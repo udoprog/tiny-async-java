@@ -1,0 +1,10 @@
+dependency-reduced-pom.xml
+target
+*.log
+.*.un~
+*~
+.*.swp
+.classpath
+.project
+.settings
+bin
