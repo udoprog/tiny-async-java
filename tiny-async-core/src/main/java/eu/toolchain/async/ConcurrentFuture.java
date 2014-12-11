@@ -44,7 +44,8 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
      */
     private static final int MAX_SPINS = 10;
 
-    private AtomicReference<List<CallbackEntry<T>>> callbacks = new AtomicReference<List<CallbackEntry<T>>>(new ArrayList<CallbackEntry<T>>());
+    private AtomicReference<List<CallbackEntry<T>>> callbacks = new AtomicReference<List<CallbackEntry<T>>>(
+            new ArrayList<CallbackEntry<T>>());
     private Sync result = new Sync();
 
     private final AsyncFramework async;
@@ -302,7 +303,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
             copy = new ArrayList<>(old);
             copy.add(entry);
-        } while(!callbacks.compareAndSet(old, copy));
+        } while (!callbacks.compareAndSet(old, copy));
 
         return true;
     }
@@ -362,7 +363,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         @SuppressWarnings("unchecked")
         private void cancelled(AsyncCaller caller) {
             if (type == DONE) {
-                caller.cancelFutureDone((FutureDone<T>)callback);
+                caller.cancelFutureDone((FutureDone<T>) callback);
                 return;
             }
 
@@ -372,7 +373,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
             }
 
             if (type == CANCELLED) {
-                caller.runFutureCancelled((FutureCancelled)callback);
+                caller.runFutureCancelled((FutureCancelled) callback);
                 return;
             }
 

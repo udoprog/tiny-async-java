@@ -19,4 +19,17 @@
     This project aims to provide small, sane, and efficient asynchronous
     programming components.
   </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>18.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>eu.toolchain.async</groupId>
+      <artifactId>tiny-async-core</artifactId>
+    </dependency>
+  </dependencies>
 </project>
