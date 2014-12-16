@@ -3,8 +3,12 @@
 A small asynchronous library for Java.
 
 * Only depend on Java 7.
-* Do not extend the paradigm more than necessary (e.g. reactive streams).
 * Do one thing, and do it well.
+* Throw checked exceptions in transformers, and collectors.
+* Give the user control over how to handle internal functionality
+  through AsyncCaller.
+* Separation of implementation and interface through an api package suitable
+  for inclusion in your public APIs.
 
 All components of the public API aims to be fully thread safe.
 
