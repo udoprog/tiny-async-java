@@ -150,27 +150,6 @@
           </excludes>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>2.5.4</version>
-        <configuration>
-          <!-- get this to work so you can fail on error again. -->
-          <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-          <failOnError>false</failOnError>
-          <effort>Max</effort>
-          <threshold>Default</threshold>
-          <xmlOutput>true</xmlOutput>
-          <skip>${skip.findbugs}</skip>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 </project>

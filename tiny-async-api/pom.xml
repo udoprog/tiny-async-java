@@ -19,8 +19,4 @@
     This project aims to provide small, sane, and efficient asynchronous
     programming components.
   </description>
-
-  <properties>
-    <skip.findbugs>true</skip.findbugs>
-  </properties>
 </project>
