@@ -4,12 +4,16 @@
 
   <groupId>eu.toolchain.async</groupId>
   <artifactId>tiny-async-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>pom</packaging>
 
   <url>https://github.com/udoprog/tiny-async-java</url>
 
   <name>tiny-async-parent</name>
+
+  <description>
+    A tiny asynchronous library for Java 7.
+  </description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

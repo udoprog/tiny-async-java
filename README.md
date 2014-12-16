@@ -28,7 +28,7 @@ a dependency to your public API.
 <dependency>
   <groupId>eu.toolchain.async</groupId>
   <artifactId>tiny-async</artifactId>
-  <version>CHANGEME</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
