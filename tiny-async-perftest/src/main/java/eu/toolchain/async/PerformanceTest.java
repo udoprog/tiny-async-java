@@ -1,6 +1,5 @@
 package eu.toolchain.async;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,9 +10,7 @@ public class PerformanceTest {
 
     private static final Runtime runtime = Runtime.getRuntime();
 
-    public static void main(String argv[]) throws IOException {
-        System.in.read();
-
+    public static void main(String argv[]) {
         run("immediate", new Immediate.Guava(), new Immediate.Tiny());
 
         run("immediate, into many transforms", new TransformMany.Guava(), new TransformMany.Tiny());
@@ -67,8 +64,8 @@ public class PerformanceTest {
 
     private static void run(String name, TestCase guava, TestCase tiny) {
         // hint that we want a clean state :).
+        final List<Long> a = runTest(guava);
         final List<Long> b = runTest(tiny);
-        final List<Long> a = b; // runTest(guava);
 
         System.out.println(name);
         System.out.println("  avg: " + time(avg(a)) + " - " + time(avg(b)));
