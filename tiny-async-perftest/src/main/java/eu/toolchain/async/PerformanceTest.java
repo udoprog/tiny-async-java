@@ -1,5 +1,6 @@
 package eu.toolchain.async;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,18 +11,20 @@ public class PerformanceTest {
 
     private static final Runtime runtime = Runtime.getRuntime();
 
-    public static void main(String argv[]) {
+    public static void main(String argv[]) throws IOException {
+        System.in.read();
+
         run("immediate", new Immediate.Guava(), new Immediate.Tiny());
 
         run("immediate, into many transforms", new TransformMany.Guava(), new TransformMany.Tiny());
 
         run("immediate, into few transforms", new TransformFew.Guava(), new TransformFew.Tiny());
+
+        run("many threads contending", new ManyThreads.Guava(), new ManyThreads.Tiny());
     }
 
     private static List<Long> runTest(TestCase test) {
         runtime.gc();
-
-        int errors = 0;
 
         final List<Long> samples = new ArrayList<>(ITERATIONS);
 
@@ -32,13 +35,15 @@ public class PerformanceTest {
             }
         }
 
+        final List<Exception> errors = new ArrayList<>();
+
         for (int i = 0; i < ITERATIONS; i++) {
             final long then = System.nanoTime();
 
             try {
                 test.test();
             } catch (Exception e) {
-                errors++;
+                errors.add(e);
             }
 
             final long diff = System.nanoTime() - then;
@@ -46,8 +51,15 @@ public class PerformanceTest {
             samples.add(diff);
         }
 
-        if (errors > 0)
+        if (!errors.isEmpty()) {
+            for (int i = 0; i < errors.size(); i++) {
+                final Exception e = errors.get(i);
+                System.out.println("Error #" + i + ": " + e.getMessage());
+                e.printStackTrace(System.out);
+            }
+
             throw new IllegalStateException("test threw errors");
+        }
 
         Collections.sort(samples);
         return samples;
@@ -55,8 +67,8 @@ public class PerformanceTest {
 
     private static void run(String name, TestCase guava, TestCase tiny) {
         // hint that we want a clean state :).
-        final List<Long> a = runTest(guava);
         final List<Long> b = runTest(tiny);
+        final List<Long> a = b; // runTest(guava);
 
         System.out.println(name);
         System.out.println("  avg: " + time(avg(a)) + " - " + time(avg(b)));

@@ -36,7 +36,7 @@ public class FailedFuture<T> implements AsyncFuture<T> {
     /* register listeners */
 
     @Override
-    public AsyncFuture<T> on(FutureDone<T> handle) {
+    public AsyncFuture<T> on(FutureDone<? super T> handle) {
         caller.failFutureDone(handle, error);
         return this;
     }
@@ -90,17 +90,17 @@ public class FailedFuture<T> implements AsyncFuture<T> {
     /* transform */
 
     @Override
-    public <C> AsyncFuture<C> transform(LazyTransform<T, C> transform) {
+    public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
         return async.failed(error, caller);
     }
 
     @Override
-    public <C> AsyncFuture<C> transform(Transform<T, C> transform) {
+    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
         return async.failed(error, caller);
     }
 
     @Override
-    public AsyncFuture<T> error(Transform<Throwable, T> transform) {
+    public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
         final T result;
 
         try {
@@ -114,17 +114,17 @@ public class FailedFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
+    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
         return async.error(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> cancelled(Transform<Void, T> transform) {
+    public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
+    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
         return this;
     }
 }

@@ -18,10 +18,10 @@ public class Immediate {
             final List<AsyncFuture<Boolean>> futures = new ArrayList<>();
 
             for (int i = 0; i < MANY_TRANSFORM_ITERATIONS; i++) {
-                futures.add(async.resolved(true).transform(new Transform<Boolean, Boolean>() {
+                futures.add(async.resolved(true).transform(new LazyTransform<Boolean, Boolean>() {
                     @Override
-                    public Boolean transform(Boolean result) throws Exception {
-                        return !result;
+                    public AsyncFuture<Boolean> transform(Boolean result) throws Exception {
+                        return async.resolved(!result);
                     }
                 }));
             }

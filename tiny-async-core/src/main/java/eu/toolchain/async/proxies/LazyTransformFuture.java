@@ -8,7 +8,7 @@ import eu.toolchain.async.ResolvableFuture;
 
 @RequiredArgsConstructor
 public class LazyTransformFuture<S, T> implements FutureDone<S> {
-    private final LazyTransform<S, T> transform;
+    private final LazyTransform<? super S, ? extends T> transform;
     private final ResolvableFuture<T> target;
 
     @Override
@@ -18,7 +18,7 @@ public class LazyTransformFuture<S, T> implements FutureDone<S> {
 
     @Override
     public void resolved(S result) throws Exception {
-        final AsyncFuture<T> t;
+        final AsyncFuture<? extends T> t;
 
         try {
             t = transform.transform(result);

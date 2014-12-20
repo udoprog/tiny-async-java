@@ -105,34 +105,35 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, Transform<C, T> transform) {
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, Transform<? super C, ? extends T> transform) {
         return new TransformFutureProxy<C, T>(this, future, transform);
     }
 
     @Override
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<C, T> transform) {
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
         return transform(future, transform, caller());
     }
 
     @Override
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<C, T> transform, AsyncCaller caller) {
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform,
+            AsyncCaller caller) {
         final ResolvableFuture<T> target = future();
         future.on(new LazyTransformFuture<C, T>(transform, target));
         return target;
     }
 
     @Override
-    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final Transform<Throwable, T> transform) {
+    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final Transform<Throwable, ? extends T> transform) {
         return new TransformErrorFutureProxy<T>(this, future, transform);
     }
 
     @Override
-    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, T> transform) {
+    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform) {
         return error(future, transform, caller);
     }
 
     @Override
-    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, T> transform,
+    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform,
             AsyncCaller caller) {
         final ResolvableFuture<T> target = future(caller);
         future.on(new LazyTransformErrorFuture<T>(transform, target));
@@ -140,17 +141,18 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final Transform<Void, T> transform) {
+    public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final Transform<Void, ? extends T> transform) {
         return new TransformCancelledFutureProxy<T>(this, future, transform);
     }
 
     @Override
-    public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, T> transform) {
+    public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform) {
         return cancelled(future, transform, caller());
     }
 
     @Override
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, T> transform, AsyncCaller caller) {
+    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform,
+            AsyncCaller caller) {
         final ResolvableFuture<T> target = future(caller);
         future.on(new LazyTransformCancelledFuture<T>(transform, target));
         return target;
@@ -250,7 +252,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> AsyncFuture<Collection<T>> collect(Collection<AsyncFuture<T>> futures) {
+    public <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<T>> futures) {
         if (futures.isEmpty())
             return resolved((Collection<T>) EMPTY_RESULTS);
 

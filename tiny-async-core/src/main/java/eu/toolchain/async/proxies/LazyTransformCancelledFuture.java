@@ -8,7 +8,7 @@ import eu.toolchain.async.ResolvableFuture;
 
 @RequiredArgsConstructor
 public class LazyTransformCancelledFuture<T> implements FutureDone<T> {
-    private final LazyTransform<Void, T> transform;
+    private final LazyTransform<Void, ? extends T> transform;
     private final ResolvableFuture<T> target;
 
     @Override
@@ -23,11 +23,11 @@ public class LazyTransformCancelledFuture<T> implements FutureDone<T> {
 
     @Override
     public void cancelled() throws Exception {
-        final AsyncFuture<T> future;
+        final AsyncFuture<? extends T> future;
 
         try {
             future = transform.transform(null);
-        } catch(Exception e) {
+        } catch (Exception e) {
             target.fail(e);
             return;
         }

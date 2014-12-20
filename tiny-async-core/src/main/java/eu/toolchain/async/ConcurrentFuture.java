@@ -126,7 +126,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> on(final FutureDone<T> done) {
+    public AsyncFuture<T> on(final FutureDone<? super T> done) {
         if (add(CallbackEntry.DONE, done))
             return this;
 
@@ -160,9 +160,6 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         if (add(CallbackEntry.CANCELLED, cancelled))
             return this;
 
-        if (this.result.state() == 0)
-            throw new IllegalStateException("result is not available");
-
         caller.runFutureCancelled(cancelled);
         return this;
     }
@@ -172,9 +169,6 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         if (add(CallbackEntry.FINISHED, finishable))
             return this;
 
-        if (this.result.state() == 0)
-            throw new IllegalStateException("result is not available");
-
         caller.runFutureFinished(finishable);
         return this;
     }
@@ -183,7 +177,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     @Override
     public boolean isDone() {
-        return result.state() != 0;
+        return result.state() > Sync.RESULT;
     }
 
     @Override
@@ -216,9 +210,9 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     @SuppressWarnings("unchecked")
     private T checkState() throws ExecutionException, CancellationException {
-        final int state = result.state();
+        final int state = result.poll();
 
-        if (state == Sync.RUNNING)
+        if (state <= Sync.RESULT)
             throw new IllegalStateException("result is not ready");
 
         final Object result = this.result.result();
@@ -238,32 +232,32 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     /* transform */
 
     @Override
-    public <C> AsyncFuture<C> transform(Transform<T, C> transform) {
+    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
         return async.transform(this, transform);
     }
 
     @Override
-    public <C> AsyncFuture<C> transform(final LazyTransform<T, C> transform) {
+    public <C> AsyncFuture<C> transform(final LazyTransform<? super T, ? extends C> transform) {
         return async.transform(this, transform, caller);
     }
 
     @Override
-    public AsyncFuture<T> error(Transform<Throwable, T> transform) {
+    public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
         return async.error(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
+    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
         return async.error(this, transform, caller);
     }
 
     @Override
-    public AsyncFuture<T> cancelled(Transform<Void, T> transform) {
+    public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform) {
         return async.cancelled(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
+    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
         return async.cancelled(this, transform, caller);
     }
 
@@ -278,7 +272,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
      */
     private boolean add(byte type, Object callback) {
         // already done.
-        if (result.state() != Sync.RUNNING)
+        if (result.state() > Sync.RESULT)
             return false;
 
         final CallbackEntry<T> entry = new CallbackEntry<T>(type, callback);
@@ -286,14 +280,14 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         List<CallbackEntry<T>> old;
         List<CallbackEntry<T>> copy;
 
-        int loops = 0;
+        int spins = 0;
 
         do {
             // try to mitigate high-contention situations by keeping track of how many times we've looped.
             // a yield is not guaranteed to help, but its the best we have.
-            if (loops++ > MAX_SPINS) {
+            if (spins++ > MAX_SPINS) {
                 Thread.yield();
-                loops = 0;
+                spins = 0;
             }
 
             old = callbacks.get();
@@ -382,10 +376,15 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     }
 
     private static class Sync extends AbstractQueuedSynchronizer {
+        // waiting for value.
         private static final int RUNNING = 0x0;
-        private static final int RESOLVED = 0x1;
-        private static final int FAILED = 0x2;
-        private static final int CANCELLED = 0x3;
+        // not running, but result not set yet.
+        private static final int RESULT = 0x1;
+
+        // various end states
+        private static final int RESOLVED = 0x10;
+        private static final int FAILED = 0x11;
+        private static final int CANCELLED = 0x12;
 
         private static final long serialVersionUID = -5044031197562766649L;
 
@@ -402,14 +401,25 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
             return true;
         }
 
+        /**
+         * Complete and provide a state, and a result to the syncer.
+         *
+         * @param state State to set.
+         * @param result Result to provide.
+         * @return {@code true} if the result was successfully provided, {@code false} otherwise.
+         */
         private boolean complete(int state, Object result) {
-            if (compareAndSetState(Sync.RUNNING, state)) {
-                this.result = result;
-                releaseShared(state);
-                return true;
-            }
+            // short path: no result to provide.
+            if (result == null)
+                return compareAndSetState(RUNNING, state);
 
-            return false;
+            if (!compareAndSetState(RUNNING, RESULT))
+                return false;
+
+            this.result = result;
+            setState(state);
+            releaseShared(state);
+            return true;
         }
 
         public boolean acquire(long nanos) throws InterruptedException {
@@ -423,8 +433,29 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
             acquireSharedInterruptibly(-1);
         }
 
+        /**
+         * Fetch state without spinning, useful for just 'taking a look' without guaranteeing that a value has been set.
+         */
         public int state() {
             return getState();
+        }
+
+        /**
+         * Take the current state, and assert that a result has been set, if applicable.
+         */
+        public int poll() {
+            // spin if the current state is changing.
+            int spins = 0;
+            int s;
+
+            do {
+                if (spins++ > MAX_SPINS) {
+                    Thread.yield();
+                    spins = 0;
+                }
+            } while ((s = getState()) == RESULT);
+
+            return s;
         }
 
         public Object result() {

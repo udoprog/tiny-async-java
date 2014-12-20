@@ -99,14 +99,14 @@ public interface AsyncFramework {
      * @param transform The transforming implementation to use.
      * @return A new future of type T.
      */
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, Transform<C, T> transform);
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, Transform<? super C, ? extends T> transform);
 
     /**
      * Same as {@link #transform(AsyncFuture, LazyTransform, AsyncCaller)}, but using the default {@link #caller()}.
      *
      * @see #transform(AsyncFuture, LazyTransform, AsyncCaller)
      */
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<C, T> transform);
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform);
 
     /**
      * Transform a future of type C, to a future of type T using lazy transformation.
@@ -120,7 +120,8 @@ public interface AsyncFramework {
      * @param caller Caller to use when invoking handlers.
      * @return A new future of type T.
      */
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<C, T> transform, AsyncCaller caller);
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform,
+            AsyncCaller caller);
 
     /**
      * Transform a failing future into a resolved future.
@@ -131,14 +132,14 @@ public interface AsyncFramework {
      * @param transform The transform implementation to use.
      * @return A new future which does not fail.
      */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, Transform<Throwable, T> transform);
+    public <T> AsyncFuture<T> error(AsyncFuture<T> future, Transform<Throwable, ? extends T> transform);
 
     /**
      * Same as {@link #error(AsyncFuture, LazyTransform, AsyncCaller)}, but using the default {@link #caller()}.
      *
      * @see #error(AsyncFuture, LazyTransform, AsyncCaller)
      */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, T> transform);
+    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform);
 
     /**
      * Transform a failing future into a resolved future.
@@ -152,7 +153,8 @@ public interface AsyncFramework {
      * @param caller Caller to use when invoking handlers.
      * @return A new future which does not fail.
      */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, T> transform, AsyncCaller caller);
+    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform,
+            AsyncCaller caller);
 
     /**
      * Transform a cancelled future into a resolved future.
@@ -162,14 +164,14 @@ public interface AsyncFramework {
      * @return A new future which does not cancel.
      * @see AsyncFuture#cancelled(Transform)
      */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, Transform<Void, T> transform);
+    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, Transform<Void, ? extends T> transform);
 
     /**
      * Same as {@link #cancelled(AsyncFuture, LazyTransform, AsyncCaller)}, but using the default {@link #caller()}.
      *
      * @see #cancelled(AsyncFuture, LazyTransform, AsyncCaller)
      */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, T> transform);
+    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform);
 
     /**
      * Transform a cancelled future into a resolved future.
@@ -182,7 +184,8 @@ public interface AsyncFramework {
      * @return A new future which does not cancel.
      * @see AsyncFuture#cancelled(LazyTransform)
      */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, T> transform, AsyncCaller caller);
+    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform,
+            AsyncCaller caller);
 
     /**
      * Build a new future that is the result of collecting all the results in a collection.
@@ -190,7 +193,7 @@ public interface AsyncFramework {
      * @param futures The collection of future to collect.
      * @return A new future that is the result of collecting all results.
      */
-    public <T> AsyncFuture<Collection<T>> collect(Collection<AsyncFuture<T>> futures);
+    public <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<T>> futures);
 
     /**
      * Build a new future that is the result of reducing the provided collection of futures using the provided

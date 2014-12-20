@@ -60,7 +60,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param done Listener to fire.
      * @return This future.
      */
-    public AsyncFuture<T> on(FutureDone<T> done);
+    public AsyncFuture<T> on(FutureDone<? super T> done);
 
     /**
      * Special type of end point, that doesn't care at all for which type.
@@ -80,13 +80,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     *
+     * 
      *   Future<Double> second = first.transform(new Transformer<Integer, Double>() {
      *     void transform(Integer result, Future<Double> future) {
      *       future.finish(result.doubleValue());
      *     }
      *   };
-     *
+     * 
      *   # use second
      * }
      * </pre>
@@ -94,7 +94,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param transform The function to use when transforming the value.
      * @return A future of type <C> which resolves with the transformed value.
      */
-    public <C> AsyncFuture<C> transform(LazyTransform<T, C> transform);
+    public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform);
 
     /**
      * Transforms the value of this future into another type using a transformer function.
@@ -108,13 +108,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     *
+     * 
      *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
      *     Double transform(Integer result) {
      *       return result.doubleValue();
      *     }
      *   };
-     *
+     * 
      *   # use second
      * }
      * </pre>
@@ -122,33 +122,33 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param transform
      * @return
      */
-    public <C> AsyncFuture<C> transform(Transform<T, C> transform);
+    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform);
 
     /**
      * Transform an error into something useful.
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> error(Transform<Throwable, T> transform);
+    public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform);
 
     /**
      * Transform an error into something useful.
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform);
+    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform);
 
     /**
      * Transform something cancelled into something useful.
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> cancelled(Transform<Void, T> transform);
+    public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform);
 
     /**
      * Transform something cancelled into something useful using a lazy operation.
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform);
+    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform);
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.AsyncFuture;
@@ -21,47 +20,62 @@ import eu.toolchain.async.ThrowableUtils;
  * @param <T>
  */
 public class FutureCollector<S, T> implements FutureDone<S> {
-    private final int size;
     private final Collector<S, T> reducable;
     private final ResolvableFuture<T> target;
 
-    private final AtomicReferenceArray<Entry> results;
+    private final int size;
+    private final Entry[] results;
     private final AtomicInteger position = new AtomicInteger();
+    private final AtomicInteger countdown;
 
     public FutureCollector(int size, Collector<S, T> reducable, ResolvableFuture<T> target) {
         this.size = size;
         this.reducable = reducable;
         this.target = target;
-        this.results = new AtomicReferenceArray<>(size);
+        this.results = entryArray(size);
+        this.countdown = new AtomicInteger(size);
+    }
+
+    private Entry[] entryArray(int size) {
+        final Entry[] entries = new Entry[size];
+
+        for (int i = 0; i < size; i++)
+            entries[i] = new Entry();
+
+        return entries;
     }
 
     @Override
     public void failed(Throwable e) throws Exception {
-        add(position.getAndIncrement(), new Entry(Entry.ERROR, e));
+        add(position.getAndIncrement(), Entry.ERROR, e);
     }
 
     @Override
     public void resolved(S result) throws Exception {
-        add(position.getAndIncrement(), new Entry(Entry.RESULT, result));
+        add(position.getAndIncrement(), Entry.RESULT, result);
     }
 
     @Override
     public void cancelled() throws Exception {
-        add(position.getAndIncrement(), new Entry(Entry.CANCEL, null));
+        add(position.getAndIncrement(), Entry.CANCEL, null);
     }
 
     /**
      * Checks in a call back. It also wraps up the group if all the callbacks have checked in.
      */
-    private void add(final int p, final Entry entry) {
-        if (p >= size)
-            throw new IllegalStateException("too many results received, expected " + size + " but got " + p);
+    private void add(final int p, final byte type, final Object value) {
+        final Entry e = results[p];
 
-        results.set(p, entry);
+        e.type = type;
+        e.value = value;
 
-        // waiting for more results.
-        if (p + 1 < size)
+        final int c = countdown.decrementAndGet();
+
+        if (c != 0)
             return;
+
+        if (c < 0)
+            throw new IllegalStateException("got more than " + size + " results");
 
         final Results<S> r = readResults();
 
@@ -97,9 +111,7 @@ public class FutureCollector<S, T> implements FutureDone<S> {
         final List<Throwable> errors = new ArrayList<>();
         int cancelled = 0;
 
-        for (int i = 0; i < size; i++) {
-            final Entry e = this.results.get(i);
-
+        for (final Entry e : this.results) {
             switch (e.type) {
             case Entry.ERROR:
                 errors.add((Throwable) e.value);
@@ -118,14 +130,13 @@ public class FutureCollector<S, T> implements FutureDone<S> {
         return new Results<S>(results, errors, cancelled);
     }
 
-    @RequiredArgsConstructor
     private static final class Entry {
-        private static final byte RESULT = 0x00;
-        private static final byte ERROR = 0x01;
-        private static final byte CANCEL = 0x02;
+        private static final byte RESULT = 0x01;
+        private static final byte ERROR = 0x02;
+        private static final byte CANCEL = 0x03;
 
-        private final byte type;
-        private final Object value;
+        private byte type;
+        private Object value;
     }
 
     @RequiredArgsConstructor

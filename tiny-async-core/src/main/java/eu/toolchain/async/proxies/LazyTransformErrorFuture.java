@@ -8,16 +8,16 @@ import eu.toolchain.async.ResolvableFuture;
 
 @RequiredArgsConstructor
 public class LazyTransformErrorFuture<T> implements FutureDone<T> {
-    private final LazyTransform<Throwable, T> transform;
+    private final LazyTransform<Throwable, ? extends T> transform;
     private final ResolvableFuture<T> target;
 
     @Override
     public void failed(Throwable cause) throws Exception {
-        final AsyncFuture<T> future;
+        final AsyncFuture<? extends T> future;
 
         try {
             future = transform.transform(cause);
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.addSuppressed(cause);
             target.fail(e);
             return;

@@ -17,7 +17,7 @@ import eu.toolchain.async.Transform;
 public class TransformErrorFutureProxy<T> implements AsyncFuture<T> {
     private final TinyAsync async;
     private final AsyncFuture<T> source;
-    private final Transform<Throwable, T> transform;
+    private final Transform<Throwable, ? extends T> transform;
 
     /* transition */
 
@@ -39,7 +39,7 @@ public class TransformErrorFutureProxy<T> implements AsyncFuture<T> {
     /* register listeners */
 
     @Override
-    public AsyncFuture<T> on(final FutureDone<T> handle) {
+    public AsyncFuture<T> on(final FutureDone<? super T> handle) {
         source.on(new FutureDone<T>() {
             @Override
             public void failed(Throwable original) throws Exception {
@@ -136,32 +136,32 @@ public class TransformErrorFutureProxy<T> implements AsyncFuture<T> {
     /* transform */
 
     @Override
-    public <C> AsyncFuture<C> transform(Transform<T, C> transform) {
+    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
         return async.transform(this, transform);
     }
 
     @Override
-    public <C> AsyncFuture<C> transform(LazyTransform<T, C> transform) {
+    public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
         return async.transform(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> error(Transform<Throwable, T> transform) {
+    public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
         return async.error(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
+    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
         return async.error(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> cancelled(Transform<Void, T> transform) {
+    public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform) {
         return async.cancelled(this, transform);
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
+    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
         return async.cancelled(this, transform);
     }
 }
