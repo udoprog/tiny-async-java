@@ -392,7 +392,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
         @Override
         protected int tryAcquireShared(int ignored) {
-            return getState() != 0 ? 1 : -1;
+            return getState() >= RESOLVED ? 1 : -1;
         }
 
         @Override
