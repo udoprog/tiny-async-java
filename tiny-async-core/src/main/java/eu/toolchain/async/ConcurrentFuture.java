@@ -410,8 +410,13 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
          */
         private boolean complete(int state, Object result) {
             // short path: no result to provide.
-            if (result == null)
-                return compareAndSetState(RUNNING, state);
+            if (result == null) {
+                if (!compareAndSetState(RUNNING, state))
+                    return false;
+
+                releaseShared(state);
+                return true;
+            }
 
             if (!compareAndSetState(RUNNING, RESULT))
                 return false;
