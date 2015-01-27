@@ -428,10 +428,10 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         }
 
         public boolean acquire(long nanos) throws InterruptedException {
-            if (!tryAcquireNanos(-1, nanos))
+            if (!tryAcquireSharedNanos(-1, nanos))
                 return false;
 
-            return false;
+            return true;
         }
 
         public void acquire() throws InterruptedException {
