@@ -36,7 +36,7 @@ a dependency to your public API.
 <dependency>
   <groupId>eu.toolchain.async</groupId>
   <artifactId>tiny-async</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.3</version>
 </dependency>
 ```
 
