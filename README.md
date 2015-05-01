@@ -73,6 +73,7 @@ See examples:
 
 * [blocking example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
 * [static results example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncStaticResultsExample.java)
+* [manually resolving a future](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncManualResolvingExample.java)
 
 ## Subscribing to changes
 
@@ -93,7 +94,7 @@ handle).
 
 See examples:
 
-* [Subscribe example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSubscribeExample.java)
+* [subscribe example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSubscribeExample.java)
 
 ## Blocking until a result is available
 
@@ -110,7 +111,7 @@ convenient in this contrived context.
 
 See examples:
 
-* [Blocking example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
+* [blocking example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
 
 ## Transforming results
 
@@ -127,7 +128,7 @@ They also allows to take a falied future, and convert it into a value B.
 
 See examples:
 
-* [Transform example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncTransformExample.java)
+* [transform example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncTransformExample.java)
 
 ## Collecting Many Results
 
@@ -151,19 +152,5 @@ the user.
 
 See examples:
 
-* [Collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
-* [Stream collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
-
-## Manually resolving a Future
-
-Sometimes it is necessary to manually resolve a future at specific points.
-
-For this purpose, most the futures which allows this implements the
-```ResolvableFuture#resolve(T result)``` method.
-
-It is recommended that a ResolvableFuture is casted down to an AsyncFuture in
-all public APIs.
-
-See examples:
-
-* [Manually resolving example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncManuallyResolvingExample.java)
+* [collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
+* [stream collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
