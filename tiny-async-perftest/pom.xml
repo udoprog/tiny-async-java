@@ -4,7 +4,7 @@
   <parent>
     <groupId>eu.toolchain.async</groupId>
     <artifactId>tiny-async-parent</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.1.0</version>
     <relativePath>..</relativePath>
   </parent>
 
