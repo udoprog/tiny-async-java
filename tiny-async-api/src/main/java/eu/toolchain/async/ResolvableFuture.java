@@ -1,6 +1,6 @@
 package eu.toolchain.async;
 
-public interface ResolvableFuture<T> extends AsyncFuture<T> {
+public interface ResolvableFuture<T> extends AsyncFuture<T>, FutureDone<T> {
     /**
      * Resolve the future.
      *

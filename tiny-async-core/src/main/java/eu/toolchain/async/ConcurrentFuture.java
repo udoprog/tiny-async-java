@@ -34,11 +34,9 @@ import lombok.RequiredArgsConstructor;
  *            The type being deferred.
  */
 // @formatter:on
-public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
+public class ConcurrentFuture<T> implements ResolvableFuture<T> {
     /**
-     * Maximum amount of spins this future allows when trying to modify the callback list.
-     *
-     * When reached it indicates high contention.
+     * The maximum number of spins allowed when busy-waiting.
      */
     private static final int MAX_SPINS = 10;
 
@@ -46,9 +44,10 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     private Sync sync = new Sync();
 
-    private volatile ArrayList<CallbackEntry<T>> callbacks = new ArrayList<CallbackEntry<T>>();
+    private volatile ArrayList<CB<T>> callbacks = new ArrayList<CB<T>>();
 
     private final AsyncFramework async;
+
     private final AsyncCaller caller;
 
     /**
@@ -89,9 +88,9 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         if (!this.sync.complete(Sync.RESOLVED, result))
             return false;
 
-        final ArrayList<CallbackEntry<T>> entries = takeAndReset();
+        final ArrayList<CB<T>> entries = takeAndClear();
 
-        for (final CallbackEntry<T> c : entries)
+        for (final CB<T> c : entries)
             c.resolved(result);
 
         return true;
@@ -102,9 +101,9 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         if (!sync.complete(Sync.FAILED, cause))
             return false;
 
-        final ArrayList<CallbackEntry<T>> entries = takeAndReset();
+        final ArrayList<CB<T>> entries = takeAndClear();
 
-        for (final CallbackEntry<T> c : entries)
+        for (final CB<T> c : entries)
             c.failed(cause);
 
         return true;
@@ -120,9 +119,9 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         if (!sync.complete(Sync.CANCELLED, null))
             return false;
 
-        final ArrayList<CallbackEntry<T>> entries = takeAndReset();
+        final ArrayList<CB<T>> entries = takeAndClear();
 
-        for (final CallbackEntry<T> c : entries)
+        for (final CB<T> c : entries)
             c.cancelled();
 
         return true;
@@ -133,21 +132,22 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> on(final FutureDone<? super T> done) {
-        if (!sync.isDone() && add(new DoneEntry(done)))
-            return this;
+        int state = this.sync.state();
 
-        final int state = this.sync.state();
+        if (!Sync.isReady(state)) {
+            if (add(new DoneCB(done)))
+                return this;
 
-        if (state == Sync.RUNNING)
-            throw new IllegalStateException("result is not available");
+            state = sync.poll();
+        }
 
         if (state == Sync.RESOLVED) {
-            caller.resolveFutureDone(done, (T) this.sync.result());
+            caller.resolveFutureDone(done, (T) this.sync.result);
             return this;
         }
 
         if (state == Sync.FAILED) {
-            caller.failFutureDone(done, (Throwable) this.sync.result());
+            caller.failFutureDone(done, (Throwable) this.sync.result);
             return this;
         }
 
@@ -167,13 +167,14 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     @Override
     public AsyncFuture<T> on(FutureCancelled cancelled) {
-        if (!sync.isDone() && add(new CancelledEntry(cancelled)))
-            return this;
+        int state = this.sync.state();
 
-        final int state = this.sync.state();
+        if (!Sync.isReady(state)) {
+            if (add(new CancelledCB(cancelled)))
+                return this;
 
-        if (state == Sync.RUNNING)
-            throw new IllegalStateException("result is not available");
+            state = sync.poll();
+        }
 
         if (state == Sync.CANCELLED)
             caller.runFutureCancelled(cancelled);
@@ -183,25 +184,29 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     @Override
     public AsyncFuture<T> on(FutureFinished finishable) {
-        if (!sync.isDone() && add(new FinishedEntry(finishable)))
+        int state = sync.state();
+
+        if (!Sync.isReady(state) && add(new FinishedCB(finishable)))
             return this;
 
         caller.runFutureFinished(finishable);
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
-        if (!sync.isDone() && add(new ResolvedEntry(resolved)))
-            return this;
+        int state = this.sync.state();
 
-        final int state = this.sync.state();
+        if (!Sync.isReady(state)) {
+            if (add(new ResolvedCB(resolved)))
+                return this;
 
-        if (state == Sync.RUNNING)
-            throw new IllegalStateException("result is not available");
+            state = sync.poll();
+        }
 
         if (state == Sync.RESOLVED)
-            caller.runFutureResolved(resolved, (T) this.sync.result());
+            caller.runFutureResolved(resolved, (T) this.sync.result);
 
         return this;
     }
@@ -210,51 +215,57 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
 
     @Override
     public boolean isDone() {
-        return sync.isDone();
+        return Sync.isReady(sync.state());
     }
 
     @Override
     public boolean isCancelled() {
-        return sync.state() == Sync.CANCELLED;
+        return Sync.isCancelled(sync.state());
     }
 
     /* get result */
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        if (!isDone())
-            sync.acquire();
+        final int state = sync.state();
 
-        return checkState();
+        if (Sync.isReady(state))
+            return checkState(state);
+
+        sync.acquire();
+        return checkState(sync.state());
     }
 
     @Override
     public T getNow() throws ExecutionException {
-        return checkState();
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            throw new IllegalStateException("sync state is not ready");
+
+        return checkState(state);
     }
 
     @Override
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        final int state = sync.state();
+
+        if (Sync.isReady(state))
+            return checkState(state);
+
         if (!sync.acquire(unit.toNanos(timeout)))
             throw new TimeoutException();
 
-        return checkState();
+        return checkState(sync.poll());
     }
 
     @SuppressWarnings("unchecked")
-    private T checkState() throws ExecutionException, CancellationException {
-        final int state = sync.poll();
-
-        if (state <= Sync.RESULT)
-            throw new IllegalStateException("result is not ready");
-
-        final Object result = this.sync.result();
-
+    private T checkState(int state) throws ExecutionException, CancellationException {
         switch (state) {
         case Sync.FAILED:
-            throw new ExecutionException((Throwable) result);
+            throw new ExecutionException((Throwable) this.sync.result);
         case Sync.RESOLVED:
-            return (T) result;
+            return (T) this.sync.result;
         case Sync.CANCELLED:
             throw new CancellationException();
         default:
@@ -297,8 +308,8 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     /**
      * Take and reset all callbacks.
      */
-    private ArrayList<CallbackEntry<T>> takeAndReset() {
-        final ArrayList<CallbackEntry<T>> entries;
+    private ArrayList<CB<T>> takeAndClear() {
+        final ArrayList<CB<T>> entries;
 
         synchronized ($lock) {
             entries = callbacks;
@@ -317,7 +328,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
      * @param callback Callback to be queued up.
      * @return {@code true} if a task has been queued up, {@code false} otherwise.
      */
-    private boolean add(CallbackEntry<T> entry) {
+    private boolean add(CB<T> entry) {
         synchronized ($lock) {
             if (callbacks == null)
                 return false;
@@ -328,7 +339,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
         return true;
     }
 
-    private static interface CallbackEntry<T> {
+    private static interface CB<T> {
         void resolved(T result);
 
         void failed(Throwable error);
@@ -337,7 +348,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     }
 
     @RequiredArgsConstructor
-    private class DoneEntry implements CallbackEntry<T> {
+    private class DoneCB implements CB<T> {
         private final FutureDone<? super T> callback;
 
         @Override
@@ -357,7 +368,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     }
 
     @RequiredArgsConstructor
-    private class ResolvedEntry implements CallbackEntry<T> {
+    private class ResolvedCB implements CB<T> {
         private final FutureResolved<? super T> callback;
 
         @Override
@@ -375,7 +386,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     }
 
     @RequiredArgsConstructor
-    private class FinishedEntry implements CallbackEntry<T> {
+    private class FinishedCB implements CB<T> {
         private final FutureFinished callback;
 
         @Override
@@ -395,7 +406,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     }
 
     @RequiredArgsConstructor
-    private class CancelledEntry implements CallbackEntry<T> {
+    private class CancelledCB implements CB<T> {
         private final FutureCancelled callback;
 
         @Override
@@ -415,8 +426,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
     private static class Sync extends AbstractQueuedSynchronizer {
         // waiting for value.
         private static final int RUNNING = 0x0;
-        // not running, but result not set yet.
-        private static final int RESULT = 0x1;
+        private static final int RESULT_UPDATING = 0x1;
 
         // various end states
         private static final int RESOLVED = 0x10;
@@ -455,11 +465,10 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
                 return true;
             }
 
-            if (!compareAndSetState(RUNNING, RESULT))
+            if (!compareAndSetState(RUNNING, RESULT_UPDATING))
                 return false;
 
             this.result = result;
-            setState(state);
             releaseShared(state);
             return true;
         }
@@ -487,25 +496,25 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T>, FutureDone<T> {
          */
         public int poll() {
             // spin if the current state is changing.
-            int spins = 0;
             int s;
+            int spins = 0;
 
-            do {
+            while ((s = getState()) == RESULT_UPDATING) {
                 if (spins++ > MAX_SPINS) {
                     Thread.yield();
                     spins = 0;
                 }
-            } while ((s = getState()) == RESULT);
+            }
 
             return s;
         }
 
-        public Object result() {
-            return result;
+        public static boolean isReady(int state) {
+            return state > RESULT_UPDATING;
         }
 
-        public boolean isDone() {
-            return getState() > RESULT;
+        public static boolean isCancelled(int state) {
+            return state == CANCELLED;
         }
     }
 }
