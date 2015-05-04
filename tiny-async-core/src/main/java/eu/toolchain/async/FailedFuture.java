@@ -14,12 +14,12 @@ import lombok.RequiredArgsConstructor;
 public class FailedFuture<T> implements AsyncFuture<T> {
     private final AsyncFramework async;
     private final AsyncCaller caller;
-    private final Throwable error;
+    private final Throwable cause;
 
     /* transition */
 
     @Override
-    public boolean fail(Throwable error) {
+    public boolean fail(Throwable cause) {
         return false;
     }
 
@@ -36,8 +36,13 @@ public class FailedFuture<T> implements AsyncFuture<T> {
     /* register listeners */
 
     @Override
+    public AsyncFuture<T> bind(AsyncFuture<?> other) {
+        return this;
+    }
+
+    @Override
     public AsyncFuture<T> on(FutureDone<? super T> handle) {
-        caller.failFutureDone(handle, error);
+        caller.failFutureDone(handle, cause);
         return this;
     }
 
@@ -63,6 +68,12 @@ public class FailedFuture<T> implements AsyncFuture<T> {
         return this;
     }
 
+    @Override
+    public AsyncFuture<T> on(FutureFailed failed) {
+        caller.runFutureFailed(failed, cause);
+        return this;
+    }
+
     /* check state */
 
     @Override
@@ -79,29 +90,29 @@ public class FailedFuture<T> implements AsyncFuture<T> {
 
     @Override
     public T get() throws ExecutionException {
-        throw new ExecutionException(error);
+        throw new ExecutionException(cause);
     }
 
     @Override
     public T get(long timeout, TimeUnit unit) throws ExecutionException {
-        throw new ExecutionException(error);
+        throw new ExecutionException(cause);
     }
 
     @Override
     public T getNow() throws ExecutionException {
-        throw new ExecutionException(error);
+        throw new ExecutionException(cause);
     }
 
     /* transform */
 
     @Override
     public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
-        return async.failed(error, caller);
+        return async.failed(cause, caller);
     }
 
     @Override
     public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
-        return async.failed(error, caller);
+        return async.failed(cause, caller);
     }
 
     @Override
@@ -109,10 +120,11 @@ public class FailedFuture<T> implements AsyncFuture<T> {
         final T result;
 
         try {
-            result = transform.transform(error);
+            result = transform.transform(cause);
         } catch (Exception e) {
-            e.addSuppressed(error);
-            return async.failed(e, caller);
+            final TransformException inner = new TransformException(e);
+            e.addSuppressed(cause);
+            return async.failed(inner, caller);
         }
 
         return async.resolved(result, caller);

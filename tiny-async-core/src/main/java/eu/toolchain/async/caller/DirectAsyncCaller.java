@@ -3,6 +3,7 @@ package eu.toolchain.async.caller;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.FutureCancelled;
 import eu.toolchain.async.FutureDone;
+import eu.toolchain.async.FutureFailed;
 import eu.toolchain.async.FutureFinished;
 import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.StreamCollector;
@@ -62,6 +63,15 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
             resolved.resolved(value);
         } catch (final Exception e) {
             internalError("FutureResolved#resolved(T)", e);
+        }
+    }
+
+    @Override
+    public void runFutureFailed(FutureFailed failed, Throwable cause) {
+        try {
+            failed.failed(cause);
+        } catch (final Exception e) {
+            internalError("FutureFailed#failed(Throwable)", e);
         }
     }
 

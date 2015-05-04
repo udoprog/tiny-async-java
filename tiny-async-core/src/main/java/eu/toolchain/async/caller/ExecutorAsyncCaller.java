@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.FutureCancelled;
 import eu.toolchain.async.FutureDone;
+import eu.toolchain.async.FutureFailed;
 import eu.toolchain.async.FutureFinished;
 import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.StreamCollector;
@@ -101,6 +102,16 @@ public final class ExecutorAsyncCaller implements AsyncCaller {
             @Override
             public void run() {
                 caller.cancelStreamCollector(collector);
+            }
+        });
+    }
+
+    @Override
+    public void runFutureFailed(final FutureFailed failed, final Throwable cause) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                caller.runFutureFailed(failed, cause);
             }
         });
     }

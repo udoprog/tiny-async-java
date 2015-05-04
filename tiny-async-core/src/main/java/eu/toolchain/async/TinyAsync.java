@@ -14,9 +14,6 @@ import eu.toolchain.async.collector.FutureStreamCollector;
 import eu.toolchain.async.proxies.LazyTransformCancelledFuture;
 import eu.toolchain.async.proxies.LazyTransformErrorFuture;
 import eu.toolchain.async.proxies.LazyTransformFuture;
-import eu.toolchain.async.proxies.TransformCancelledFutureProxy;
-import eu.toolchain.async.proxies.TransformErrorFutureProxy;
-import eu.toolchain.async.proxies.TransformFutureProxy;
 
 // @formatter:off
 /**
@@ -105,8 +102,37 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, Transform<? super C, ? extends T> transform) {
-        return new TransformFutureProxy<C, T>(this, future, transform);
+    public <C, T> AsyncFuture<T> transform(final AsyncFuture<C> future,
+            final Transform<? super C, ? extends T> transform) {
+        final ResolvableFuture<T> target = future();
+
+        future.on(new FutureDone<C>() {
+            @Override
+            public void failed(Throwable cause) throws Exception {
+                target.fail(cause);
+            }
+
+            @Override
+            public void resolved(C result) throws Exception {
+                final T value;
+
+                try {
+                    value = transform.transform(result);
+                } catch (Exception e) {
+                    target.fail(new TransformException(e));
+                    return;
+                }
+
+                target.resolve(value);
+            }
+
+            @Override
+            public void cancelled() throws Exception {
+                target.cancel();
+            }
+        });
+
+        return target.bind(future);
     }
 
     @Override
@@ -124,7 +150,35 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final Transform<Throwable, ? extends T> transform) {
-        return new TransformErrorFutureProxy<T>(this, future, transform);
+        final ResolvableFuture<T> target = future();
+
+        future.on(new FutureDone<T>() {
+            @Override
+            public void failed(Throwable cause) throws Exception {
+                final T value;
+
+                try {
+                    value = transform.transform(cause);
+                } catch (Exception e) {
+                    target.fail(new TransformException(e));
+                    return;
+                }
+
+                target.resolve(value);
+            }
+
+            @Override
+            public void resolved(T result) throws Exception {
+                target.resolve(result);
+            }
+
+            @Override
+            public void cancelled() throws Exception {
+                target.cancel();
+            }
+        });
+
+        return target.bind(future);
     }
 
     @Override
@@ -142,7 +196,35 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final Transform<Void, ? extends T> transform) {
-        return new TransformCancelledFutureProxy<T>(this, future, transform);
+        final ResolvableFuture<T> target = future();
+
+        future.on(new FutureDone<T>() {
+            @Override
+            public void failed(Throwable cause) throws Exception {
+                target.fail(cause);
+            }
+
+            @Override
+            public void resolved(T result) throws Exception {
+                target.resolve(result);
+            }
+
+            @Override
+            public void cancelled() throws Exception {
+                final T value;
+
+                try {
+                    value = transform.transform(null);
+                } catch (Exception e) {
+                    target.fail(new TransformException(e));
+                    return;
+                }
+
+                target.resolve(value);
+            }
+        });
+
+        return target.bind(future);
     }
 
     @Override
@@ -332,23 +414,11 @@ public final class TinyAsync implements AsyncFramework {
      * @param futures The futures to cancel, when {@code target} is cancelled.
      */
     private <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
-        target.on(new FutureDone<T>() {
-            @Override
-            public void failed(Throwable cause) throws Exception {
-                for (final AsyncFuture<?> f : futures) {
-                    f.fail(cause);
-                }
-            }
-
+        target.on(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
-                for (final AsyncFuture<?> f : futures) {
+                for (final AsyncFuture<?> f : futures)
                     f.cancel();
-                }
-            }
-
-            @Override
-            public void resolved(T result) throws Exception {
             }
         });
     }

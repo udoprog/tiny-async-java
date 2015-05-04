@@ -23,7 +23,7 @@ public interface AsyncFramework {
     public AsyncCaller caller();
 
     /**
-     * Retrieve a caller implementation that is threaded.
+     * Retrieve a caller implementation that is threaded, or fail if none is available.
      *
      * @return An async caller that is threaded.
      */
@@ -37,7 +37,10 @@ public interface AsyncFramework {
     public <T> ResolvableFuture<T> future();
 
     /**
-     * Build a new future.
+     * Build a new resolvable future.
+     *
+     * These futures are guaranteed to be thread-safe, all of their public methods can be called from any thread, at any
+     * time.
      *
      * @return A new future.
      */

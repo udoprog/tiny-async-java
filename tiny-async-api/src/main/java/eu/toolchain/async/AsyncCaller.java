@@ -54,13 +54,22 @@ public interface AsyncCaller {
     public void runFutureCancelled(FutureCancelled cancelled);
 
     /**
-     * Run resovled handle on {@code FutureResolved<T>}.
+     * Run resolved handle on {@code FutureResolved<T>}.
      *
      * @param resolved The handle to run on.
      * @param <T> the type of the resolved value.
      * @see FutureResolved#resolved(T)
      */
-    public <T> void runFutureResolved(FutureResolved<T> resolved, T value);
+    public <T> void runFutureResolved(FutureResolved<T> resolved, T result);
+
+    /**
+     * Run failed handle on {@code FutureFailed}.
+     *
+     * @param failed The handle to run.
+     * @param cause The error thrown.
+     * @see FutureResolved#fail(Throwable)
+     */
+    public void runFutureFailed(FutureFailed failed, Throwable cause);
 
     /**
      * Run resolved handle on {@code StreamCollector}.

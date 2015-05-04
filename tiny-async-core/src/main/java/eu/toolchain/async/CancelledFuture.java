@@ -18,7 +18,7 @@ public class CancelledFuture<T> implements AsyncFuture<T> {
     /* transition */
 
     @Override
-    public boolean fail(Throwable error) {
+    public boolean fail(Throwable cause) {
         return false;
     }
 
@@ -46,6 +46,12 @@ public class CancelledFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
+    public AsyncFuture<T> bind(AsyncFuture<?> other) {
+        other.cancel();
+        return this;
+    }
+
+    @Override
     public AsyncFuture<T> on(FutureFinished finishable) {
         caller.runFutureFinished(finishable);
         return this;
@@ -59,6 +65,11 @@ public class CancelledFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
+        return this;
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureFailed failed) {
         return this;
     }
 

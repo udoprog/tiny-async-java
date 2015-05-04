@@ -17,18 +17,22 @@ import java.util.concurrent.ExecutionException;
  */
 public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     /**
-     * Fail the future.
-     *
-     * @return {@code true} if the future was failed because of this call. {@code false} otherwise.
-     */
-    public boolean fail(Throwable error);
-
-    /**
      * Cancel the future.
      *
      * @return {@code true} if the future was cancelled because of this call. {@code false} otherwise.
      */
     public boolean cancel();
+
+    /**
+     * This implementation will do nothing, unless the underlying implementation is a resolvable future.
+     *
+     * Failure state is a fundamental component of the computation, and should only be made available to
+     * {@link ResolvableFuture}.
+     *
+     * @deprecated Use {@code ResolvableFuture#fail(Throwable)} instead, this method will be removed in {@literal 2.0}.
+     **/
+    @Deprecated
+    public boolean fail(Throwable cause);
 
     /**
      * Get the result of the future.
@@ -37,6 +41,14 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @throws ExecutionException if the computation threw an exception.
      */
     public T getNow() throws ExecutionException, CancellationException;
+
+    /**
+     * Register a future that will be cancelled by this future.
+     *
+     * @param other Other future to bind to.
+     * @return This future.
+     */
+    public AsyncFuture<T> bind(AsyncFuture<?> other);
 
     /**
      * Register a listener to be called when this future finishes for any reason.
@@ -71,6 +83,14 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     public AsyncFuture<T> on(FutureDone<? super T> done);
 
     /**
+     * Register a listener that is called when a future is failed.
+     *
+     * @param failed Listener to fire.
+     * @return This future.
+     */
+    public AsyncFuture<T> on(FutureFailed failed);
+
+    /**
      * Registers a listener to be called when this future finishes.
      *
      * The type of the listener is ignored.
@@ -93,13 +113,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     * 
+     *
      *   Future<Double> second = first.transform(new Transformer<Integer, Double>() {
      *     void transform(Integer result, Future<Double> future) {
      *       future.finish(result.doubleValue());
      *     }
      *   };
-     * 
+     *
      *   # use second
      * }
      * </pre>
@@ -121,13 +141,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     * 
+     *
      *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
      *     Double transform(Integer result) {
      *       return result.doubleValue();
      *     }
      *   };
-     * 
+     *
      *   # use second
      * }
      * </pre>

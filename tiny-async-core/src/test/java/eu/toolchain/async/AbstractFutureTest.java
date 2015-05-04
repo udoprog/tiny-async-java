@@ -15,44 +15,67 @@ import org.mockito.Mockito;
  * @author udoprog
  * @param <T> Type of the callback implementation to test.
  */
+@SuppressWarnings("unchecked")
 public abstract class AbstractFutureTest<T extends ResolvableFuture<Object>> {
     private static final Object REFERENCE = new Object();
     private static final Exception ERROR = Mockito.mock(Exception.class);
 
+    @Getter
+    private AsyncFramework async;
+
+    @Getter
     private AsyncCaller caller;
 
     @Getter
-    private FutureDone<Object> handle;
+    private FutureDone<Object> futureDone;
+
+    @Getter
+    private FutureResolved<Object> futureResolved;
+
+    @Getter
+    private FutureFinished futureFinished;
+
+    @Getter
+    private FutureFailed futureFailed;
+
+    @Getter
+    private FutureCancelled futureCancelled;
 
     @Getter
     private T callback;
 
-    @SuppressWarnings("unchecked")
     @Before
     public void before() {
+        async = Mockito.mock(AsyncFramework.class);
         caller = Mockito.mock(AsyncCaller.class);
-        handle = Mockito.mock(FutureDone.class);
-        callback = newCallback(caller);
+
+        futureDone = Mockito.mock(FutureDone.class);
+        futureResolved = Mockito.mock(FutureResolved.class);
+        futureFinished = Mockito.mock(FutureFinished.class);
+        futureFailed = Mockito.mock(FutureFailed.class);
+        futureCancelled = Mockito.mock(FutureCancelled.class);
+
+        callback = newCallback();
     }
 
-    abstract protected T newCallback(AsyncCaller caller);
+    abstract protected T newCallback();
 
     @Test
     public void testShouldFireCallbacks() throws Exception {
         Assert.assertFalse(callback.isDone());
 
-        callback.on(handle);
+        callback.on(futureDone);
         callback.resolve(REFERENCE);
 
-        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(handle), Mockito.any(Exception.class));
-        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(handle));
-        Mockito.verify(caller).resolveFutureDone(handle, REFERENCE);
+        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(futureDone), Mockito.any(Exception.class));
+        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(futureDone));
+        Mockito.verify(caller).resolveFutureDone(futureDone, REFERENCE);
 
         callback.resolve(REFERENCE);
 
-        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(handle), Mockito.any(Exception.class));
-        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(handle));
-        Mockito.verify(caller).resolveFutureDone(handle, REFERENCE);
+        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(futureDone), Mockito.any(Exception.class));
+        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(futureDone));
+        Mockito.verify(caller).resolveFutureDone(futureDone, REFERENCE);
 
         Assert.assertTrue(callback.isDone());
     }
@@ -62,19 +85,19 @@ public abstract class AbstractFutureTest<T extends ResolvableFuture<Object>> {
         Assert.assertFalse(callback.isDone());
 
         callback.resolve(REFERENCE);
-        callback.on(handle);
+        callback.on(futureDone);
 
-        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(handle), Mockito.any(Exception.class));
-        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(handle));
-        Mockito.verify(caller).resolveFutureDone(handle, REFERENCE);
+        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(futureDone), Mockito.any(Exception.class));
+        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(futureDone));
+        Mockito.verify(caller).resolveFutureDone(futureDone, REFERENCE);
 
         // attempt a second register.
-        callback.on(handle);
+        callback.on(futureDone);
 
         // handle should have been called again.
-        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(handle), Mockito.any(Exception.class));
-        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(handle));
-        Mockito.verify(caller, Mockito.atLeast(2)).resolveFutureDone(handle, REFERENCE);
+        Mockito.verify(caller, Mockito.never()).failFutureDone(Mockito.eq(futureDone), Mockito.any(Exception.class));
+        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(futureDone));
+        Mockito.verify(caller, Mockito.atLeast(2)).resolveFutureDone(futureDone, REFERENCE);
 
         Assert.assertTrue(callback.isDone());
     }
@@ -83,20 +106,20 @@ public abstract class AbstractFutureTest<T extends ResolvableFuture<Object>> {
     public void testShouldFireFailure() throws Exception {
         Assert.assertFalse(callback.isDone());
 
-        callback.on(handle);
+        callback.on(futureDone);
         callback.fail(ERROR);
 
-        Mockito.verify(caller).failFutureDone(handle, ERROR);
-        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(handle));
-        Mockito.verify(caller, Mockito.never()).resolveFutureDone(Mockito.eq(handle), Mockito.any());
+        Mockito.verify(caller).failFutureDone(futureDone, ERROR);
+        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(futureDone));
+        Mockito.verify(caller, Mockito.never()).resolveFutureDone(Mockito.eq(futureDone), Mockito.any());
 
         // attempt a second fail.
         callback.fail(ERROR);
 
         // should be same state.
-        Mockito.verify(caller).failFutureDone(handle, ERROR);
-        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(handle));
-        Mockito.verify(caller, Mockito.never()).resolveFutureDone(Mockito.eq(handle), Mockito.any());
+        Mockito.verify(caller).failFutureDone(futureDone, ERROR);
+        Mockito.verify(caller, Mockito.never()).cancelFutureDone(Mockito.eq(futureDone));
+        Mockito.verify(caller, Mockito.never()).resolveFutureDone(Mockito.eq(futureDone), Mockito.any());
 
         Assert.assertTrue(callback.isDone());
     }
@@ -120,5 +143,10 @@ public abstract class AbstractFutureTest<T extends ResolvableFuture<Object>> {
         Mockito.verify(caller, Mockito.times(2)).runFutureResolved(resolved, REFERENCE);
 
         Assert.assertTrue(callback.isDone());
+    }
+
+    @Test
+    public void testShouldFireMixedCallbacks() {
+
     }
 }

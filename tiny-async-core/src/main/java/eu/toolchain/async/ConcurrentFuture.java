@@ -66,21 +66,6 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
         this.caller = caller;
     }
 
-    @Override
-    public void failed(Throwable cause) throws Exception {
-        fail(cause);
-    }
-
-    @Override
-    public void resolved(T result) throws Exception {
-        resolve(result);
-    }
-
-    @Override
-    public void cancelled() throws Exception {
-        cancel();
-    }
-
     /* transition */
 
     @Override
@@ -128,6 +113,23 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
     }
 
     /* listeners */
+
+    @Override
+    public AsyncFuture<T> bind(AsyncFuture<?> other) {
+        int state = this.sync.state();
+
+        if (!Sync.isReady(state)) {
+            if (add(new AsyncFutureCB(other)))
+                return this;
+
+            state = sync.poll();
+        }
+
+        if (state == Sync.CANCELLED)
+            other.cancel();
+
+        return this;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -207,6 +209,23 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
 
         if (state == Sync.RESOLVED)
             caller.runFutureResolved(resolved, (T) this.sync.result);
+
+        return this;
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureFailed failed) {
+        int state = this.sync.state();
+
+        if (!Sync.isReady(state)) {
+            if (add(new FailedCB(failed)))
+                return this;
+
+            state = sync.poll();
+        }
+
+        if (state == Sync.FAILED)
+            caller.runFutureFailed(failed, (Throwable) this.sync.result);
 
         return this;
     }
@@ -342,9 +361,27 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
     private static interface CB<T> {
         void resolved(T result);
 
-        void failed(Throwable error);
+        void failed(Throwable cause);
 
         void cancelled();
+    }
+
+    @RequiredArgsConstructor
+    private class AsyncFutureCB implements CB<T> {
+        private final AsyncFuture<?> other;
+
+        @Override
+        public void resolved(T result) {
+        }
+
+        @Override
+        public void failed(Throwable cause) {
+        }
+
+        @Override
+        public void cancelled() {
+            other.cancel();
+        }
     }
 
     @RequiredArgsConstructor
@@ -364,6 +401,24 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
         @Override
         public void cancelled() {
             caller.cancelFutureDone(callback);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private class FailedCB implements CB<T> {
+        private final FutureFailed callback;
+
+        @Override
+        public void resolved(T result) {
+        }
+
+        @Override
+        public void failed(Throwable cause) {
+            caller.runFutureFailed(callback, cause);
+        }
+
+        @Override
+        public void cancelled() {
         }
     }
 

@@ -13,12 +13,12 @@ import lombok.RequiredArgsConstructor;
 public class ResolvedFuture<T> implements AsyncFuture<T> {
     private final AsyncFramework async;
     private final AsyncCaller caller;
-    private final T value;
+    private final T result;
 
     /* transition */
 
     @Override
-    public boolean fail(Throwable error) {
+    public boolean fail(Throwable cause) {
         return false;
     }
 
@@ -35,8 +35,13 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
     /* register listeners */
 
     @Override
+    public AsyncFuture<T> bind(AsyncFuture<?> other) {
+        return this;
+    }
+
+    @Override
     public AsyncFuture<T> on(FutureDone<? super T> handle) {
-        caller.resolveFutureDone(handle, value);
+        caller.resolveFutureDone(handle, result);
         return this;
     }
 
@@ -59,7 +64,12 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
-        caller.runFutureResolved(resolved, value);
+        caller.runFutureResolved(resolved, result);
+        return this;
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureFailed failed) {
         return this;
     }
 
@@ -79,17 +89,17 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
 
     @Override
     public T get() {
-        return value;
+        return result;
     }
 
     @Override
     public T get(long timeout, TimeUnit unit) {
-        return value;
+        return result;
     }
 
     @Override
     public T getNow() {
-        return value;
+        return result;
     }
 
     /* transform */
@@ -98,7 +108,7 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
     @Override
     public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
         try {
-            return (AsyncFuture<C>) transform.transform(value);
+            return (AsyncFuture<C>) transform.transform(result);
         } catch (Exception e) {
             return async.failed(e, caller);
         }
@@ -106,15 +116,15 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
 
     @Override
     public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
-        C result;
+        C value;
 
         try {
-            result = transform.transform(value);
+            value = transform.transform(result);
         } catch (Exception e) {
             return async.failed(e, caller);
         }
 
-        return async.resolved(result, caller);
+        return async.resolved(value, caller);
     }
 
     @Override

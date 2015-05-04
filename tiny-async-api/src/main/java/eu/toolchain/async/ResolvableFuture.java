@@ -1,6 +1,6 @@
 package eu.toolchain.async;
 
-public interface ResolvableFuture<T> extends AsyncFuture<T>, FutureDone<T> {
+public interface ResolvableFuture<T> extends AsyncFuture<T> {
     /**
      * Resolve the future.
      *
@@ -11,5 +11,12 @@ public interface ResolvableFuture<T> extends AsyncFuture<T>, FutureDone<T> {
      * @param result Result of the callback.
      * @return {@code true} if the future was resolved. {@code false} otherwise.
      */
-    public boolean resolve(T value);
+    public boolean resolve(T result);
+
+    /**
+     * Fail the future.
+     *
+     * @return {@code true} if the future was failed because of this call. {@code false} otherwise.
+     */
+    public boolean fail(Throwable cause);
 }
