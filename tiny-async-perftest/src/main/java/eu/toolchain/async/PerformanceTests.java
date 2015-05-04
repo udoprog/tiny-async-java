@@ -4,13 +4,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class PerformanceTest {
+import eu.toolchain.async.perftests.Immediate;
+import eu.toolchain.async.perftests.ManyListeners;
+import eu.toolchain.async.perftests.ManyThreads;
+import eu.toolchain.async.perftests.TransformFew;
+import eu.toolchain.async.perftests.TransformMany;
+
+/**
+ * These tests are only in place to verify to a loose degree that we get at least as good performance as Guava.
+ *
+ * @author udoprog
+ */
+public class PerformanceTests {
     private static final int WARMUP = 100;
     private static final int ITERATIONS = 1000;
 
     private static final Runtime runtime = Runtime.getRuntime();
 
     public static void main(String argv[]) {
+        run("many listeners", new ManyListeners.Guava(), new ManyListeners.Tiny());
+
         run("immediate", new Immediate.Guava(), new Immediate.Tiny());
 
         run("immediate, into many transforms", new TransformMany.Guava(), new TransformMany.Tiny());
@@ -64,15 +77,15 @@ public class PerformanceTest {
 
     private static void run(String name, TestCase guava, TestCase tiny) {
         // hint that we want a clean state :).
-        final List<Long> a = runTest(guava);
-        final List<Long> b = runTest(tiny);
+        final List<Long> g = runTest(guava);
+        final List<Long> t = runTest(tiny);
 
-        System.out.println(name);
-        System.out.println("  avg: " + time(avg(a)) + " - " + time(avg(b)));
-        System.out.println("  p50: " + time(q(a, 0.5)) + " - " + time(q(b, 0.5)));
-        System.out.println("  p95: " + time(q(a, 0.95)) + " - " + time(q(b, 0.95)));
-        System.out.println("  p99: " + time(q(a, 0.99)) + " - " + time(q(b, 0.99)));
-        System.out.println("  " + Math.round(((double) avg(a) / (double) avg(b)) * 100d) + "%");
+        System.out.println(name + " (guava - tiny)");
+        System.out.println("  avg: " + time(avg(g)) + " - " + time(avg(t)));
+        System.out.println("  p50: " + time(q(g, 0.5)) + " - " + time(q(t, 0.5)));
+        System.out.println("  p95: " + time(q(g, 0.95)) + " - " + time(q(t, 0.95)));
+        System.out.println("  p99: " + time(q(g, 0.99)) + " - " + time(q(t, 0.99)));
+        System.out.println("  " + Math.round(((double) avg(g) / (double) avg(t)) * 100d) + "%");
     }
 
     private static long avg(List<Long> samples) {

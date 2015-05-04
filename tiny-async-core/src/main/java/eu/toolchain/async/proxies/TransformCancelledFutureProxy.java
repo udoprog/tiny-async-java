@@ -9,6 +9,7 @@ import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.FutureCancelled;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.FutureFinished;
+import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.TinyAsync;
 import eu.toolchain.async.Transform;
@@ -84,6 +85,12 @@ public class TransformCancelledFutureProxy<T> implements AsyncFuture<T> {
     @Override
     public AsyncFuture<T> on(FutureCancelled cancelled) {
         source.on(cancelled);
+        return this;
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
+        source.on(resolved);
         return this;
     }
 

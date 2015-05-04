@@ -203,6 +203,7 @@ public final class TinyAsync implements AsyncFramework {
         future.on(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
+                // cancel, but do not interrupt.
                 task.cancel(false);
             }
         });
@@ -218,6 +219,11 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <T> ResolvableFuture<T> future(AsyncCaller caller) {
         return new ConcurrentFuture<T>(this, caller);
+    }
+
+    @Override
+    public AsyncFuture<Void> resolved() {
+        return resolved(null, caller());
     }
 
     @Override
@@ -252,7 +258,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<T>> futures) {
+    public <T> AsyncFuture<Collection<T>> collect(final Collection<? extends AsyncFuture<T>> futures) {
         if (futures.isEmpty())
             return resolved((Collection<T>) EMPTY_RESULTS);
 
@@ -264,11 +270,12 @@ public final class TinyAsync implements AsyncFramework {
         for (final AsyncFuture<T> q : futures)
             q.on(done);
 
+        bindSignals(target, futures);
         return target;
     }
 
     @Override
-    public <C, T> AsyncFuture<T> collect(Collection<AsyncFuture<C>> futures, final Collector<C, T> collector) {
+    public <C, T> AsyncFuture<T> collect(final Collection<AsyncFuture<C>> futures, final Collector<C, T> collector) {
         if (futures.isEmpty())
             return collectEmpty(collector);
 
@@ -279,6 +286,7 @@ public final class TinyAsync implements AsyncFramework {
         for (final AsyncFuture<C> q : futures)
             q.on(done);
 
+        bindSignals(target, futures);
         return target;
     }
 
@@ -295,13 +303,13 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> collect(Collection<AsyncFuture<C>> futures, final StreamCollector<C, T> collector) {
+    public <C, T> AsyncFuture<T> collect(final Collection<AsyncFuture<C>> futures, final StreamCollector<C, T> collector) {
         return collect(futures, collector, caller());
     }
 
     @Override
-    public <C, T> AsyncFuture<T> collect(Collection<AsyncFuture<C>> futures, final StreamCollector<C, T> collector,
-            AsyncCaller caller) {
+    public <C, T> AsyncFuture<T> collect(final Collection<AsyncFuture<C>> futures,
+            final StreamCollector<C, T> collector, AsyncCaller caller) {
         if (futures.isEmpty())
             return collectEmpty(collector);
 
@@ -312,7 +320,37 @@ public final class TinyAsync implements AsyncFramework {
         for (final AsyncFuture<C> q : futures)
             q.on(done);
 
+        bindSignals(target, futures);
         return target;
+    }
+
+    /**
+     * Bind the given collection of futures to the target future, which if cancelled, or failed will do the
+     * corresponding to their collection of futures.
+     *
+     * @param target The future to cancel, and fail on.
+     * @param futures The futures to cancel, when {@code target} is cancelled.
+     */
+    private <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
+        target.on(new FutureDone<T>() {
+            @Override
+            public void failed(Throwable cause) throws Exception {
+                for (final AsyncFuture<?> f : futures) {
+                    f.fail(cause);
+                }
+            }
+
+            @Override
+            public void cancelled() throws Exception {
+                for (final AsyncFuture<?> f : futures) {
+                    f.cancel();
+                }
+            }
+
+            @Override
+            public void resolved(T result) throws Exception {
+            }
+        });
     }
 
     /**

@@ -55,7 +55,15 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     public AsyncFuture<T> on(FutureCancelled cancelled);
 
     /**
-     * Register a listeners to be called when this future resolved or fails (done).
+     * Register a listener to be called when this future is resolved.
+     *
+     * @param resolved Listener to fire.
+     * @return This future.
+     */
+    public AsyncFuture<T> on(FutureResolved<? super T> resolved);
+
+    /**
+     * Register a listener that is called on all three types of events for this future; resolved, failed, and cancelled.
      *
      * @param done Listener to fire.
      * @return This future.
@@ -63,9 +71,14 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     public AsyncFuture<T> on(FutureDone<? super T> done);
 
     /**
-     * Special type of end point, that doesn't care at all for which type.
+     * Registers a listener to be called when this future finishes.
+     *
+     * The type of the listener is ignored.
+     *
+     * @param done Listener to fire.
+     * @return This future.
      */
-    public AsyncFuture<T> onAny(FutureDone<?> handle);
+    public AsyncFuture<T> onAny(FutureDone<?> done);
 
     /**
      * Transforms the value of one future into another using a deferred transformer function.

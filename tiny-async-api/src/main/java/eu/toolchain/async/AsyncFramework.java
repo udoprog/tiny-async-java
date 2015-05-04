@@ -44,6 +44,14 @@ public interface AsyncFramework {
     public <T> ResolvableFuture<T> future(AsyncCaller caller);
 
     /**
+     * Same as {@link #resolved(Object, AsyncCaller)}, but using the default {@link caller()} and resolved with
+     * {@code null}.
+     *
+     * @see #resolved(Void, AsyncCaller)
+     */
+    public AsyncFuture<Void> resolved();
+
+    /**
      * Same as {@link #resolved(T, AsyncCaller)}, but using the default {@link #caller()}.
      *
      * @see #resolved(T, AsyncCaller)
@@ -222,6 +230,9 @@ public interface AsyncFramework {
      * This allows the implementor to reduce memory usage for certain operations since all results does not have to be
      * collected.
      *
+     * If the returned future ends up in a non-resolved state, this will be forwarded to the given list of futures as
+     * well.
+     *
      * @param futures The collection of futures to collect.
      * @param collector The implementation for how to reduce the collected futures.
      * @param caller The caller implementation to invoke handles with.
@@ -231,9 +242,10 @@ public interface AsyncFramework {
             AsyncCaller caller);
 
     /**
-     * Collect the results from a collection of futures, but discard them.
+     * Collect the results from a collection of futures, then discard them.
      *
-     * Only forward errors and cancellations.
+     * Signals like cancellations and failures will be communicated in a similar fashion to
+     * {@link #collect(Collection, StreamCollector, AsyncCaller)}.
      *
      * @param futures The collection of futures to collect.
      * @return A new future that is the result of collecting the provided futures, but discarding their results.

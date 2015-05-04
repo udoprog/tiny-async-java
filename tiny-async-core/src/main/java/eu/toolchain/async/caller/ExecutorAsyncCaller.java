@@ -7,6 +7,7 @@ import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.FutureCancelled;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.FutureFinished;
+import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.StreamCollector;
 
 @RequiredArgsConstructor
@@ -60,6 +61,16 @@ public final class ExecutorAsyncCaller implements AsyncCaller {
             @Override
             public void run() {
                 caller.runFutureFinished(finishable);
+            }
+        });
+    }
+
+    @Override
+    public <T> void runFutureResolved(final FutureResolved<T> resolved, final T value) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                caller.runFutureResolved(resolved, value);
             }
         });
     }

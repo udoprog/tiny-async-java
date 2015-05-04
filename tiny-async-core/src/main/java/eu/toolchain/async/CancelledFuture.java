@@ -57,6 +57,11 @@ public class CancelledFuture<T> implements AsyncFuture<T> {
         return this;
     }
 
+    @Override
+    public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
+        return this;
+    }
+
     /* check state */
 
     @Override

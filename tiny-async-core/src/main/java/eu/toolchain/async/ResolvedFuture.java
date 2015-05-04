@@ -57,6 +57,12 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
         return this;
     }
 
+    @Override
+    public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
+        caller.runFutureResolved(resolved, value);
+        return this;
+    }
+
     /* check state */
 
     @Override

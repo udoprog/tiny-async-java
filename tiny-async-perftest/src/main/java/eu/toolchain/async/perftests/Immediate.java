@@ -1,4 +1,4 @@
-package eu.toolchain.async;
+package eu.toolchain.async.perftests;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,6 +6,12 @@ import java.util.List;
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.LazyTransform;
+import eu.toolchain.async.TestCase;
+import eu.toolchain.async.TinyAsync;
 
 public class Immediate {
     private static final int MANY_TRANSFORM_ITERATIONS = 10000;

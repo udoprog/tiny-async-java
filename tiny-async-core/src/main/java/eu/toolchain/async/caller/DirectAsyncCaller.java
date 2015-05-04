@@ -4,6 +4,7 @@ import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.FutureCancelled;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.FutureFinished;
+import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.StreamCollector;
 
 /**
@@ -56,6 +57,15 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
+    public <T> void runFutureResolved(FutureResolved<T> resolved, T value) {
+        try {
+            resolved.resolved(value);
+        } catch (final Exception e) {
+            internalError("FutureResolved#resolved(T)", e);
+        }
+    }
+
+    @Override
     public <T, R> void resolveStreamCollector(StreamCollector<T, R> collector, T result) {
         try {
             collector.resolved(result);
@@ -72,7 +82,6 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
             internalError("StreamCollector#failed(Throwable)", e);
         }
     }
-
 
     @Override
     public <T, R> void cancelStreamCollector(StreamCollector<T, R> collector) {

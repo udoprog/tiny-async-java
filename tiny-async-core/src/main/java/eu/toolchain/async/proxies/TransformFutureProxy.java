@@ -9,7 +9,9 @@ import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.FutureCancelled;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.FutureFinished;
+import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.LazyTransform;
+import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyAsync;
 import eu.toolchain.async.Transform;
 
@@ -80,6 +82,31 @@ public class TransformFutureProxy<S, T> implements AsyncFuture<T> {
     public AsyncFuture<T> on(FutureCancelled cancelled) {
         source.on(cancelled);
         return null;
+    }
+
+    @Override
+    public AsyncFuture<T> on(final FutureResolved<? super T> resolved) {
+        // we have no choice, but to create a new future to properly communicate failure state down the line.
+        final ResolvableFuture<T> future = async.future();
+
+        source.on(new FutureResolved<S>() {
+            @Override
+            public void resolved(S result) throws Exception {
+                final T value;
+
+                try {
+                    value = transform.transform(result);
+                } catch (Exception e) {
+                    future.fail(e);
+                    return;
+                }
+
+                resolved.resolved(value);
+                future.resolve(value);
+            }
+        });
+
+        return future;
     }
 
     /* check state */

@@ -1,6 +1,5 @@
 package eu.toolchain.async;
 
-
 /**
  * The interface that governs in which thread context a specific callback should be invoked.
  *
@@ -53,6 +52,15 @@ public interface AsyncCaller {
      * @see FutureFinished#finished()
      */
     public void runFutureCancelled(FutureCancelled cancelled);
+
+    /**
+     * Run resovled handle on {@code FutureResolved<T>}.
+     *
+     * @param resolved The handle to run on.
+     * @param <T> the type of the resolved value.
+     * @see FutureResolved#resolved(T)
+     */
+    public <T> void runFutureResolved(FutureResolved<T> resolved, T value);
 
     /**
      * Run resolved handle on {@code StreamCollector}.
