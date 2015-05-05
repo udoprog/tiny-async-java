@@ -256,6 +256,24 @@ public interface AsyncFramework {
     public <C> AsyncFuture<Void> collectAndDiscard(Collection<AsyncFuture<C>> futures);
 
     /**
+     * Collect the result from a collection of futures, that are lazily created. Futures will be created using the given
+     * {@code callables}, but will only create as many pending futures to be less than or equal to the given
+     * {@code parallelism} setting.
+     *
+     * If a single future is cancelled, or failed, all the other will be as well.
+     *
+     * This method is intended to be used for rate-limiting requests that could potentially be difficult to stop
+     * cleanly.
+     *
+     * @param callables The list of constructor methods.
+     * @param collector The collector to reduce the result.
+     * @param parallelism The number of futures that are allowed to be constructed at the same time.
+     * @return
+     */
+    public <C, T> AsyncFuture<T> eventuallyCollect(Collection<Callable<AsyncFuture<C>>> callables,
+            StreamCollector<C, T> collector, int parallelism);
+
+    /**
      * Call the given callable.
      *
      * @see #call(Callable, Executor, ResolvableFuture)

@@ -18,7 +18,7 @@ import eu.toolchain.async.StreamCollector;
  */
 public class FutureStreamCollector<S, T> implements FutureDone<S> {
     private final AsyncCaller caller;
-    private final StreamCollector<S, T> reducable;
+    private final StreamCollector<S, T> collector;
     private final ResolvableFuture<T> target;
     private final AtomicInteger countdown;
 
@@ -26,10 +26,10 @@ public class FutureStreamCollector<S, T> implements FutureDone<S> {
     private final AtomicInteger failed = new AtomicInteger();
     private final AtomicInteger cancelled = new AtomicInteger();
 
-    public FutureStreamCollector(final AsyncCaller caller, final int size, final StreamCollector<S, T> reducable,
+    public FutureStreamCollector(final AsyncCaller caller, final int size, final StreamCollector<S, T> collector,
             final ResolvableFuture<T> target) {
         this.caller = caller;
-        this.reducable = reducable;
+        this.collector = collector;
         this.target = target;
         this.countdown = new AtomicInteger(size);
     }
@@ -56,22 +56,22 @@ public class FutureStreamCollector<S, T> implements FutureDone<S> {
     }
 
     private void handleError(Throwable error) {
-        caller.failStreamCollector(reducable, error);
+        caller.failStreamCollector(collector, error);
     }
 
     private void handleFinish(S result) {
-        caller.resolveStreamCollector(reducable, result);
+        caller.resolveStreamCollector(collector, result);
     }
 
     private void handleCancelled() {
-        caller.cancelStreamCollector(reducable);
+        caller.cancelStreamCollector(collector);
     }
 
     private void done() {
         final T result;
 
         try {
-            result = reducable.end(successful.get(), failed.get(), cancelled.get());
+            result = collector.end(successful.get(), failed.get(), cancelled.get());
         } catch (Exception e) {
             target.fail(e);
             return;

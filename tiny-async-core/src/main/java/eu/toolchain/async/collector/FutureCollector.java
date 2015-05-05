@@ -20,7 +20,7 @@ import eu.toolchain.async.ThrowableUtils;
  * @param <T>
  */
 public class FutureCollector<S, T> implements FutureDone<S> {
-    private final Collector<S, T> reducable;
+    private final Collector<S, T> collector;
     private final ResolvableFuture<T> target;
 
     private final int size;
@@ -28,9 +28,9 @@ public class FutureCollector<S, T> implements FutureDone<S> {
     private final AtomicInteger position = new AtomicInteger();
     private final AtomicInteger countdown;
 
-    public FutureCollector(int size, Collector<S, T> reducable, ResolvableFuture<T> target) {
+    public FutureCollector(int size, Collector<S, T> collector, ResolvableFuture<T> target) {
         this.size = size;
-        this.reducable = reducable;
+        this.collector = collector;
         this.target = target;
         this.results = entryArray(size);
         this.countdown = new AtomicInteger(size);
@@ -96,7 +96,7 @@ public class FutureCollector<S, T> implements FutureDone<S> {
         T result;
 
         try {
-            result = reducable.collect(results);
+            result = collector.collect(results);
         } catch (final Exception error) {
             target.fail(error);
             return;
