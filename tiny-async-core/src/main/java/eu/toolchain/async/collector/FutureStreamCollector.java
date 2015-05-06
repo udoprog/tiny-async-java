@@ -19,7 +19,7 @@ import eu.toolchain.async.StreamCollector;
 public class FutureStreamCollector<S, T> implements FutureDone<S> {
     private final AsyncCaller caller;
     private final StreamCollector<S, T> collector;
-    private final ResolvableFuture<T> target;
+    private final ResolvableFuture<? super T> target;
     private final AtomicInteger countdown;
 
     private final AtomicInteger successful = new AtomicInteger();
@@ -27,7 +27,7 @@ public class FutureStreamCollector<S, T> implements FutureDone<S> {
     private final AtomicInteger cancelled = new AtomicInteger();
 
     public FutureStreamCollector(final AsyncCaller caller, final int size, final StreamCollector<S, T> collector,
-            final ResolvableFuture<T> target) {
+            final ResolvableFuture<? super T> target) {
         this.caller = caller;
         this.collector = collector;
         this.target = target;

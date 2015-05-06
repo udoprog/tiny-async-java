@@ -142,13 +142,14 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
+    public <C, T> AsyncFuture<T> transform(final AsyncFuture<C> future,
+            final LazyTransform<? super C, ? extends T> transform) {
         return transform(future, transform, caller());
     }
 
     @Override
     public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform,
-            AsyncCaller caller) {
+            final AsyncCaller caller) {
         final ResolvableFuture<T> target = future();
         future.on(new LazyTransformFuture<C, T>(transform, target));
         return target;
@@ -194,7 +195,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform,
-            AsyncCaller caller) {
+            final AsyncCaller caller) {
         final ResolvableFuture<T> target = future(caller);
         future.on(new LazyTransformErrorFuture<T>(transform, target));
         return target;
@@ -239,25 +240,25 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform,
-            AsyncCaller caller) {
+    public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform,
+            final AsyncCaller caller) {
         final ResolvableFuture<T> target = future(caller);
         future.on(new LazyTransformCancelledFuture<T>(transform, target));
         return target;
     }
 
     @Override
-    public <C> AsyncFuture<C> call(final Callable<C> callable) {
+    public <C> AsyncFuture<C> call(final Callable<? extends C> callable) {
         return call(callable, defaultExecutor(), this.<C> future());
     }
 
     @Override
-    public <C> AsyncFuture<C> call(final Callable<C> callable, ExecutorService executor) {
+    public <C> AsyncFuture<C> call(final Callable<? extends C> callable, final ExecutorService executor) {
         return call(callable, executor, this.<C> future());
     }
 
     @Override
-    public <C> AsyncFuture<C> call(final Callable<C> callable, final ExecutorService executor,
+    public <C> AsyncFuture<C> call(final Callable<? extends C> callable, final ExecutorService executor,
             final ResolvableFuture<C> future) {
         final Runnable runnable = new Runnable() {
             @Override
@@ -346,7 +347,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> AsyncFuture<Collection<T>> collect(final Collection<? extends AsyncFuture<T>> futures) {
+    public <T> AsyncFuture<Collection<T>> collect(final Collection<? extends AsyncFuture<? extends T>> futures) {
         if (futures.isEmpty())
             return resolved((Collection<T>) EMPTY_RESULTS);
 
@@ -355,7 +356,7 @@ public final class TinyAsync implements AsyncFramework {
         final FutureDone<T> done = new FutureCollector<T, Collection<T>>(futures.size(), Collectors.<T> collection(),
                 target);
 
-        for (final AsyncFuture<T> q : futures)
+        for (final AsyncFuture<? extends T> q : futures)
             q.on(done);
 
         bindSignals(target, futures);
@@ -363,15 +364,16 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> collect(final Collection<AsyncFuture<C>> futures, final Collector<C, T> collector) {
+    public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
+            final Collector<? super C, ? extends T> collector) {
         if (futures.isEmpty())
-            return collectEmpty(collector);
+            return this.collectEmpty(collector);
 
         final ResolvableFuture<T> target = future();
 
-        final FutureDone<C> done = new FutureCollector<C, T>(futures.size(), collector, target);
+        final FutureCollector<? super C, ? extends T> done = new FutureCollector<>(futures.size(), collector, target);
 
-        for (final AsyncFuture<C> q : futures)
+        for (final AsyncFuture<? extends C> q : futures)
             q.on(done);
 
         bindSignals(target, futures);
@@ -382,7 +384,7 @@ public final class TinyAsync implements AsyncFramework {
      * Shortcut for when the list of futures is empty.
      */
     @SuppressWarnings("unchecked")
-    private <C, T> AsyncFuture<T> collectEmpty(final Collector<C, T> collector) {
+    private <C, T> AsyncFuture<T> collectEmpty(final Collector<C, ? extends T> collector) {
         try {
             return this.<T> resolved(collector.collect((Collection<C>) EMPTY_RESULTS));
         } catch (Exception e) {
@@ -391,21 +393,23 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> collect(final Collection<AsyncFuture<C>> futures, final StreamCollector<C, T> collector) {
+    public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
+            final StreamCollector<? super C, ? extends T> collector) {
         return collect(futures, collector, caller());
     }
 
     @Override
-    public <C, T> AsyncFuture<T> collect(final Collection<AsyncFuture<C>> futures,
-            final StreamCollector<C, T> collector, AsyncCaller caller) {
+    public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
+            final StreamCollector<? super C, ? extends T> collector, AsyncCaller caller) {
         if (futures.isEmpty())
             return collectEmpty(collector);
 
         final ResolvableFuture<T> target = future();
 
-        final FutureDone<C> done = new FutureStreamCollector<C, T>(caller, futures.size(), collector, target);
+        final FutureStreamCollector<? super C, ? extends T> done = new FutureStreamCollector<>(caller, futures.size(),
+                collector, target);
 
-        for (final AsyncFuture<C> q : futures)
+        for (final AsyncFuture<? extends C> q : futures)
             q.on(done);
 
         bindSignals(target, futures);
@@ -413,8 +417,9 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> eventuallyCollect(final Collection<Callable<AsyncFuture<C>>> callables,
-            final StreamCollector<C, T> collector, int parallelism) {
+    public <C, T> AsyncFuture<T> eventuallyCollect(
+            final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
+            final StreamCollector<? super C, ? extends T> collector, int parallelism) {
         if (callables.isEmpty()) {
             final T value;
 
@@ -444,14 +449,14 @@ public final class TinyAsync implements AsyncFramework {
         private final AtomicInteger cancelled = new AtomicInteger();
         private final AtomicBoolean cancel = new AtomicBoolean();
 
-        private final Collection<Callable<AsyncFuture<C>>> callables;
+        private final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables;
         private final StreamCollector<? super C, ? extends T> collector;
         private final Semaphore semaphore;
-        private final ResolvableFuture<T> future;
+        private final ResolvableFuture<? super T> future;
 
-        public DelayedCollectCoordinator(final Collection<Callable<AsyncFuture<C>>> callables,
-                final StreamCollector<? super C, ? extends T> collector, final int parallelism,
-                final ResolvableFuture<T> future) {
+        public DelayedCollectCoordinator(
+                final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
+                final StreamCollector<C, T> collector, final int parallelism, final ResolvableFuture<? super T> future) {
             this.callables = callables;
             this.collector = collector;
             this.semaphore = new Semaphore(parallelism);
@@ -490,7 +495,7 @@ public final class TinyAsync implements AsyncFramework {
         @Override
         public void run() {
             final int total = callables.size();
-            final Iterator<Callable<AsyncFuture<C>>> iterator = callables.iterator();
+            final Iterator<? extends Callable<? extends AsyncFuture<? extends C>>> iterator = callables.iterator();
 
             int acquired = 0;
 
@@ -510,9 +515,9 @@ public final class TinyAsync implements AsyncFramework {
                 if (failed.get() > 0)
                     break;
 
-                final Callable<? extends AsyncFuture<C>> callable = iterator.next();
+                final Callable<? extends AsyncFuture<? extends C>> callable = iterator.next();
 
-                final AsyncFuture<C> f;
+                final AsyncFuture<? extends C> f;
 
                 try {
                     f = callable.call();
@@ -557,12 +562,13 @@ public final class TinyAsync implements AsyncFramework {
         }
     }
 
-    private <C, T> AsyncFuture<T> delayedCollectParallel(Collection<Callable<AsyncFuture<C>>> callables,
-            StreamCollector<C, T> collector) {
-        final List<AsyncFuture<C>> futures = new ArrayList<>(callables.size());
+    private <C, T> AsyncFuture<T> delayedCollectParallel(
+            Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
+            StreamCollector<? super C, ? extends T> collector) {
+        final List<AsyncFuture<? extends C>> futures = new ArrayList<>(callables.size());
 
-        for (final Callable<AsyncFuture<C>> c : callables) {
-            final AsyncFuture<C> future;
+        for (final Callable<? extends AsyncFuture<? extends C>> c : callables) {
+            final AsyncFuture<? extends C> future;
 
             try {
                 future = c.call();
@@ -597,16 +603,16 @@ public final class TinyAsync implements AsyncFramework {
     /**
      * Shortcut for when the list of futures is empty with {@link StreamCollector}.
      */
-    private <C, T> AsyncFuture<T> collectEmpty(final StreamCollector<C, T> collector) {
+    private <C, T> AsyncFuture<T> collectEmpty(final StreamCollector<? super C, ? extends T> collector) {
         try {
-            return this.resolved(collector.end(0, 0, 0));
+            return this.<T> resolved(collector.end(0, 0, 0));
         } catch (Exception e) {
             return failed(e);
         }
     }
 
     @Override
-    public <C> AsyncFuture<Void> collectAndDiscard(Collection<AsyncFuture<C>> futures) {
+    public <C> AsyncFuture<Void> collectAndDiscard(Collection<? extends AsyncFuture<C>> futures) {
         if (futures.isEmpty())
             return resolved(null);
 

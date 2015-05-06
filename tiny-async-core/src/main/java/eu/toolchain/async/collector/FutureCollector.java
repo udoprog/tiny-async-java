@@ -21,14 +21,14 @@ import eu.toolchain.async.ThrowableUtils;
  */
 public class FutureCollector<S, T> implements FutureDone<S> {
     private final Collector<S, T> collector;
-    private final ResolvableFuture<T> target;
+    private final ResolvableFuture<? super T> target;
 
     private final int size;
     private final Entry[] results;
     private final AtomicInteger position = new AtomicInteger();
     private final AtomicInteger countdown;
 
-    public FutureCollector(int size, Collector<S, T> collector, ResolvableFuture<T> target) {
+    public FutureCollector(int size, Collector<S, T> collector, ResolvableFuture<? super T> target) {
         this.size = size;
         this.collector = collector;
         this.target = target;

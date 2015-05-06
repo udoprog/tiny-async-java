@@ -204,7 +204,7 @@ public interface AsyncFramework {
      * @param futures The collection of future to collect.
      * @return A new future that is the result of collecting all results.
      */
-    public <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<T>> futures);
+    public <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<? extends T>> futures);
 
     /**
      * Build a new future that is the result of reducing the provided collection of futures using the provided
@@ -214,14 +214,16 @@ public interface AsyncFramework {
      * @param collector The implementation for how to reduce the collected futures.
      * @return A new future that is the result of reducing the collection of futures.
      */
-    public <C, T> AsyncFuture<T> collect(Collection<AsyncFuture<C>> futures, Collector<C, T> collector);
+    public <C, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends C>> futures,
+            Collector<? super C, ? extends T> collector);
 
     /**
      * Same as {@link #collect(Collection, StreamCollector, AsyncCaller)}, but using the default {@link #caller()}.
      *
      * @see #collect(Collection, StreamCollector, AsyncCaller)
      */
-    public <C, T> AsyncFuture<T> collect(Collection<AsyncFuture<C>> futures, StreamCollector<C, T> collector);
+    public <C, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends C>> futures,
+            StreamCollector<? super C, ? extends T> collector);
 
     /**
      * Build a new future that is the result of reducing the provided collection of futures using the provided
@@ -241,8 +243,8 @@ public interface AsyncFramework {
      * @param caller The caller implementation to invoke handles with.
      * @return A new future that is the result of reducing the collection of futures.
      */
-    public <C, T> AsyncFuture<T> collect(Collection<AsyncFuture<C>> futures, StreamCollector<C, T> collector,
-            AsyncCaller caller);
+    public <C, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends C>> futures,
+            StreamCollector<? super C, ? extends T> collector, AsyncCaller caller);
 
     /**
      * Collect the results from a collection of futures, then discard them.
@@ -253,7 +255,7 @@ public interface AsyncFramework {
      * @param futures The collection of futures to collect.
      * @return A new future that is the result of collecting the provided futures, but discarding their results.
      */
-    public <C> AsyncFuture<Void> collectAndDiscard(Collection<AsyncFuture<C>> futures);
+    public <C> AsyncFuture<Void> collectAndDiscard(Collection<? extends AsyncFuture<C>> futures);
 
     /**
      * Collect the result from a collection of futures, that are lazily created. Futures will be created using the given
@@ -270,22 +272,23 @@ public interface AsyncFramework {
      * @param parallelism The number of futures that are allowed to be constructed at the same time.
      * @return
      */
-    public <C, T> AsyncFuture<T> eventuallyCollect(Collection<Callable<AsyncFuture<C>>> callables,
-            StreamCollector<C, T> collector, int parallelism);
+    public <C, T> AsyncFuture<T> eventuallyCollect(
+            Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
+            StreamCollector<? super C, ? extends T> collector, int parallelism);
 
     /**
      * Call the given callable.
      *
      * @see #call(Callable, Executor, ResolvableFuture)
      */
-    public <C> AsyncFuture<C> call(Callable<C> callable);
+    public <C> AsyncFuture<C> call(Callable<? extends C> callable);
 
     /**
      * Call the given callable on the provided executor.
      *
      * @see #call(Callable, Executor, ResolvableFuture)
      */
-    public <C> AsyncFuture<C> call(Callable<C> callable, ExecutorService executor);
+    public <C> AsyncFuture<C> call(Callable<? extends C> callable, ExecutorService executor);
 
     /**
      * Call the given callable and resolve the given future with its result.
@@ -297,5 +300,5 @@ public interface AsyncFramework {
      * @param future The future to resolve.
      * @return The future that will be resolved.
      */
-    public <C> AsyncFuture<C> call(Callable<C> callable, ExecutorService executor, ResolvableFuture<C> future);
+    public <C> AsyncFuture<C> call(Callable<? extends C> callable, ExecutorService executor, ResolvableFuture<C> future);
 }
