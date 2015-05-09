@@ -301,4 +301,12 @@ public interface AsyncFramework {
      * @return The future that will be resolved.
      */
     public <C> AsyncFuture<C> call(Callable<? extends C> callable, ExecutorService executor, ResolvableFuture<C> future);
+
+    /**
+     * Setup a managed reference.
+     *
+     * @param setup The setup method for the managed reference.
+     * @return The managed reference.
+     */
+    public <C> Managed<C> managed(ManagedSetup<C> setup);
 }

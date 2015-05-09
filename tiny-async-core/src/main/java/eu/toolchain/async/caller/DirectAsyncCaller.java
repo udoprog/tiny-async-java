@@ -76,6 +76,11 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
+    public <T> void leakedManagedReference(T reference, StackTraceElement[] stack) {
+        internalError(String.format("reference %s leaked @ %s", reference, formatStack(stack)), null);
+    }
+
+    @Override
     public <T, R> void resolveStreamCollector(StreamCollector<T, R> collector, T result) {
         try {
             collector.resolved(result);
@@ -105,6 +110,20 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     @Override
     public boolean isThreaded() {
         return false;
+    }
+
+    private static String formatStack(StackTraceElement[] stack) {
+        if (stack == null)
+            return "unknown";
+
+        final StringBuilder builder = new StringBuilder();
+
+        for (final StackTraceElement e : stack) {
+            builder.append(String.format("    %s#%s (%s:%d)\n", e.getClassName(), e.getMethodName(), e.getFileName(),
+                    e.getLineNumber()));
+        }
+
+        return builder.toString();
     }
 
     abstract protected void internalError(String what, Throwable e);

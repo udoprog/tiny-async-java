@@ -626,6 +626,11 @@ public final class TinyAsync implements AsyncFramework {
         return target;
     }
 
+    @Override
+    public <C> Managed<C> managed(ManagedSetup<C> setup) {
+        return new TinyManaged<C>(this, setup);
+    }
+
     /**
      * Build a new TinyAsync instance.
      *

@@ -117,6 +117,16 @@ public final class ExecutorAsyncCaller implements AsyncCaller {
     }
 
     @Override
+    public <T> void leakedManagedReference(final T reference, final StackTraceElement[] stack) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                caller.leakedManagedReference(reference, stack);
+            }
+        });
+    }
+
+    @Override
     public boolean isThreaded() {
         return true;
     }

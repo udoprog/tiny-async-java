@@ -72,6 +72,14 @@ public interface AsyncCaller {
     public void runFutureFailed(FutureFailed failed, Throwable cause);
 
     /**
+     * Indicate that a Managed reference has been leaked.
+     *
+     * @param reference The reference that was leaked.
+     * @param stack The stacktrace for where it was leaked, can be {@code null} if information is unavailable.
+     */
+    public <T> void leakedManagedReference(T reference, StackTraceElement[] stack);
+
+    /**
      * Run resolved handle on {@code StreamCollector}.
      *
      * @param collector Collector to run handle on.
