@@ -24,6 +24,11 @@ public class ThreadedReduceTest {
     private static ExecutorService executor;
     private static TinyAsync async;
 
+    private static final long TIMEOUT = 1000;
+
+    private static final int COUNT = 10;
+    private static final int BATCH_SIZE = 100;
+
     @BeforeClass
     public static void beforeClass() {
         executor = Executors.newFixedThreadPool(10);
@@ -36,7 +41,7 @@ public class ThreadedReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void testEmpty() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Exception>> futures = new ArrayList<>();
 
@@ -52,7 +57,7 @@ public class ThreadedReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void testResolved() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Exception>> futures = new ArrayList<>();
         futures.add(async.resolved(A));
@@ -74,7 +79,7 @@ public class ThreadedReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void testErrors() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Object>> futures = new ArrayList<>();
         futures.add(async.failed(A));
@@ -103,18 +108,15 @@ public class ThreadedReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void testThreadedReduce() throws InterruptedException, ExecutionException {
-        final int size = 100;
-        final int batchSize = 1000;
-
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < COUNT; i++) {
             final CountDownLatch latch = new CountDownLatch(1);
 
             final List<AsyncFuture<Integer>> futures = new ArrayList<>();
 
-            for (int j = 0; j < batchSize; j++) {
-                final int p = i * size + j;
+            for (int j = 0; j < BATCH_SIZE; j++) {
+                final int p = i * COUNT + j;
 
                 futures.add(async.call(new Callable<Integer>() {
                     @Override
@@ -141,8 +143,8 @@ public class ThreadedReduceTest {
             Collections.sort(sorted);
             final Iterator<Integer> iter = sorted.iterator();
 
-            for (int j = 0; j < batchSize; j++)
-                Assert.assertEquals((Integer) (i * size + j), iter.next());
+            for (int j = 0; j < BATCH_SIZE; j++)
+                Assert.assertEquals((Integer) (i * COUNT + j), iter.next());
         }
     }
 }
