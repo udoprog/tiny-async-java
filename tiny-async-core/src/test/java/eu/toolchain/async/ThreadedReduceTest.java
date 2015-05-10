@@ -16,7 +16,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ReduceTest {
+public class ThreadedReduceTest {
     private static final Object REF = new Object();
     private static final Exception A = new Exception("A");
     private static final Exception B = new Exception("B");
@@ -36,7 +36,7 @@ public class ReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 100)
+    @Test(timeout = 1000)
     public void testEmpty() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Exception>> futures = new ArrayList<>();
 
@@ -52,7 +52,7 @@ public class ReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 100)
+    @Test(timeout = 1000)
     public void testResolved() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Exception>> futures = new ArrayList<>();
         futures.add(async.resolved(A));
@@ -74,7 +74,7 @@ public class ReduceTest {
     }
 
     // TODO: move out from unit tests.
-    @Test(timeout = 100)
+    @Test(timeout = 1000)
     public void testErrors() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Object>> futures = new ArrayList<>();
         futures.add(async.failed(A));
