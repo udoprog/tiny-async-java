@@ -12,7 +12,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestEventuallyCollect {
+/**
+ * A high-level integration test for {@code TinyAsync#eventuallyCollect(java.util.Collection, StreamCollector, int)}.
+ */
+public class ThreadedEventuallyCollectTest {
     private ExecutorService executor;
     private ExecutorService otherExecutor;
     private AsyncFramework async;
