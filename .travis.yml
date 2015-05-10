@@ -6,7 +6,11 @@ jdk:
   - openjdk8
   - oraclejdk8
 
+script:
+  - mvn -P test clean test
+
 after_success:
-  - mvn clean
+  - mvn -P coverage
+    clean
     cobertura:cobertura
-    org.eluder.coveralls:coveralls-maven-plugin:report
+    coveralls:report
