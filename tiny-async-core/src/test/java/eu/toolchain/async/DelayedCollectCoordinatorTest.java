@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Semaphore;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +25,7 @@ import com.google.common.collect.ImmutableList;
 public class DelayedCollectCoordinatorTest {
     private AsyncCaller caller;
     private StreamCollector<Object, Object> collector;
-    private TinySemaphore mutex;
+    private Semaphore mutex;
     private ResolvableFuture<Object> future;
     private Callable<AsyncFuture<Object>> callable;
     private Callable<AsyncFuture<Object>> callable2;
@@ -38,7 +39,7 @@ public class DelayedCollectCoordinatorTest {
     public void setup() throws Exception {
         caller = mock(AsyncCaller.class);
         collector = mock(StreamCollector.class);
-        mutex = mock(TinySemaphore.class);
+        mutex = mock(Semaphore.class);
         future = mock(ResolvableFuture.class);
         callable = mock(Callable.class);
         callable2 = mock(Callable.class);
@@ -74,8 +75,7 @@ public class DelayedCollectCoordinatorTest {
     public void testEmptyCallables() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of();
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         final Object reference = new Object();
 
@@ -108,8 +108,7 @@ public class DelayedCollectCoordinatorTest {
 
         doThrow(e).when(mutex).acquire();
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         coordinator.run();
 
@@ -132,8 +131,7 @@ public class DelayedCollectCoordinatorTest {
     public void testInterruptedOnCancelWait() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable);
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         final InterruptedException e = new InterruptedException();
 
@@ -171,8 +169,7 @@ public class DelayedCollectCoordinatorTest {
     public void testCancelled() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable, callable);
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         doNothing().when(mutex).acquire();
         doAnswer(new Answer<Void>() {
@@ -207,8 +204,7 @@ public class DelayedCollectCoordinatorTest {
     public void testSuccessful() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable);
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         final Object reference = new Object();
 
@@ -237,8 +233,7 @@ public class DelayedCollectCoordinatorTest {
     public void testFailSecond() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable, callable2);
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         final Object reference = new Object();
 
@@ -274,8 +269,7 @@ public class DelayedCollectCoordinatorTest {
     public void testFailFirst() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable, callable2);
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         final Object reference = new Object();
 
@@ -307,8 +301,7 @@ public class DelayedCollectCoordinatorTest {
     public void testCollectodEndThrows() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable);
 
-        final DelayedCollectCoordinator<Object, Object> coordinator = new DelayedCollectCoordinator<Object, Object>(
-                caller, callables, collector, mutex, future, PARALLELISM);
+        final DelayedCollectCoordinator<Object, Object> coordinator = setupCoordinator(callables);
 
         final Object reference = new Object();
         final Exception e = new Exception();
@@ -332,5 +325,10 @@ public class DelayedCollectCoordinatorTest {
         verify(caller, never()).cancelStreamCollector(eq(collector));
         verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
         verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+    }
+
+    private DelayedCollectCoordinator<Object, Object> setupCoordinator(
+            final List<Callable<AsyncFuture<Object>>> callables) {
+        return new DelayedCollectCoordinator<Object, Object>(caller, callables, collector, mutex, future, PARALLELISM);
     }
 }

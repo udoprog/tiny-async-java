@@ -7,15 +7,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import eu.toolchain.async.caller.DefaultAsyncCaller;
-import eu.toolchain.async.caller.ExecutorAsyncCaller;
-import eu.toolchain.async.collector.FutureCollector;
-import eu.toolchain.async.collector.FutureDiscardCollector;
-import eu.toolchain.async.collector.FutureStreamCollector;
-import eu.toolchain.async.proxies.LazyTransformCancelledFuture;
-import eu.toolchain.async.proxies.LazyTransformErrorFuture;
-import eu.toolchain.async.proxies.LazyTransformFuture;
+import java.util.concurrent.Semaphore;
 
 // @formatter:off
 /**
@@ -140,7 +132,7 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new LazyTransformFuture<C, T>(transform, target));
+        future.on(new TransformHelper<C, T>(transform, target));
         return target;
     }
 
@@ -180,7 +172,7 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new LazyTransformErrorFuture<T>(transform, target));
+        future.on(new ErrorTransformHelper<T>(transform, target));
         return target;
     }
 
@@ -220,7 +212,7 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new LazyTransformCancelledFuture<T>(transform, target));
+        future.on(new CancelledTransformHelper<T>(transform, target));
         return target;
     }
 
@@ -279,7 +271,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> ResolvableFuture<T> future() {
-        return new ConcurrentFuture<T>(this, caller);
+        return new ConcurrentResolvableFuture<T>(this, caller);
     }
 
     @Override
@@ -289,17 +281,17 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> resolved(T value) {
-        return new ResolvedFuture<T>(this, caller, value);
+        return new ResolvedAsyncFuture<T>(this, caller, value);
     }
 
     @Override
     public <T> AsyncFuture<T> failed(Throwable e) {
-        return new FailedFuture<T>(this, caller, e);
+        return new FailedAsyncFuture<T>(this, caller, e);
     }
 
     @Override
     public <T> AsyncFuture<T> cancelled() {
-        return new CancelledFuture<T>(this, caller);
+        return new CancelledAsyncFuture<T>(this, caller);
     }
 
     @SuppressWarnings("unchecked")
@@ -310,7 +302,7 @@ public final class TinyAsync implements AsyncFramework {
 
         final ResolvableFuture<Collection<T>> target = future();
 
-        final FutureDone<T> done = new FutureCollector<T, Collection<T>>(futures.size(), Collectors.<T> collection(),
+        final FutureDone<T> done = new CollectHelper<T, Collection<T>>(futures.size(), TinyCollectors.<T> collection(),
                 target);
 
         for (final AsyncFuture<? extends T> q : futures)
@@ -328,7 +320,7 @@ public final class TinyAsync implements AsyncFramework {
 
         final ResolvableFuture<T> target = future();
 
-        final FutureCollector<? super C, ? extends T> done = new FutureCollector<>(futures.size(), collector, target);
+        final CollectHelper<? super C, ? extends T> done = new CollectHelper<>(futures.size(), collector, target);
 
         for (final AsyncFuture<? extends C> q : futures)
             q.on(done);
@@ -357,7 +349,7 @@ public final class TinyAsync implements AsyncFramework {
 
         final ResolvableFuture<T> target = future();
 
-        final FutureStreamCollector<? super C, ? extends T> done = new FutureStreamCollector<>(caller, futures.size(),
+        final CollectStreamHelper<? super C, ? extends T> done = new CollectStreamHelper<>(caller, futures.size(),
                 collector, target);
 
         for (final AsyncFuture<? extends C> q : futures)
@@ -387,7 +379,7 @@ public final class TinyAsync implements AsyncFramework {
         if (parallelism >= callables.size())
             return delayedCollectParallel(callables, collector);
 
-        final TinySemaphore mutex = new TinySemaphoreImpl(parallelism);
+        final Semaphore mutex = new Semaphore(parallelism);
         final ResolvableFuture<T> future = future();
         defaultExecutor().execute(
                 new DelayedCollectCoordinator<>(caller, callables, collector, mutex, future, parallelism));
@@ -450,7 +442,7 @@ public final class TinyAsync implements AsyncFramework {
 
         final ResolvableFuture<Void> target = future();
 
-        final FutureDone<C> done = new FutureDiscardCollector<>(futures.size(), target);
+        final FutureDone<C> done = new CollectAndDiscardHelper<>(futures.size(), target);
 
         for (final AsyncFuture<C> q : futures)
             q.on(done);
@@ -460,7 +452,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <C> Managed<C> managed(ManagedSetup<C> setup) {
-        return new TinyManaged<C>(this, setup);
+        return new ConcurrentManaged<C>(this, setup);
     }
 
     /**
@@ -470,6 +462,19 @@ public final class TinyAsync implements AsyncFramework {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * The simplest possible implementation of a concurrent caller.
+     */
+    public static class DefaultAsyncCaller extends DirectAsyncCaller {
+        private final String CTX = DefaultAsyncCaller.class.getCanonicalName();
+
+        @Override
+        protected void internalError(String what, Throwable e) {
+            System.err.println(CTX + ": " + what);
+            e.printStackTrace(System.err);
+        }
     }
 
     public static class Builder {

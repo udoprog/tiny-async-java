@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.TinyAsync;
-import eu.toolchain.async.caller.DirectAsyncCaller;
+import eu.toolchain.async.DirectAsyncCaller;
 
 public final class AsyncSetup {
     public static TinyAsync setup() {

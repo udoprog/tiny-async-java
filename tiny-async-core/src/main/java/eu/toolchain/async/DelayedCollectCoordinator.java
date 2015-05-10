@@ -3,6 +3,7 @@ package eu.toolchain.async;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -16,7 +17,7 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
     private final AsyncCaller caller;
     private final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables;
     private final StreamCollector<? super C, ? extends T> collector;
-    private final TinySemaphore mutex;
+    private final Semaphore mutex;
     private final ResolvableFuture<? super T> future;
     private final int totalPermitsToAcquire;
 
@@ -24,7 +25,7 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
 
     public DelayedCollectCoordinator(final AsyncCaller caller,
             final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
-            final StreamCollector<C, T> collector, final TinySemaphore mutex, final ResolvableFuture<? super T> future,
+            final StreamCollector<C, T> collector, final Semaphore mutex, final ResolvableFuture<? super T> future,
             int parallelism) {
         this.caller = caller;
         this.callables = callables;
