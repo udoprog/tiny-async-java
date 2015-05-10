@@ -106,12 +106,12 @@ public class CancelledFuture<T> implements AsyncFuture<T> {
 
     @Override
     public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
-        return async.cancelled(caller);
+        return async.cancelled();
     }
 
     @Override
     public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
-        return async.cancelled(caller);
+        return async.cancelled();
     }
 
     @Override
@@ -131,14 +131,14 @@ public class CancelledFuture<T> implements AsyncFuture<T> {
         try {
             result = transform.transform(null);
         } catch (Exception e) {
-            return async.failed(e, caller);
+            return async.failed(e);
         }
 
-        return async.resolved(result, caller);
+        return async.resolved(result);
     }
 
     @Override
     public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
-        return async.cancelled(this, transform, caller);
+        return async.cancelled(this, transform);
     }
 }

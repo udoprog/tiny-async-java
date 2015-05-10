@@ -30,76 +30,44 @@ public interface AsyncFramework {
     public AsyncCaller threadedCaller();
 
     /**
-     * Same as {@link #future(AsyncCaller)}, but using the default {@link #caller()}.
+     * Build a new resolvable future.
+     *
+     * These futures are guaranteed to be thread-safe, all of their public methods can be called from any thread, at any
+     * time.
      *
      * @see #future(AsyncCaller)
      */
     public <T> ResolvableFuture<T> future();
 
     /**
-     * Build a new resolvable future.
-     *
-     * These futures are guaranteed to be thread-safe, all of their public methods can be called from any thread, at any
-     * time.
-     *
-     * @return A new future.
-     */
-    public <T> ResolvableFuture<T> future(AsyncCaller caller);
-
-    /**
-     * Same as {@link #resolved(Object, AsyncCaller)}, but using the default {@link caller()} and resolved with
-     * {@code null}.
+     * Returns an already resolved void future.
      *
      * @see #resolved(Void, AsyncCaller)
      */
     public AsyncFuture<Void> resolved();
 
     /**
-     * Same as {@link #resolved(T, AsyncCaller)}, but using the default {@link #caller()}.
-     *
-     * @see #resolved(T, AsyncCaller)
-     */
-    public <T> AsyncFuture<T> resolved(T value);
-
-    /**
      * Build an already resolved future.
      *
      * @param value The value which the future was resolved using.
-     * @param The caller to use when invoking handles.
      * @return A new resolved future.
      */
-    public <T> AsyncFuture<T> resolved(T value, AsyncCaller caller);
-
-    /**
-     * Same as {@link #failed(AsyncCaller)}, but using the default {@link #caller()}.
-     *
-     * @see #failed(Throwable, AsyncCaller)
-     */
-    public <T> AsyncFuture<T> failed(Throwable e);
+    public <T> AsyncFuture<T> resolved(T value);
 
     /**
      * Build an already failed future.
      *
      * @param e The Error which the future is failed using.
-     * @param The caller to use when invoking handles.
      * @return A new failed future.
      */
-    public <T> AsyncFuture<T> failed(Throwable e, AsyncCaller caller);
+    public <T> AsyncFuture<T> failed(Throwable e);
 
     /**
-     * Same as {@link #cancelled(AsyncCaller)}, but using the default {@link #caller()}.
+     * Build an immediately cancelled future.
      *
-     * @see #cancelled(AsyncCaller)
-     */
-    public <T> AsyncFuture<T> cancelled();
-
-    /**
-     * Build an already cancelled future.
-     *
-     * @param The caller to use when invoking handles.
      * @return A new cancelled future.
      */
-    public <T> AsyncFuture<T> cancelled(AsyncCaller caller);
+    public <T> AsyncFuture<T> cancelled();
 
     /**
      * Transform a future of type C, to a future of type T.
@@ -113,13 +81,6 @@ public interface AsyncFramework {
     public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, Transform<? super C, ? extends T> transform);
 
     /**
-     * Same as {@link #transform(AsyncFuture, LazyTransform, AsyncCaller)}, but using the default {@link #caller()}.
-     *
-     * @see #transform(AsyncFuture, LazyTransform, AsyncCaller)
-     */
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform);
-
-    /**
      * Transform a future of type C, to a future of type T using lazy transformation.
      *
      * Use {@link AsyncFuture#transform(LazyTransform)} instead of this directly.
@@ -128,11 +89,9 @@ public interface AsyncFramework {
      *
      * @param future A future of type C to transform.
      * @param transform The transforming implementation to use.
-     * @param caller Caller to use when invoking handlers.
      * @return A new future of type T.
      */
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform,
-            AsyncCaller caller);
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform);
 
     /**
      * Transform a failing future into a resolved future.
@@ -146,13 +105,6 @@ public interface AsyncFramework {
     public <T> AsyncFuture<T> error(AsyncFuture<T> future, Transform<Throwable, ? extends T> transform);
 
     /**
-     * Same as {@link #error(AsyncFuture, LazyTransform, AsyncCaller)}, but using the default {@link #caller()}.
-     *
-     * @see #error(AsyncFuture, LazyTransform, AsyncCaller)
-     */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform);
-
-    /**
      * Transform a failing future into a resolved future.
      *
      * Use {@link AsyncFuture#error(Transform)} instead of this directly.
@@ -161,11 +113,9 @@ public interface AsyncFramework {
      *
      * @param future The failing future to transform.
      * @param transform The transform implementation to use.
-     * @param caller Caller to use when invoking handlers.
      * @return A new future which does not fail.
      */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform,
-            AsyncCaller caller);
+    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform);
 
     /**
      * Transform a cancelled future into a resolved future.
@@ -178,25 +128,16 @@ public interface AsyncFramework {
     public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, Transform<Void, ? extends T> transform);
 
     /**
-     * Same as {@link #cancelled(AsyncFuture, LazyTransform, AsyncCaller)}, but using the default {@link #caller()}.
-     *
-     * @see #cancelled(AsyncFuture, LazyTransform, AsyncCaller)
-     */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform);
-
-    /**
      * Transform a cancelled future into a resolved future.
      *
      * Lazy transformations returns another future instead of the result directly.
      *
      * @param future The failing future to transform.
      * @param transform The transform implementation to use.
-     * @param caller Caller to use when invoking handlers.
      * @return A new future which does not cancel.
      * @see AsyncFuture#cancelled(LazyTransform)
      */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform,
-            AsyncCaller caller);
+    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform);
 
     /**
      * Build a new future that is the result of collecting all the results in a collection.
@@ -218,14 +159,6 @@ public interface AsyncFramework {
             Collector<? super C, ? extends T> collector);
 
     /**
-     * Same as {@link #collect(Collection, StreamCollector, AsyncCaller)}, but using the default {@link #caller()}.
-     *
-     * @see #collect(Collection, StreamCollector, AsyncCaller)
-     */
-    public <C, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends C>> futures,
-            StreamCollector<? super C, ? extends T> collector);
-
-    /**
      * Build a new future that is the result of reducing the provided collection of futures using the provided
      * collector.
      *
@@ -240,11 +173,10 @@ public interface AsyncFramework {
      *
      * @param futures The collection of futures to collect.
      * @param collector The implementation for how to reduce the collected futures.
-     * @param caller The caller implementation to invoke handles with.
      * @return A new future that is the result of reducing the collection of futures.
      */
     public <C, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends C>> futures,
-            StreamCollector<? super C, ? extends T> collector, AsyncCaller caller);
+            StreamCollector<? super C, ? extends T> collector);
 
     /**
      * Collect the results from a collection of futures, then discard them.

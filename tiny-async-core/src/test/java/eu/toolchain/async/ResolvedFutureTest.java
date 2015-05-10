@@ -39,12 +39,12 @@ public class ResolvedFutureTest {
         final Transform<Object, Object> transform = Mockito.mock(Transform.class);
         Mockito.when(transform.transform(result)).thenReturn(result2);
         final AsyncFuture<Object> second = Mockito.mock(AsyncFuture.class);
-        Mockito.when(async.resolved(result2, caller)).thenReturn(second);
+        Mockito.when(async.resolved(result2)).thenReturn(second);
 
         future.transform(transform).on(handle);
 
         Mockito.verify(transform).transform(result);
-        Mockito.verify(async).resolved(result2, caller);
+        Mockito.verify(async).resolved(result2);
     }
 
     @Test

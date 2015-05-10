@@ -110,7 +110,7 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
         try {
             return (AsyncFuture<C>) transform.transform(result);
         } catch (Exception e) {
-            return async.failed(e, caller);
+            return async.failed(e);
         }
     }
 
@@ -121,10 +121,10 @@ public class ResolvedFuture<T> implements AsyncFuture<T> {
         try {
             value = transform.transform(result);
         } catch (Exception e) {
-            return async.failed(e, caller);
+            return async.failed(e);
         }
 
-        return async.resolved(value, caller);
+        return async.resolved(value);
     }
 
     @Override

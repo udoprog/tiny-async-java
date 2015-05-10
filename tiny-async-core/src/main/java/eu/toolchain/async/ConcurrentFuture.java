@@ -301,7 +301,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
 
     @Override
     public <C> AsyncFuture<C> transform(final LazyTransform<? super T, ? extends C> transform) {
-        return async.transform(this, transform, caller);
+        return async.transform(this, transform);
     }
 
     @Override
@@ -311,7 +311,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
 
     @Override
     public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
-        return async.error(this, transform, caller);
+        return async.error(this, transform);
     }
 
     @Override
@@ -321,7 +321,7 @@ public class ConcurrentFuture<T> implements ResolvableFuture<T> {
 
     @Override
     public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
-        return async.cancelled(this, transform, caller);
+        return async.cancelled(this, transform);
     }
 
     /**

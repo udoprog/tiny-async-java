@@ -138,14 +138,7 @@ public final class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <C, T> AsyncFuture<T> transform(final AsyncFuture<C> future,
-            final LazyTransform<? super C, ? extends T> transform) {
-        return transform(future, transform, caller());
-    }
-
-    @Override
-    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform,
-            final AsyncCaller caller) {
+    public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
         future.on(new LazyTransformFuture<C, T>(transform, target));
         return target;
@@ -186,13 +179,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform) {
-        return error(future, transform, caller);
-    }
-
-    @Override
-    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform,
-            final AsyncCaller caller) {
-        final ResolvableFuture<T> target = future(caller);
+        final ResolvableFuture<T> target = future();
         future.on(new LazyTransformErrorFuture<T>(transform, target));
         return target;
     }
@@ -232,13 +219,7 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform) {
-        return cancelled(future, transform, caller());
-    }
-
-    @Override
-    public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform,
-            final AsyncCaller caller) {
-        final ResolvableFuture<T> target = future(caller);
+        final ResolvableFuture<T> target = future();
         future.on(new LazyTransformCancelledFuture<T>(transform, target));
         return target;
     }
@@ -298,46 +279,26 @@ public final class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> ResolvableFuture<T> future() {
-        return future(caller());
-    }
-
-    @Override
-    public <T> ResolvableFuture<T> future(AsyncCaller caller) {
         return new ConcurrentFuture<T>(this, caller);
     }
 
     @Override
     public AsyncFuture<Void> resolved() {
-        return resolved(null, caller());
+        return resolved(null);
     }
 
     @Override
     public <T> AsyncFuture<T> resolved(T value) {
-        return resolved(value, caller());
-    }
-
-    @Override
-    public <T> AsyncFuture<T> resolved(T value, AsyncCaller caller) {
         return new ResolvedFuture<T>(this, caller, value);
     }
 
     @Override
     public <T> AsyncFuture<T> failed(Throwable e) {
-        return failed(e, caller);
-    }
-
-    @Override
-    public <T> AsyncFuture<T> failed(Throwable e, AsyncCaller caller) {
         return new FailedFuture<T>(this, caller, e);
     }
 
     @Override
     public <T> AsyncFuture<T> cancelled() {
-        return cancelled(caller());
-    }
-
-    @Override
-    public <T> AsyncFuture<T> cancelled(AsyncCaller caller) {
         return new CancelledFuture<T>(this, caller);
     }
 
@@ -391,12 +352,6 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
             final StreamCollector<? super C, ? extends T> collector) {
-        return collect(futures, collector, caller());
-    }
-
-    @Override
-    public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
-            final StreamCollector<? super C, ? extends T> collector, AsyncCaller caller) {
         if (futures.isEmpty())
             return collectEmpty(collector);
 

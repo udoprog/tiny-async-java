@@ -37,11 +37,11 @@ public class FailedFutureTest {
     public void testTransform() throws Exception {
         final Transform<Boolean, Integer> transform = Mockito.mock(Transform.class);
         final AsyncFuture<Integer> secondFailed = Mockito.mock(AsyncFuture.class);
-        Mockito.when(async.<Integer> failed(error, caller)).thenReturn(secondFailed);
+        Mockito.when(async.<Integer> failed(error)).thenReturn(secondFailed);
 
         failed.transform(transform).on(handle);
 
-        Mockito.verify(async).failed(error, caller);
+        Mockito.verify(async).failed(error);
         Mockito.verify(transform, Mockito.never()).transform(Mockito.anyBoolean());
     }
 
@@ -49,11 +49,11 @@ public class FailedFutureTest {
     public void testDeferredTransform() throws Exception {
         final LazyTransform<Boolean, Integer> transform = Mockito.mock(LazyTransform.class);
         final AsyncFuture<Integer> secondFailed = Mockito.mock(AsyncFuture.class);
-        Mockito.when(async.<Integer> failed(error, caller)).thenReturn(secondFailed);
+        Mockito.when(async.<Integer> failed(error)).thenReturn(secondFailed);
 
         failed.transform(transform).on(handle);
 
-        Mockito.verify(async).failed(error, caller);
+        Mockito.verify(async).failed(error);
         Mockito.verify(transform, Mockito.never()).transform(Mockito.anyBoolean());
     }
 }

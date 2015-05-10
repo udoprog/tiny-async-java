@@ -107,12 +107,12 @@ public class FailedFuture<T> implements AsyncFuture<T> {
 
     @Override
     public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
-        return async.failed(cause, caller);
+        return async.failed(cause);
     }
 
     @Override
     public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
-        return async.failed(cause, caller);
+        return async.failed(cause);
     }
 
     @Override
@@ -124,10 +124,10 @@ public class FailedFuture<T> implements AsyncFuture<T> {
         } catch (Exception e) {
             final TransformException inner = new TransformException(e);
             e.addSuppressed(cause);
-            return async.failed(inner, caller);
+            return async.failed(inner);
         }
 
-        return async.resolved(result, caller);
+        return async.resolved(result);
     }
 
     @Override
