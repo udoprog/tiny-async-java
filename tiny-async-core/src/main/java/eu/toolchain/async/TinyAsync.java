@@ -434,7 +434,8 @@ public final class TinyAsync implements AsyncFramework {
 
         final TinySemaphore mutex = new TinySemaphoreImpl(parallelism);
         final ResolvableFuture<T> future = future();
-        defaultExecutor().execute(new DelayedCollectCoordinator<>(caller, callables, collector, mutex, future));
+        defaultExecutor().execute(
+                new DelayedCollectCoordinator<>(caller, callables, collector, mutex, future, parallelism));
         return future;
     }
 

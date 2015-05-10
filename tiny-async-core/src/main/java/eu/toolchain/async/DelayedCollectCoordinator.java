@@ -18,17 +18,20 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
     private final StreamCollector<? super C, ? extends T> collector;
     private final TinySemaphore mutex;
     private final ResolvableFuture<? super T> future;
+    private final int totalPermitsToAcquire;
 
     final AtomicBoolean cancel = new AtomicBoolean();
 
     public DelayedCollectCoordinator(final AsyncCaller caller,
             final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
-            final StreamCollector<C, T> collector, final TinySemaphore mutex, final ResolvableFuture<? super T> future) {
+            final StreamCollector<C, T> collector, final TinySemaphore mutex, final ResolvableFuture<? super T> future,
+            int parallelism) {
         this.caller = caller;
         this.callables = callables;
         this.collector = collector;
         this.mutex = mutex;
         this.future = future;
+        this.totalPermitsToAcquire = (callables.size() + parallelism);
     }
 
     @Override
@@ -100,7 +103,7 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
         }
 
         // wait for the rest of the pending futures...
-        while (acquired++ < total) {
+        while (acquired++ < totalPermitsToAcquire) {
             try {
                 mutex.acquire();
             } catch (Exception e) {
