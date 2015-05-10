@@ -16,10 +16,13 @@ public class TinyManaged<T> implements Managed<T> {
     private static final boolean TRACING;
     private static final boolean CAPTURE_STACK;
 
+    // fetch and compare the value of properties that modifies runtime behaviour of this class.
     static {
-        TRACING = "yes".equals(System.getProperty(Managed.TRACING, "no"));
-        CAPTURE_STACK = "yes".equals(System.getProperty(Managed.CAPTURE_STACK, "no"));
+        TRACING = "on".equals(System.getProperty(Managed.TRACING, "off"));
+        CAPTURE_STACK = "on".equals(System.getProperty(Managed.CAPTURE_STACK, "off"));
     }
+
+    private static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
 
     private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
@@ -30,11 +33,14 @@ public class TinyManaged<T> implements Managed<T> {
     private final AtomicReference<T> reference = new AtomicReference<>();
 
     // acts to allow only a single thread to setup the reference.
-    private volatile ResolvableFuture<Void> startFuture = null;
+    private final ResolvableFuture<Void> startFuture;
+    private final ResolvableFuture<Void> zeroLeaseFuture;
+    private final ResolvableFuture<T> stopReferenceFuture;
 
-    private volatile ResolvableFuture<Void> zeroLeaseFuture = null;
+    // composite future that depends on zero-lease, and stop-reference.
+    private final AsyncFuture<Void> stopFuture;
 
-    private volatile AsyncFuture<Void> stopFuture = null;
+    private final AtomicReference<ManagedState> state = new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
 
     private final Set<ValidBorrowed> traces;
 
@@ -42,14 +48,28 @@ public class TinyManaged<T> implements Managed<T> {
         this.async = async;
         this.setup = setup;
 
+        this.startFuture = async.future();
+        this.zeroLeaseFuture = async.future();
+        this.stopReferenceFuture = async.future();
+
+        this.stopFuture = zeroLeaseFuture.transform(new LazyTransform<Void, Void>() {
+            @Override
+            public AsyncFuture<Void> transform(Void v) throws Exception {
+                return stopReferenceFuture.transform(new LazyTransform<T, Void>() {
+                    @Override
+                    public AsyncFuture<Void> transform(T reference) throws Exception {
+                        return setup.destruct(reference);
+                    }
+                });
+            }
+        });
+
         if (TRACING) {
             traces = Collections.newSetFromMap(new ConcurrentHashMap<ValidBorrowed, Boolean>());
         } else {
             traces = null;
         }
     }
-
-    private final Object $lock = new Object();
 
     /**
      * The number of borrowed references that are out there.
@@ -95,14 +115,13 @@ public class TinyManaged<T> implements Managed<T> {
         leases.incrementAndGet();
 
         final T value = reference.get();
-        final StackTraceElement[] stack = getStackTrace();
 
         if (value == null) {
-            release(value, stack);
-            return new InvalidBorrowed<>();
+            release();
+            return (Borrowed<T>) INVALID;
         }
 
-        final ValidBorrowed b = new ValidBorrowed(value, stack);
+        final ValidBorrowed b = new ValidBorrowed(value, getStackTrace());
 
         if (TRACING)
             traces.add(b);
@@ -122,12 +141,8 @@ public class TinyManaged<T> implements Managed<T> {
 
     @Override
     public AsyncFuture<Void> start() {
-        synchronized ($lock) {
-            if (startFuture != null)
-                return startFuture;
-
-            startFuture = async.future();
-        }
+        if (!state.compareAndSet(ManagedState.INITIALIZED, ManagedState.STARTED))
+            return startFuture;
 
         return setup.construct().transform(new Transform<T, Void>() {
             @Override
@@ -158,42 +173,17 @@ public class TinyManaged<T> implements Managed<T> {
 
     @Override
     public AsyncFuture<Void> stop() {
-        synchronized ($lock) {
-            if (startFuture == null)
-                throw new IllegalStateException("not started");
-
-            if (zeroLeaseFuture == null) {
-                zeroLeaseFuture = async.future();
-
-                // stop future depends on successful start, then on zero leases.
-                stopFuture = startFuture.transform(new LazyTransform<Void, Void>() {
-                    @Override
-                    public AsyncFuture<Void> transform(Void result) throws Exception {
-                        return zeroLeaseFuture;
-                    }
-                });
-            }
-        }
-
-        final T value = reference.getAndSet(null);
-
-        if (value == null)
+        if (!state.compareAndSet(ManagedState.STARTED, ManagedState.STOPPED))
             return stopFuture;
 
-        final StackTraceElement[] stack = getStackTrace();
+        stopReferenceFuture.resolve(this.reference.getAndSet(null));
 
         // release self-reference.
-        release(value, stack);
-
-        return stopFuture.transform(new LazyTransform<Void, Void>() {
-            @Override
-            public AsyncFuture<Void> transform(Void result) throws Exception {
-                return setup.destruct(value);
-            }
-        });
+        release();
+        return stopFuture;
     }
 
-    private void release(T reference, StackTraceElement[] stack) {
+    private void release() {
         final int lease = leases.decrementAndGet();
 
         if (lease == 0)
@@ -218,7 +208,7 @@ public class TinyManaged<T> implements Managed<T> {
 
         @Override
         public T get() {
-            return null;
+            throw new IllegalStateException("cannot get an invalid borrowed reference");
         }
 
         @Override
@@ -254,7 +244,7 @@ public class TinyManaged<T> implements Managed<T> {
             if (TRACING)
                 traces.remove(this);
 
-            TinyManaged.this.release(reference, stack);
+            TinyManaged.this.release();
         }
 
         @Override
@@ -295,7 +285,7 @@ public class TinyManaged<T> implements Managed<T> {
         final T reference = this.reference.get();
 
         if (traces == null || traces.isEmpty())
-            return String.format("Managed(%s)", reference);
+            return String.format("Managed(%s, %s)", state, reference);
 
         return formatTraces(traces, reference);
     }
@@ -303,7 +293,7 @@ public class TinyManaged<T> implements Managed<T> {
     private String formatTraces(final List<ValidBorrowed> traces, final T reference) {
         final StringBuilder builder = new StringBuilder();
 
-        builder.append(String.format("Managed(%s:\n", reference));
+        builder.append(String.format("Managed(%s, %s:\n", state, reference));
 
         int i = 0;
 
@@ -336,5 +326,9 @@ public class TinyManaged<T> implements Managed<T> {
 
         final StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         return Arrays.copyOfRange(stack, 0, stack.length - 2);
+    }
+
+    private static enum ManagedState {
+        INITIALIZED, STARTED, STOPPED
     }
 }
