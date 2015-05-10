@@ -37,9 +37,7 @@ public class TestEventuallyCollect {
     @Test
     public void testBasic() throws Exception {
         final List<Callable<AsyncFuture<Integer>>> callables = new ArrayList<>();
-
         final AtomicInteger pending = new AtomicInteger();
-
         final AtomicInteger called = new AtomicInteger();
 
         for (int i = 0; i < 10000; i++) {
