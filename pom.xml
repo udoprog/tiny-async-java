@@ -167,6 +167,14 @@
               <format>xml</format>
               <maxmem>256m</maxmem>
               <aggregate>true</aggregate>
+              <instrumentation>
+                <ignores>
+                  <ignore>eu.toolchain.examples.*</ignore>
+                </ignores>
+                <excludes>
+                  <exclude>eu/toolchain/examples/**/*.class</exclude>
+                </excludes>
+              </instrumentation>
             </configuration>
           </plugin>
         </plugins>
