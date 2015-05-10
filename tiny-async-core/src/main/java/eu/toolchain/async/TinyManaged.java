@@ -108,6 +108,7 @@ public class TinyManaged<T> implements Managed<T> {
      * @return
      * @throws IllegalStateException If the reference is not ready when calling {@code #get()}.
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Borrowed<T> borrow() {
         // pre-emptively increase the number of leases in order to prevent the underlying object (if valid) to be
