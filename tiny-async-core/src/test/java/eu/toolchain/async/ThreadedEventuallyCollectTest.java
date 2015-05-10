@@ -32,7 +32,7 @@ public class ThreadedEventuallyCollectTest {
     private static final long EXPECTED_SUM = COUNT;
     private static final int PARALLELISM = 4;
 
-    private static final long TIMEOUT = 500;
+    private static final long TIMEOUT = 5000;
 
     @Before
     public void setup() {

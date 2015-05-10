@@ -24,7 +24,7 @@ public class ThreadedReduceTest {
     private static ExecutorService executor;
     private static TinyAsync async;
 
-    private static final long TIMEOUT = 1000;
+    private static final long TIMEOUT = 5000;
 
     private static final int COUNT = 10;
     private static final int BATCH_SIZE = 100;
