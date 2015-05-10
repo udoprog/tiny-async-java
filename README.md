@@ -1,5 +1,7 @@
 # TinyAsync
 
+[![Build Status](https://travis-ci.org/udoprog/tiny-async-java.svg?branch=master)](https://travis-ci.org/udoprog/tiny-async-java)
+
 A tiny asynchronous library for Java.
 
 Writing multithreaded code is hard, tiny async tries to make it easier by providing simple abstractions for executing and manipulating computations through a clean API abstraction.
