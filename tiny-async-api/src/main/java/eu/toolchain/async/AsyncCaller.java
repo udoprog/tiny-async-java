@@ -3,11 +3,23 @@ package eu.toolchain.async;
 /**
  * The interface that governs in which thread context a specific callback should be invoked.
  *
- * The implementation of these methods will be invoked from the calling thread that interacts with the future.
+ * The implementation of these methods will be invoked from the calling thread that interacts with the future. It also
+ * provides the framework with an ability to allow the user to handle unexpected circumstances by catching and handling
+ * the case when a callback invocation throw an exception.
+ *
+ * See the core frameworks {@code DirectAsyncCaller} for a helper implementation to accomplish this.
  *
  * @see ConcurrentFuture
  */
 public interface AsyncCaller {
+    /**
+     * Indicate that a Managed reference has been leaked.
+     *
+     * @param reference The reference that was leaked.
+     * @param stack The stacktrace for where it was leaked, can be {@code null} if information is unavailable.
+     */
+    public <T> void leakedManagedReference(T reference, StackTraceElement[] stack);
+
     /**
      * @return {@code true} if this caller implementation defers task to a thread, {@code false} otherwise.
      */
@@ -70,14 +82,6 @@ public interface AsyncCaller {
      * @see FutureResolved#fail(Throwable)
      */
     public void runFutureFailed(FutureFailed failed, Throwable cause);
-
-    /**
-     * Indicate that a Managed reference has been leaked.
-     *
-     * @param reference The reference that was leaked.
-     * @param stack The stacktrace for where it was leaked, can be {@code null} if information is unavailable.
-     */
-    public <T> void leakedManagedReference(T reference, StackTraceElement[] stack);
 
     /**
      * Run resolved handle on {@code StreamCollector}.
