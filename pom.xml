@@ -170,9 +170,11 @@
               <instrumentation>
                 <ignores>
                   <ignore>eu.toolchain.examples.*</ignore>
+                  <ignore>eu.toolchain.async.perftests.*</ignore>
                 </ignores>
                 <excludes>
                   <exclude>eu/toolchain/examples/**/*.class</exclude>
+                  <exclude>eu/toolchain/async/perftests/**/*.class</exclude>
                 </excludes>
               </instrumentation>
             </configuration>
