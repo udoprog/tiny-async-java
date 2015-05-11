@@ -24,7 +24,7 @@ public class CancelledTransformHelper<T> implements FutureDone<T> {
         try {
             future = transform.transform(null);
         } catch (Exception e) {
-            target.fail(e);
+            target.fail(new TransformException(e));
             return;
         }
 

@@ -132,7 +132,7 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new TransformHelper<C, T>(transform, target));
+        future.on(new ResolvedTransformHelper<C, T>(transform, target));
         return target;
     }
 
@@ -172,7 +172,7 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new ErrorTransformHelper<T>(transform, target));
+        future.on(new FailedTransformHelper<T>(transform, target));
         return target;
     }
 
