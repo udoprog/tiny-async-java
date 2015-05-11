@@ -294,34 +294,165 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
     /* transform */
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
-        return async.transform(this, transform);
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            return async.transform(this, transform);
+
+        // shortcut
+
+        if (state == Sync.CANCELLED)
+            return async.cancelled();
+
+        if (state == Sync.FAILED) {
+            final Throwable e = (Throwable) sync.result;
+            return async.failed(e);
+        }
+
+        final T result = (T) sync.result;
+        final C transformed;
+
+        try {
+            transformed = transform.transform(result);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
+
+        return async.resolved(transformed);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C> AsyncFuture<C> transform(final LazyTransform<? super T, ? extends C> transform) {
-        return async.transform(this, transform);
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            return async.transform(this, transform);
+
+        // shortcut
+
+        if (state == Sync.CANCELLED)
+            return async.cancelled();
+
+        if (state == Sync.FAILED) {
+            final Throwable e = (Throwable) sync.result;
+            return async.failed(e);
+        }
+
+        final T result = (T) sync.result;
+
+        try {
+            return (AsyncFuture<C>) transform.transform(result);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
-        return async.error(this, transform);
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            return async.error(this, transform);
+
+        // shortcut
+
+        if (state == Sync.CANCELLED)
+            return async.cancelled();
+
+        if (state == Sync.RESOLVED)
+            return async.resolved((T) sync.result);
+
+        final Throwable cause = (Throwable) sync.result;
+
+        final T transformed;
+
+        try {
+            transformed = transform.transform(cause);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
+
+        return async.resolved(transformed);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
-        return async.error(this, transform);
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            return async.error(this, transform);
+
+        // shortcut
+
+        if (state == Sync.CANCELLED)
+            return async.cancelled();
+
+        if (state == Sync.RESOLVED)
+            return async.resolved((T) sync.result);
+
+        final Throwable cause = (Throwable) sync.result;
+
+        try {
+            return (AsyncFuture<T>) transform.transform(cause);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform) {
-        return async.cancelled(this, transform);
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            return async.cancelled(this, transform);
+
+        // shortcut
+
+        if (state == Sync.FAILED)
+            return this;
+
+        if (state == Sync.RESOLVED)
+            return this;
+
+        final T transformed;
+
+        try {
+            transformed = transform.transform(null);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
+
+        return async.resolved(transformed);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
-        return async.cancelled(this, transform);
+        final int state = sync.state();
+
+        if (!Sync.isReady(state))
+            return async.cancelled(this, transform);
+
+        // shortcut
+
+        if (state == Sync.FAILED)
+            return this;
+
+        if (state == Sync.RESOLVED)
+            return this;
+
+        try {
+            return (AsyncFuture<T>) transform.transform(null);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
     }
 
     /**

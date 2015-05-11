@@ -194,7 +194,7 @@ public abstract class AbstractImmediateAsyncFuture {
         final AsyncFuture<Object> returned = future.transform(transform);
 
         verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(failedTimes)).failed(cause);
+        verify(async, times(failedTimes)).failed(any(TransformException.class));
         verify(transform, times(resolvedTimes)).transform(result);
     }
 
@@ -209,8 +209,7 @@ public abstract class AbstractImmediateAsyncFuture {
         future.transform(transform);
 
         verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(failedTimes)).failed(cause);
-        verify(async, times(resolvedTimes)).failed(e);
+        verify(async, times(Math.max(resolvedTimes, failedTimes))).failed(any(TransformException.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -224,7 +223,7 @@ public abstract class AbstractImmediateAsyncFuture {
         future.transform(transform);
 
         verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(failedTimes)).failed(cause);
+        verify(async, times(failedTimes)).failed(any(TransformException.class));
         verify(transform, times(resolvedTimes)).transform(result);
         verify(async, times(resolvedTimes)).resolved(transfomed);
     }
@@ -239,8 +238,7 @@ public abstract class AbstractImmediateAsyncFuture {
         future.transform(transform);
 
         verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(failedTimes)).failed(cause);
-        verify(async, times(resolvedTimes)).failed(e);
+        verify(async, times(Math.max(resolvedTimes, failedTimes))).failed(any(TransformException.class));
     }
 
     @SuppressWarnings("unchecked")
