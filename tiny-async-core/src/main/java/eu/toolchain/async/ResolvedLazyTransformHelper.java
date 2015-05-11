@@ -3,24 +3,27 @@ package eu.toolchain.async;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FailedTransformHelper<T> implements FutureDone<T> {
-    private final LazyTransform<Throwable, ? extends T> transform;
+public class ResolvedLazyTransformHelper<S, T> implements FutureDone<S> {
+    private final LazyTransform<? super S, ? extends T> transform;
     private final ResolvableFuture<T> target;
 
     @Override
-    public void failed(Throwable cause) throws Exception {
-        final AsyncFuture<? extends T> future;
+    public void failed(Throwable e) throws Exception {
+        target.fail(e);
+    }
+
+    @Override
+    public void resolved(S result) throws Exception {
+        final AsyncFuture<? extends T> t;
 
         try {
-            future = transform.transform(cause);
+            t = transform.transform(result);
         } catch (Exception e) {
-            final TransformException inner = new TransformException(e);
-            inner.addSuppressed(cause);
-            target.fail(inner);
+            failed(e);
             return;
         }
 
-        future.on(new FutureDone<T>() {
+        t.on(new FutureDone<T>() {
             @Override
             public void failed(Throwable e) throws Exception {
                 target.fail(e);
@@ -36,11 +39,6 @@ public class FailedTransformHelper<T> implements FutureDone<T> {
                 target.cancel();
             }
         });
-    }
-
-    @Override
-    public void resolved(T result) throws Exception {
-        target.resolve(result);
     }
 
     @Override

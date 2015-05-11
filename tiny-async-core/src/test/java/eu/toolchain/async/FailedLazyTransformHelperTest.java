@@ -1,11 +1,11 @@
 package eu.toolchain.async;
 
-public class FailedTransformHelperTest extends AbstractTransformHelperTest<Throwable> {
+public class FailedLazyTransformHelperTest extends AbstractTransformHelperTest<Throwable> {
     private final Exception e = new Exception();
 
     @Override
     protected FutureDone<Object> setupDone(LazyTransform<Throwable, Object> transform, ResolvableFuture<Object> target) {
-        return new FailedTransformHelper<Object>(transform, target);
+        return new FailedLazyTransformHelper<Object>(transform, target);
     }
 
     @Override

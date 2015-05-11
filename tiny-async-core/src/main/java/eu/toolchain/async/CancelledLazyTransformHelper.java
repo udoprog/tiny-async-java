@@ -3,7 +3,7 @@ package eu.toolchain.async;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class CancelledTransformHelper<T> implements FutureDone<T> {
+public class CancelledLazyTransformHelper<T> implements FutureDone<T> {
     private final LazyTransform<Void, ? extends T> transform;
     private final ResolvableFuture<T> target;
 

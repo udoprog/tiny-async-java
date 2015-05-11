@@ -1,9 +1,9 @@
 package eu.toolchain.async;
 
-public class CancelledTransformHelperTest extends AbstractTransformHelperTest<Void> {
+public class CancelledLazyTransformHelperTest extends AbstractTransformHelperTest<Void> {
     @Override
     protected FutureDone<Object> setupDone(LazyTransform<Void, Object> transform, ResolvableFuture<Object> target) {
-        return new CancelledTransformHelper<Object>(transform, target);
+        return new CancelledLazyTransformHelper<Object>(transform, target);
     }
 
     @Override

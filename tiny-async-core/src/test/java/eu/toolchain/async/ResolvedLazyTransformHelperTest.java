@@ -1,11 +1,11 @@
 package eu.toolchain.async;
 
-public class ResolvedTransformHelperTest extends AbstractTransformHelperTest<Object> {
+public class ResolvedLazyTransformHelperTest extends AbstractTransformHelperTest<Object> {
     private final Object from = new Object();
 
     @Override
     protected FutureDone<Object> setupDone(LazyTransform<Object, Object> transform, ResolvableFuture<Object> target) {
-        return new ResolvedTransformHelper<Object, Object>(transform, target);
+        return new ResolvedLazyTransformHelper<Object, Object>(transform, target);
     }
 
     @Override
