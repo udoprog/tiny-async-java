@@ -16,8 +16,11 @@ public class CollectHelper<S, T> implements FutureDone<S> {
 
     private final int size;
     private final Entry[] results;
-    private final AtomicInteger position = new AtomicInteger();
     private final AtomicInteger countdown;
+
+    /* maintain position separate since the is a potential race condition between getting the current position and
+     * setting the entry. This is avoided by only relying on countdown to trigger when we are done. */
+    private final AtomicInteger position = new AtomicInteger();
 
     public CollectHelper(int size, Collector<S, T> collector, ResolvableFuture<? super T> target) {
         if (size <= 0)
@@ -58,22 +61,19 @@ public class CollectHelper<S, T> implements FutureDone<S> {
      * Checks in a call back. It also wraps up the group if all the callbacks have checked in.
      */
     private void add(final int p, final byte type, final Object value) {
+        // could technically wrap around, but that would be a minor issue.
         final int c = countdown.decrementAndGet();
 
-        if (c < 0)
-            throw new IllegalStateException("got more than " + size + " results");
+        if (p < size) {
+            final Entry e = results[p];
+            e.type = type;
+            e.value = value;
+        }
 
-        final Entry e = results[p];
-
-        e.type = type;
-        e.value = value;
-
-        if (c != 0)
-            return;
-
-        final Results<S> r = readResults();
-
-        done(r.results, r.errors, r.cancelled);
+        if (c == 0) {
+            final Results<S> r = readResults();
+            done(r.results, r.errors, r.cancelled);
+        }
     }
 
     private void done(Collection<S> results, Collection<Throwable> errors, int cancelled) {

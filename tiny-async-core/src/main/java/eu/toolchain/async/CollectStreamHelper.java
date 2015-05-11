@@ -1,5 +1,6 @@
 package eu.toolchain.async;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,6 +22,9 @@ public class CollectStreamHelper<S, T> implements FutureDone<S> {
 
     public CollectStreamHelper(final AsyncCaller caller, final int size, final StreamCollector<S, T> collector,
             final ResolvableFuture<? super T> target) {
+        if (size <= 0)
+            throw new IllegalArgumentException("size");
+
         this.caller = caller;
         this.collector = collector;
         this.target = target;
@@ -30,34 +34,27 @@ public class CollectStreamHelper<S, T> implements FutureDone<S> {
     @Override
     public void failed(Throwable e) throws Exception {
         failed.incrementAndGet();
-        handleError(e);
+        caller.failStreamCollector(collector, e);
         check();
     }
 
     @Override
     public void resolved(S result) throws Exception {
         successful.incrementAndGet();
-        handleFinish(result);
+        caller.resolveStreamCollector(collector, result);
         check();
     }
 
     @Override
     public void cancelled() throws Exception {
         cancelled.incrementAndGet();
-        handleCancelled();
+        caller.cancelStreamCollector(collector);
         check();
     }
 
-    private void handleError(Throwable error) {
-        caller.failStreamCollector(collector, error);
-    }
-
-    private void handleFinish(S result) {
-        caller.resolveStreamCollector(collector, result);
-    }
-
-    private void handleCancelled() {
-        caller.cancelStreamCollector(collector);
+    private void check() throws Exception {
+        if (countdown.decrementAndGet() == 0)
+            done();
     }
 
     private void done() {
@@ -71,10 +68,5 @@ public class CollectStreamHelper<S, T> implements FutureDone<S> {
         }
 
         target.resolve(result);
-    }
-
-    private void check() throws Exception {
-        if (countdown.decrementAndGet() == 0)
-            done();
     }
 }

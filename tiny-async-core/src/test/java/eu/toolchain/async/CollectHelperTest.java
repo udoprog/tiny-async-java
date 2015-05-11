@@ -82,7 +82,6 @@ public class CollectHelperTest {
         verify(target).fail(any(Exception.class));
     }
 
-    @Test(expected = IllegalStateException.class)
     public void testTooManyResolves() throws Exception {
         final CollectHelper<Object, Object> helper = new CollectHelper<Object, Object>(2, collector, target);
 
