@@ -20,6 +20,9 @@ public class CollectHelper<S, T> implements FutureDone<S> {
     private final AtomicInteger countdown;
 
     public CollectHelper(int size, Collector<S, T> collector, ResolvableFuture<? super T> target) {
+        if (size <= 0)
+            throw new IllegalArgumentException("size");
+
         this.size = size;
         this.collector = collector;
         this.target = target;
@@ -55,18 +58,18 @@ public class CollectHelper<S, T> implements FutureDone<S> {
      * Checks in a call back. It also wraps up the group if all the callbacks have checked in.
      */
     private void add(final int p, final byte type, final Object value) {
+        final int c = countdown.decrementAndGet();
+
+        if (c < 0)
+            throw new IllegalStateException("got more than " + size + " results");
+
         final Entry e = results[p];
 
         e.type = type;
         e.value = value;
 
-        final int c = countdown.decrementAndGet();
-
         if (c != 0)
             return;
-
-        if (c < 0)
-            throw new IllegalStateException("got more than " + size + " results");
 
         final Results<S> r = readResults();
 
