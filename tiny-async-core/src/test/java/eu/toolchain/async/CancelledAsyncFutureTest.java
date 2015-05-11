@@ -1,13 +1,13 @@
 package eu.toolchain.async;
 
-public class ResolvedAsyncFutureTest extends AbstractImmediateAsyncFuture {
+public class CancelledAsyncFutureTest extends AbstractImmediateAsyncFuture {
     @Override
-    protected int setupResolved() {
+    protected int setupCancelled() {
         return 1;
     }
 
     @Override
     protected AsyncFuture<Object> setupFuture(AsyncFramework async, AsyncCaller caller, Object result, Throwable cause) {
-        return new ResolvedAsyncFuture<Object>(async, caller, result);
+        return new CancelledAsyncFuture<Object>(async, caller);
     }
 }

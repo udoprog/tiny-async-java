@@ -36,6 +36,7 @@ public class CancelledAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureDone<? super T> handle) {
+        caller.cancelFutureDone(handle);
         return this;
     }
 
@@ -82,7 +83,7 @@ public class CancelledAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return true;
     }
 
     /* get value */
@@ -131,14 +132,19 @@ public class CancelledAsyncFuture<T> implements AsyncFuture<T> {
         try {
             result = transform.transform(null);
         } catch (Exception e) {
-            return async.failed(e);
+            return async.failed(new TransformException(e));
         }
 
         return async.resolved(result);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
-        return async.cancelled(this, transform);
+        try {
+            return (AsyncFuture<T>) transform.transform(null);
+        } catch (Exception e) {
+            return async.failed(new TransformException(e));
+        }
     }
 }

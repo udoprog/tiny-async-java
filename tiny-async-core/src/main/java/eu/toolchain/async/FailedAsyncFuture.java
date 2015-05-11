@@ -123,16 +123,23 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
             result = transform.transform(cause);
         } catch (Exception e) {
             final TransformException inner = new TransformException(e);
-            e.addSuppressed(cause);
+            inner.addSuppressed(cause);
             return async.failed(inner);
         }
 
         return async.resolved(result);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
-        return async.error(this, transform);
+        try {
+            return (AsyncFuture<T>) transform.transform(cause);
+        } catch (Exception e) {
+            final TransformException inner = new TransformException(e);
+            inner.addSuppressed(cause);
+            return async.failed(e);
+        }
     }
 
     @Override
