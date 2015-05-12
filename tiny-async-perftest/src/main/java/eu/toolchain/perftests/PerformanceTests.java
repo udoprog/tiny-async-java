@@ -1,14 +1,9 @@
-package eu.toolchain.async;
+package eu.toolchain.perftests;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import eu.toolchain.async.perftests.Immediate;
-import eu.toolchain.async.perftests.ManyListeners;
-import eu.toolchain.async.perftests.ManyThreads;
-import eu.toolchain.async.perftests.TransformFew;
-import eu.toolchain.async.perftests.TransformMany;
+import java.util.concurrent.Callable;
 
 /**
  * These tests are only in place to verify to a loose degree that we get at least as good performance as Guava.
@@ -22,25 +17,25 @@ public class PerformanceTests {
     private static final Runtime runtime = Runtime.getRuntime();
 
     public static void main(String argv[]) {
-        run("many listeners", new ManyListeners.Guava(), new ManyListeners.Tiny());
+        run("many listeners", new ManyListeners());
 
-        run("immediate", new Immediate.Guava(), new Immediate.Tiny());
+        run("immediate", new Immediate());
 
-        run("immediate, into many transforms", new TransformMany.Guava(), new TransformMany.Tiny());
+        run("immediate, into many transforms", new TransformMany());
 
-        run("immediate, into few transforms", new TransformFew.Guava(), new TransformFew.Tiny());
+        run("immediate, into few transforms", new TransformFew());
 
-        run("many threads contending", new ManyThreads.Guava(), new ManyThreads.Tiny());
+        run("many threads contending", new ManyThreads());
     }
 
-    private static List<Long> runTest(TestCase test) {
+    private static List<Long> runTest(Callable<Void> runnable) {
         runtime.gc();
 
         final List<Long> samples = new ArrayList<>(ITERATIONS);
 
         for (int i = 0; i < WARMUP; i++) {
             try {
-                test.test();
+                runnable.call();
             } catch (Exception e) {
             }
         }
@@ -51,7 +46,7 @@ public class PerformanceTests {
             final long then = System.nanoTime();
 
             try {
-                test.test();
+                runnable.call();
             } catch (Exception e) {
                 errors.add(e);
             }
@@ -75,10 +70,23 @@ public class PerformanceTests {
         return samples;
     }
 
-    private static void run(String name, TestCase guava, TestCase tiny) {
+    private static void run(String name, final TestCase test) {
         // hint that we want a clean state :).
-        final List<Long> g = runTest(guava);
-        final List<Long> t = runTest(tiny);
+        final List<Long> g = runTest(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                test.guava();
+                return null;
+            }
+        });
+
+        final List<Long> t = runTest(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                test.tiny();
+                return null;
+            }
+        });
 
         System.out.println(name + " (guava - tiny)");
         System.out.println("  avg: " + time(avg(g)) + " - " + time(avg(t)));

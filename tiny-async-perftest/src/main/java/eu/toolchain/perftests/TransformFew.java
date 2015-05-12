@@ -1,4 +1,4 @@
-package eu.toolchain.async.perftests;
+package eu.toolchain.perftests;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,17 +8,16 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.TestCase;
 import eu.toolchain.async.TinyAsync;
 
-public class TransformMany {
-    private static final int IMMEDIATE_SIZE = 10000;
+public class TransformFew implements TestCase {
+    private static final int IMMEDIATE_SIZE = 10;
 
     private static AsyncFramework async = TinyAsync.builder().build();
 
-    public static class Tiny implements TestCase {
-        @Override
-        public void test() throws Exception {
+    @Override
+    public void tiny() throws Exception {
+        for (int l = 0; l < 1000; l++) {
             final List<AsyncFuture<Boolean>> futures = new ArrayList<>();
 
             for (int i = 0; i < IMMEDIATE_SIZE; i++) {
@@ -29,9 +28,9 @@ public class TransformMany {
         }
     }
 
-    public static class Guava implements TestCase {
-        @Override
-        public void test() throws Exception {
+    @Override
+    public void guava() throws Exception {
+        for (int l = 0; l < 1000; l++) {
             final List<ListenableFuture<Boolean>> futures = new ArrayList<>();
 
             for (int i = 0; i < IMMEDIATE_SIZE; i++) {

@@ -217,11 +217,11 @@
               <instrumentation>
                 <ignores>
                   <ignore>eu.toolchain.examples.*</ignore>
-                  <ignore>eu.toolchain.async.perftests.*</ignore>
+                  <ignore>eu.toolchain.perftests.*</ignore>
                 </ignores>
                 <excludes>
                   <exclude>eu/toolchain/examples/**/*.class</exclude>
-                  <exclude>eu/toolchain/async/perftests/**/*.class</exclude>
+                  <exclude>eu/toolchain/perftests/**/*.class</exclude>
                 </excludes>
               </instrumentation>
             </configuration>
