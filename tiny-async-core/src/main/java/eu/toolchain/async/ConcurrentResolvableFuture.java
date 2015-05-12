@@ -365,7 +365,6 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
         final int state = sync.state();
@@ -375,23 +374,21 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         // shortcut
 
-        if (state == CANCELLED)
-            return async.cancelled();
+        if (state == FAILED) {
+            final Throwable cause = (Throwable) sync.result(state);
 
-        if (state == RESOLVED)
-            return async.resolved((T) sync.result(state));
+            final T transformed;
 
-        final Throwable cause = (Throwable) sync.result(state);
+            try {
+                transformed = transform.transform(cause);
+            } catch (Exception e) {
+                return async.failed(new TransformException(e));
+            }
 
-        final T transformed;
-
-        try {
-            transformed = transform.transform(cause);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+            return async.resolved(transformed);
         }
 
-        return async.resolved(transformed);
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -404,19 +401,17 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         // shortcut
 
-        if (state == CANCELLED)
-            return async.cancelled();
+        if (state == FAILED) {
+            final Throwable cause = (Throwable) sync.result(state);
 
-        if (state == RESOLVED)
-            return async.resolved((T) sync.result(state));
-
-        final Throwable cause = (Throwable) sync.result(state);
-
-        try {
-            return (AsyncFuture<T>) transform.transform(cause);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+            try {
+                return (AsyncFuture<T>) transform.transform(cause);
+            } catch (Exception e) {
+                return async.failed(new TransformException(e));
+            }
         }
+
+        return this;
     }
 
     @Override
@@ -428,21 +423,19 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         // shortcut
 
-        if (state == FAILED)
-            return this;
+        if (state == CANCELLED) {
+            final T transformed;
 
-        if (state == RESOLVED)
-            return this;
+            try {
+                transformed = transform.transform(null);
+            } catch (Exception e) {
+                return async.failed(new TransformException(e));
+            }
 
-        final T transformed;
-
-        try {
-            transformed = transform.transform(null);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+            return async.resolved(transformed);
         }
 
-        return async.resolved(transformed);
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -455,17 +448,15 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         // shortcut
 
-        if (state == FAILED)
-            return this;
-
-        if (state == RESOLVED)
-            return this;
-
-        try {
-            return (AsyncFuture<T>) transform.transform(null);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+        if (state == CANCELLED) {
+            try {
+                return (AsyncFuture<T>) transform.transform(null);
+            } catch (Exception e) {
+                return async.failed(new TransformException(e));
+            }
         }
+
+        return this;
     }
 
     /**
