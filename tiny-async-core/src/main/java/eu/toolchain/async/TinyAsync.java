@@ -374,7 +374,7 @@ public class TinyAsync implements AsyncFramework {
 
     @Override
     public <C> Managed<C> managed(ManagedSetup<C> setup) {
-        return new ConcurrentManaged<C>(this, setup);
+        return ConcurrentManaged.newManaged(this, setup);
     }
 
     /**

@@ -44,15 +44,12 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     private final Set<ValidBorrowed> traces;
 
-    public ConcurrentManaged(final AsyncFramework async, final ManagedSetup<T> setup) {
-        this.async = async;
-        this.setup = setup;
+    public static <T> ConcurrentManaged<T> newManaged(final AsyncFramework async, final ManagedSetup<T> setup) {
+        final ResolvableFuture<Void> startFuture = async.future();
+        final ResolvableFuture<Void> zeroLeaseFuture = async.future();
+        final ResolvableFuture<T> stopReferenceFuture = async.future();
 
-        this.startFuture = async.future();
-        this.zeroLeaseFuture = async.future();
-        this.stopReferenceFuture = async.future();
-
-        this.stopFuture = zeroLeaseFuture.transform(new LazyTransform<Void, Void>() {
+        final AsyncFuture<Void> stopFuture = zeroLeaseFuture.transform(new LazyTransform<Void, Void>() {
             @Override
             public AsyncFuture<Void> transform(Void v) throws Exception {
                 return stopReferenceFuture.transform(new LazyTransform<T, Void>() {
@@ -63,6 +60,20 @@ public class ConcurrentManaged<T> implements Managed<T> {
                 });
             }
         });
+
+        return new ConcurrentManaged<T>(async, setup, startFuture, zeroLeaseFuture, stopReferenceFuture, stopFuture);
+    }
+
+    protected ConcurrentManaged(final AsyncFramework async, final ManagedSetup<T> setup,
+            final ResolvableFuture<Void> startFuture, final ResolvableFuture<Void> zeroLeaseFuture,
+            final ResolvableFuture<T> stopReferenceFuture, final AsyncFuture<Void> stopFuture) {
+        this.async = async;
+        this.setup = setup;
+
+        this.startFuture = startFuture;
+        this.zeroLeaseFuture = zeroLeaseFuture;
+        this.stopReferenceFuture = stopReferenceFuture;
+        this.stopFuture = stopFuture;
 
         if (TRACING) {
             traces = Collections.newSetFromMap(new ConcurrentHashMap<ValidBorrowed, Boolean>());
@@ -83,10 +94,10 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
         final Borrowed<T> b = borrow();
 
-        final T reference = b.get();
-
-        if (reference == null)
+        if (!b.isValid())
             return async.cancelled();
+
+        final T reference = b.get();
 
         final AsyncFuture<R> f;
 
