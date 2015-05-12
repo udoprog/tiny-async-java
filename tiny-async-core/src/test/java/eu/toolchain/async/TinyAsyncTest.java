@@ -75,7 +75,7 @@ public class TinyAsyncTest {
         assertEquals(threadedCaller, new TinyAsync(null, caller, threadedCaller).threadedCaller());
     }
 
-    @Before
+    @Test
     public void testNullCaller() {
         except.expect(NullPointerException.class);
         except.expectMessage("caller");
