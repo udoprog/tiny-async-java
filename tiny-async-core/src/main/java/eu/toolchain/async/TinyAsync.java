@@ -223,18 +223,6 @@ public final class TinyAsync implements AsyncFramework {
         return target;
     }
 
-    private static final Collector<? extends Object, ? extends Collection<? extends Object>> collectCollector = new Collector<Object, Collection<Object>>() {
-        @Override
-        public Collection<Object> collect(Collection<Object> results) throws Exception {
-            return results;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private <T> Collector<T, Collection<T>> collection() {
-        return (Collector<T, Collection<T>>) collectCollector;
-    }
-
     @Override
     public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
             final Collector<? super C, ? extends T> collector) {
@@ -309,7 +297,19 @@ public final class TinyAsync implements AsyncFramework {
         return future;
     }
 
-    private <C, T> AsyncFuture<T> delayedCollectParallel(
+    protected static final Collector<? extends Object, ? extends Collection<? extends Object>> collectCollector = new Collector<Object, Collection<Object>>() {
+        @Override
+        public Collection<Object> collect(Collection<Object> results) throws Exception {
+            return results;
+        }
+    };
+
+    @SuppressWarnings("unchecked")
+    protected <T> Collector<T, Collection<T>> collection() {
+        return (Collector<T, Collection<T>>) collectCollector;
+    }
+
+    protected <C, T> AsyncFuture<T> delayedCollectParallel(
             Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
             StreamCollector<? super C, ? extends T> collector) {
         final List<AsyncFuture<? extends C>> futures = new ArrayList<>(callables.size());
@@ -337,7 +337,7 @@ public final class TinyAsync implements AsyncFramework {
      * @param target The future to cancel, and fail on.
      * @param futures The futures to cancel, when {@code target} is cancelled.
      */
-    private <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
+    protected <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
         target.on(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
@@ -350,7 +350,7 @@ public final class TinyAsync implements AsyncFramework {
     /**
      * Shortcut for when the list of futures is empty with {@link StreamCollector}.
      */
-    private <C, T> AsyncFuture<T> collectEmpty(final StreamCollector<? super C, ? extends T> collector) {
+    protected <C, T> AsyncFuture<T> collectEmpty(final StreamCollector<? super C, ? extends T> collector) {
         try {
             return this.<T> resolved(collector.end(0, 0, 0));
         } catch (Exception e) {
