@@ -131,7 +131,7 @@ public class TinyAsyncBuilder {
      */
     private AsyncCaller setupCaller() {
         if (caller == null)
-            return new StderrDefaultAsyncCaller();
+            return new PrintStreamDefaultAsyncCaller(System.err);
 
         return caller;
     }

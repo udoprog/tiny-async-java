@@ -64,7 +64,7 @@ public class TinyAsyncBuilderTest {
     public void testBuilderDefaultDirectCaller() {
         final TinyAsync async = builder().build();
         assertTrue("if not caller configured, using StderrDefaultAsyncCaller",
-                async.caller() instanceof StderrDefaultAsyncCaller);
+                async.caller() instanceof PrintStreamDefaultAsyncCaller);
     }
 
     @Test
