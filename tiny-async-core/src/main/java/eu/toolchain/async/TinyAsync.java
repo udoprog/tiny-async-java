@@ -214,14 +214,25 @@ public final class TinyAsync implements AsyncFramework {
 
         final ResolvableFuture<Collection<T>> target = future();
 
-        final FutureDone<T> done = new CollectHelper<T, Collection<T>>(futures.size(), TinyCollectors.<T> collection(),
-                target);
+        final FutureDone<T> done = new CollectHelper<T, Collection<T>>(futures.size(), this.<T> collection(), target);
 
         for (final AsyncFuture<? extends T> q : futures)
             q.on(done);
 
         bindSignals(target, futures);
         return target;
+    }
+
+    private static final Collector<? extends Object, ? extends Collection<? extends Object>> collectCollector = new Collector<Object, Collection<Object>>() {
+        @Override
+        public Collection<Object> collect(Collection<Object> results) throws Exception {
+            return results;
+        }
+    };
+
+    @SuppressWarnings("unchecked")
+    private <T> Collector<T, Collection<T>> collection() {
+        return (Collector<T, Collection<T>>) collectCollector;
     }
 
     @Override
