@@ -34,7 +34,7 @@ import java.util.concurrent.Semaphore;
  * }
  */
 // @formatter:on
-public final class TinyAsync implements AsyncFramework {
+public class TinyAsync implements AsyncFramework {
     @SuppressWarnings("unchecked")
     private static final Collection<Object> EMPTY_RESULTS = Collections.EMPTY_LIST;
 
@@ -212,23 +212,20 @@ public final class TinyAsync implements AsyncFramework {
         if (futures.isEmpty())
             return resolved((Collection<T>) EMPTY_RESULTS);
 
-        final ResolvableFuture<Collection<T>> target = future();
-
-        final FutureDone<T> done = new CollectHelper<T, Collection<T>>(futures.size(), this.<T> collection(), target);
-
-        for (final AsyncFuture<? extends T> q : futures)
-            q.on(done);
-
-        bindSignals(target, futures);
-        return target;
+        return collect(futures, this.<T> collection());
     }
 
     @Override
     public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
             final Collector<? super C, ? extends T> collector) {
         if (futures.isEmpty())
-            return this.collectEmpty(collector);
+            return doCollectEmpty(collector);
 
+        return doCollect(futures, collector);
+    }
+
+    protected <C, T> AsyncFuture<T> doCollect(final Collection<? extends AsyncFuture<? extends C>> futures,
+            final Collector<? super C, ? extends T> collector) {
         final ResolvableFuture<T> target = future();
 
         final CollectHelper<? super C, ? extends T> done = new CollectHelper<>(futures.size(), collector, target);
@@ -244,7 +241,7 @@ public final class TinyAsync implements AsyncFramework {
      * Shortcut for when the list of futures is empty.
      */
     @SuppressWarnings("unchecked")
-    private <C, T> AsyncFuture<T> collectEmpty(final Collector<C, ? extends T> collector) {
+    protected <C, T> AsyncFuture<T> doCollectEmpty(final Collector<C, ? extends T> collector) {
         try {
             return this.<T> resolved(collector.collect((Collection<C>) EMPTY_RESULTS));
         } catch (Exception e) {
@@ -256,8 +253,13 @@ public final class TinyAsync implements AsyncFramework {
     public <C, T> AsyncFuture<T> collect(final Collection<? extends AsyncFuture<? extends C>> futures,
             final StreamCollector<? super C, ? extends T> collector) {
         if (futures.isEmpty())
-            return collectEmpty(collector);
+            return doCollectEmpty(collector);
 
+        return doCollect(futures, collector);
+    }
+
+    protected <T, C> AsyncFuture<T> doCollect(final Collection<? extends AsyncFuture<? extends C>> futures,
+            final StreamCollector<? super C, ? extends T> collector) {
         final ResolvableFuture<T> target = future();
 
         final CollectStreamHelper<? super C, ? extends T> done = new CollectStreamHelper<>(caller, futures.size(),
@@ -274,27 +276,14 @@ public final class TinyAsync implements AsyncFramework {
     public <C, T> AsyncFuture<T> eventuallyCollect(
             final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
             final StreamCollector<? super C, ? extends T> collector, int parallelism) {
-        if (callables.isEmpty()) {
-            final T value;
-
-            try {
-                value = collector.end(0, 0, 0);
-            } catch (Exception e) {
-                return failed(e);
-            }
-
-            return resolved(value);
-        }
+        if (callables.isEmpty())
+            return doEventuallyCollectEmpty(collector);
 
         // Special case: the specified parallelism is sufficient to run all at once.
         if (parallelism >= callables.size())
-            return delayedCollectParallel(callables, collector);
+            return doEventuallyCollectImmediate(callables, collector);
 
-        final Semaphore mutex = new Semaphore(parallelism);
-        final ResolvableFuture<T> future = future();
-        defaultExecutor().execute(
-                new DelayedCollectCoordinator<>(caller, callables, collector, mutex, future, parallelism));
-        return future;
+        return doEventuallyCollect(callables, collector, parallelism);
     }
 
     protected static final Collector<? extends Object, ? extends Collection<? extends Object>> collectCollector = new Collector<Object, Collection<Object>>() {
@@ -309,7 +298,19 @@ public final class TinyAsync implements AsyncFramework {
         return (Collector<T, Collection<T>>) collectCollector;
     }
 
-    protected <C, T> AsyncFuture<T> delayedCollectParallel(
+    protected <T, C> AsyncFuture<T> doEventuallyCollectEmpty(final StreamCollector<? super C, ? extends T> collector) {
+        final T value;
+
+        try {
+            value = collector.end(0, 0, 0);
+        } catch (Exception e) {
+            return failed(e);
+        }
+
+        return resolved(value);
+    }
+
+    protected <C, T> AsyncFuture<T> doEventuallyCollectImmediate(
             Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
             StreamCollector<? super C, ? extends T> collector) {
         final List<AsyncFuture<? extends C>> futures = new ArrayList<>(callables.size());
@@ -330,27 +331,20 @@ public final class TinyAsync implements AsyncFramework {
         return collect(futures, collector);
     }
 
-    /**
-     * Bind the given collection of futures to the target future, which if cancelled, or failed will do the
-     * corresponding to their collection of futures.
-     *
-     * @param target The future to cancel, and fail on.
-     * @param futures The futures to cancel, when {@code target} is cancelled.
-     */
-    protected <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
-        target.on(new FutureCancelled() {
-            @Override
-            public void cancelled() throws Exception {
-                for (final AsyncFuture<?> f : futures)
-                    f.cancel();
-            }
-        });
+    protected <T, C> AsyncFuture<T> doEventuallyCollect(
+            final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
+            final StreamCollector<? super C, ? extends T> collector, int parallelism) {
+        final ExecutorService executor = defaultExecutor();
+        final ResolvableFuture<T> future = future();
+        final Semaphore mutex = new Semaphore(parallelism);
+        executor.execute(new DelayedCollectCoordinator<>(caller, callables, collector, mutex, future, parallelism));
+        return future;
     }
 
     /**
      * Shortcut for when the list of futures is empty with {@link StreamCollector}.
      */
-    protected <C, T> AsyncFuture<T> collectEmpty(final StreamCollector<? super C, ? extends T> collector) {
+    protected <C, T> AsyncFuture<T> doCollectEmpty(final StreamCollector<? super C, ? extends T> collector) {
         try {
             return this.<T> resolved(collector.end(0, 0, 0));
         } catch (Exception e) {
@@ -361,8 +355,12 @@ public final class TinyAsync implements AsyncFramework {
     @Override
     public <C> AsyncFuture<Void> collectAndDiscard(Collection<? extends AsyncFuture<C>> futures) {
         if (futures.isEmpty())
-            return resolved(null);
+            return resolved();
 
+        return doCollectAndDiscard(futures);
+    }
+
+    protected <C> AsyncFuture<Void> doCollectAndDiscard(Collection<? extends AsyncFuture<C>> futures) {
         final ResolvableFuture<Void> target = future();
 
         final FutureDone<C> done = new CollectAndDiscardHelper<>(futures.size(), target);
@@ -370,6 +368,7 @@ public final class TinyAsync implements AsyncFramework {
         for (final AsyncFuture<C> q : futures)
             q.on(done);
 
+        bindSignals(target, futures);
         return target;
     }
 
@@ -385,5 +384,22 @@ public final class TinyAsync implements AsyncFramework {
      */
     public static TinyAsyncBuilder builder() {
         return new TinyAsyncBuilder();
+    }
+
+    /**
+     * Bind the given collection of futures to the target future, which if cancelled, or failed will do the
+     * corresponding to their collection of futures.
+     *
+     * @param target The future to cancel, and fail on.
+     * @param futures The futures to cancel, when {@code target} is cancelled.
+     */
+    protected <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
+        target.on(new FutureCancelled() {
+            @Override
+            public void cancelled() throws Exception {
+                for (final AsyncFuture<?> f : futures)
+                    f.cancel();
+            }
+        });
     }
 }
