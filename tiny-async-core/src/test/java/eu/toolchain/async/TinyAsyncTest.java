@@ -22,18 +22,44 @@ public class TinyAsyncTest {
 
     private ExecutorService executor;
     private AsyncCaller caller;
+    private AsyncCaller threadedCaller;
+
+    private StreamCollector<Object, Object> streamCollector;
+
+    private TinyAsync underTest;
+
+    @SuppressWarnings("unchecked")
+    @Before
+    public void setup() {
+        executor = mock(ExecutorService.class);
+        caller = mock(AsyncCaller.class);
+        threadedCaller = mock(AsyncCaller.class);
+
+        streamCollector = mock(StreamCollector.class);
+
+        underTest = new TinyAsync(executor, caller, threadedCaller);
+    }
+
+    @Test
+    public void testGetDefaultExecutor() {
+        assertEquals(executor, new TinyAsync(executor, caller, null).defaultExecutor());
+    }
+
+    @Test
+    public void testGetCaller() {
+        assertEquals(caller, new TinyAsync(null, caller, null).caller());
+    }
+
+    @Test
+    public void testGetThreadedCaller() {
+        assertEquals(threadedCaller, new TinyAsync(null, caller, threadedCaller).threadedCaller());
+    }
 
     @Before
     public void testNullCaller() {
         except.expect(NullPointerException.class);
         except.expectMessage("caller");
-        new TinyAsync(executor, null, null);
-    }
-
-    @Before
-    public void setup() {
-        executor = mock(ExecutorService.class);
-        caller = mock(AsyncCaller.class);
+        new TinyAsync(null, null, null);
     }
 
     @Test
@@ -50,41 +76,27 @@ public class TinyAsyncTest {
         new TinyAsync(null, caller, null).threadedCaller();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testEventuallyCollectEmpty() throws Exception {
-        final TinyAsync async = TinyAsync.builder().executor(executor).build();
-
         final Object value = new Object();
 
         final List<Callable<AsyncFuture<Object>>> callables = new ArrayList<>();
-        final StreamCollector<Object, Object> collector = mock(StreamCollector.class);
 
-        doReturn(value).when(collector).end(0, 0, 0);
-        final Object result = async.eventuallyCollect(callables, collector, 10).getNow();
+        doReturn(value).when(streamCollector).end(0, 0, 0);
+        final Object result = underTest.eventuallyCollect(callables, streamCollector, 10).getNow();
 
         assertEquals(value, result);
-        verify(collector).end(0, 0, 0);
+        verify(streamCollector).end(0, 0, 0);
     }
 
-    @SuppressWarnings("unchecked")
     @Test(expected = Throwable.class)
     public void testEventuallyCollectEmptyThrows() throws Exception {
-        final TinyAsync async = TinyAsync.builder().executor(executor).build();
-
         final Throwable e = new Throwable();
 
         final List<Callable<AsyncFuture<Object>>> callables = new ArrayList<>();
-        final StreamCollector<Object, Object> collector = mock(StreamCollector.class);
 
-        doThrow(e).when(collector).end(0, 0, 0);
+        doThrow(e).when(streamCollector).end(0, 0, 0);
 
-        async.eventuallyCollect(callables, collector, 10).getNow();
-    }
-
-    public void testDefaultExecutor() {
-        final ExecutorService executor = mock(ExecutorService.class);
-        final TinyAsync async = TinyAsync.builder().executor(executor).build();
-        assertEquals(executor, async.defaultExecutor());
+        underTest.eventuallyCollect(callables, streamCollector, 10).getNow();
     }
 }
