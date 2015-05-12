@@ -53,7 +53,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
     private final S sync;
 
-    private volatile ArrayList<CB<T>> callbacks = new ArrayList<CB<T>>();
+    protected volatile ArrayList<CB<T>> callbacks = new ArrayList<CB<T>>();
 
     private final AsyncFramework async;
 
@@ -115,7 +115,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (!sync.complete(CANCELLED, null))
+        if (!sync.complete(CANCELLED))
             return false;
 
         final ArrayList<CB<T>> entries = takeAndClear();
@@ -172,7 +172,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
             return this;
         }
 
-        throw new IllegalStateException("invalid result state: " + state);
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -202,8 +202,10 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     public AsyncFuture<T> on(FutureFinished finishable) {
         int state = sync.state();
 
-        if (!isStateReady(state) && add(new FinishedCB(finishable)))
-            return this;
+        if (!isStateReady(state)) {
+            if (add(new FinishedCB(finishable)))
+                return this;
+        }
 
         caller.runFutureFinished(finishable);
         return this;
@@ -473,6 +475,14 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         return entries;
     }
 
+    public static boolean isStateReady(int state) {
+        return state > RESULT_UPDATING;
+    }
+
+    public static boolean isStateCancelled(int state) {
+        return state == CANCELLED;
+    }
+
     /**
      * Attempt to add an event listener to the list of listeners.
      *
@@ -502,7 +512,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @RequiredArgsConstructor
-    private class AsyncFutureCB implements CB<T> {
+    protected class AsyncFutureCB implements CB<T> {
         private final AsyncFuture<?> other;
 
         @Override
@@ -520,7 +530,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @RequiredArgsConstructor
-    private class DoneCB implements CB<T> {
+    protected class DoneCB implements CB<T> {
         private final FutureDone<? super T> callback;
 
         @Override
@@ -540,7 +550,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @RequiredArgsConstructor
-    private class FailedCB implements CB<T> {
+    protected class FailedCB implements CB<T> {
         private final FutureFailed callback;
 
         @Override
@@ -558,7 +568,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @RequiredArgsConstructor
-    private class ResolvedCB implements CB<T> {
+    protected class ResolvedCB implements CB<T> {
         private final FutureResolved<? super T> callback;
 
         @Override
@@ -576,7 +586,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @RequiredArgsConstructor
-    private class FinishedCB implements CB<T> {
+    protected class FinishedCB implements CB<T> {
         private final FutureFinished callback;
 
         @Override
@@ -596,7 +606,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @RequiredArgsConstructor
-    private class CancelledCB implements CB<T> {
+    protected class CancelledCB implements CB<T> {
         private final FutureCancelled callback;
 
         @Override
@@ -611,14 +621,6 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         public void cancelled() {
             caller.runFutureCancelled(callback);
         }
-    }
-
-    public static boolean isStateReady(int state) {
-        return state > RESULT_UPDATING;
-    }
-
-    public static boolean isStateCancelled(int state) {
-        return state == CANCELLED;
     }
 
     protected interface S {
@@ -662,6 +664,13 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         public boolean complete(int state, Object result);
 
         /**
+         * Same as {@code #complete(int, Object)} but with a null result.
+         *
+         * @see #complete(int, Object)
+         */
+        public boolean complete(int state);
+
+        /**
          * Fetch the result of the synchronizer.
          *
          * @param state The state that you expect the synchronizer to currently be in.
@@ -686,6 +695,15 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
             return true;
         }
 
+        @Override
+        public boolean complete(int state) {
+            if (!compareAndSetState(RUNNING, state))
+                return false;
+
+            releaseShared(state);
+            return true;
+        }
+
         /**
          * Complete and provide a state, and a result to the syncer.
          *
@@ -695,15 +713,6 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
          */
         @Override
         public boolean complete(int state, Object result) {
-            // short path: no result to provide.
-            if (result == null) {
-                if (!compareAndSetState(RUNNING, state))
-                    return false;
-
-                releaseShared(state);
-                return true;
-            }
-
             if (!compareAndSetState(RUNNING, RESULT_UPDATING))
                 return false;
 
