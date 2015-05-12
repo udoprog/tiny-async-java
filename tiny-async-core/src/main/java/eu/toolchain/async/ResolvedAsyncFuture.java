@@ -81,11 +81,26 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
+    public boolean isResolved() {
+        return true;
+    }
+
+    @Override
+    public boolean isFailed() {
+        return false;
+    }
+
+    @Override
     public boolean isCancelled() {
         return false;
     }
 
     /* get value */
+
+    @Override
+    public Throwable cause() {
+        throw TinyThrowableUtils.illegalState();
+    }
 
     @Override
     public T get() {

@@ -3,21 +3,46 @@ package eu.toolchain.async;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
+// @formatter:off
 /**
- * Interface for asynchronous futures with the ability to subscribe to interesting events.
+ * An interface that defines a contract with a computation that could be asynchronous.
  *
- * The available events are.
+ * A future has four states.
  *
  * <ul>
- * <li>resolved, for when a future has been resolved with a value.</li>
- * <li>failed, for when a future failed to resolve because of an exception.</li>
+ *   <li>running, which indicates that the future is currently active, and has not reached an end-state.</li>
+ *   <li>resolved, which indicates that the computation was successful, and produced a result.</li>
+ *   <li>failed, which indicates that the computation failed through an exception, which can be fetched for inspection.</li>
+ *   <li>cancelled, which indicates that the computation was cancelled.</li>
  * </ul>
  *
- * @param <T> The type being realized in the future's finish method.
+ * The last three states are characterized as <em>end states</em>, a future can only transition into one of these, and when in an end-state will never go into another state.
+ * If a future is in and end state it is considered <em>done</em>, as is indicated by the {@link #isDone()} method.
+ *
+ * @param <T> The type being provided by the future.
  */
+// @formatter:on
 public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     /**
+     * Check if future is resolved.
+     *
+     * @return {@code true} if the future is in a resolved state, otherwise {@code false}.
+     * @see #isDone()
+     */
+    public boolean isResolved();
+
+    /**
+     * Check if future is failed.
+     *
+     * @return {@code true} if the future is in a failed state, otherwise {@code false}.
+     * @see #isDone()
+     */
+    public boolean isFailed();
+
+    /**
      * Cancel the future.
+     *
+     * This will not interrupt an in progress computation, but it could prevent future ones from being executed.
      *
      * @return {@code true} if the future was cancelled because of this call. {@code false} otherwise.
      */
@@ -33,6 +58,15 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      **/
     @Deprecated
     public boolean fail(Throwable cause);
+
+    /**
+     * Get the cause of a failed future.
+     *
+     * @see #isFailed()
+     * @throws IllegalStateException if the future is not in the failed state.
+     * @return The exception that cause the future to fail.
+     */
+    public Throwable cause();
 
     /**
      * Get the result of the future.
@@ -113,13 +147,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     *
+     * 
      *   Future<Double> second = first.transform(new Transformer<Integer, Double>() {
      *     void transform(Integer result, Future<Double> future) {
      *       future.finish(result.doubleValue());
      *     }
      *   };
-     *
+     * 
      *   # use second
      * }
      * </pre>
@@ -141,13 +175,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     *
+     * 
      *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
      *     Double transform(Integer result) {
      *       return result.doubleValue();
      *     }
      *   };
-     *
+     * 
      *   # use second
      * }
      * </pre>

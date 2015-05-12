@@ -254,11 +254,31 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @Override
+    public boolean isResolved() {
+        return sync.state() == RESOLVED;
+    }
+
+    @Override
+    public boolean isFailed() {
+        return sync.state() == FAILED;
+    }
+
+    @Override
     public boolean isCancelled() {
         return sync.state() == CANCELLED;
     }
 
     /* get result */
+
+    @Override
+    public Throwable cause() {
+        final int state = sync.state();
+
+        if (state != FAILED)
+            throw TinyThrowableUtils.illegalState();
+
+        return (Throwable) sync.result(state);
+    }
 
     @Override
     public T get() throws InterruptedException, ExecutionException {

@@ -1,6 +1,8 @@
 package eu.toolchain.async;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -151,14 +153,18 @@ public class TinyAsyncTest {
         verify(streamCollector).end(0, 0, 0);
     }
 
-    @Test(expected = Throwable.class)
+    @Test
     public void testEventuallyCollectEmptyThrows() throws Exception {
-        final Throwable e = new Throwable();
+        final Exception thrown = new Exception();
 
         final List<Callable<AsyncFuture<Object>>> callables = new ArrayList<>();
 
-        doThrow(e).when(streamCollector).end(0, 0, 0);
+        doThrow(thrown).when(streamCollector).end(0, 0, 0);
 
-        underTest.eventuallyCollect(callables, streamCollector, 10).getNow();
+        final AsyncFuture<Object> result = underTest.eventuallyCollect(callables, streamCollector, 10);
+        assertTrue(result.isDone());
+        assertFalse(result.isResolved());
+        assertTrue(result.isFailed());
+        assertFalse(result.isCancelled());
     }
 }

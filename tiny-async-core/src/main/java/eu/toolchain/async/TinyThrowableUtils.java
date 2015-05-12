@@ -18,6 +18,10 @@ public class TinyThrowableUtils {
         return builder.toString();
     }
 
+    public static RuntimeException illegalState() {
+        return new IllegalStateException("future is not in the expected state for the given operation");
+    }
+
     public static Throwable buildCollectedException(Collection<Throwable> errors) {
         final Exception e = new Exception(errors.size() + " exception(s) caught: "
                 + TinyThrowableUtils.formatMultiMessage(errors));

@@ -52,6 +52,66 @@ public class ConcurrentResolvableFutureTest {
     }
 
     @Test
+    public void testIsResolved() throws Exception {
+        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
+        when(sync.complete(ConcurrentResolvableFuture.RESOLVED, result)).thenReturn(true);
+
+        assertFalse(future.isResolved());
+        assertFalse(future.isFailed());
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        assertTrue(future.resolve(result));
+
+        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
+
+        assertTrue(future.isResolved());
+        assertFalse(future.isFailed());
+        assertFalse(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    public void testIsFailed() throws Exception {
+        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
+        when(sync.complete(ConcurrentResolvableFuture.FAILED, cause)).thenReturn(true);
+
+        assertFalse(future.isResolved());
+        assertFalse(future.isFailed());
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        assertTrue(future.fail(cause));
+
+        when(sync.state()).thenReturn(ConcurrentResolvableFuture.FAILED);
+
+        assertFalse(future.isResolved());
+        assertTrue(future.isFailed());
+        assertFalse(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    public void testIsCancelled() throws Exception {
+        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
+        when(sync.complete(ConcurrentResolvableFuture.CANCELLED)).thenReturn(true);
+
+        assertFalse(future.isResolved());
+        assertFalse(future.isFailed());
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        assertTrue(future.cancel());
+
+        when(sync.state()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
+
+        assertFalse(future.isResolved());
+        assertFalse(future.isFailed());
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
+    @Test
     public void testResolveAlreadyDone() {
         when(sync.complete(ConcurrentResolvableFuture.RESOLVED, result)).thenReturn(false);
         assertFalse(future.resolve(result));

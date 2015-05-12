@@ -2,6 +2,7 @@ package eu.toolchain.async;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -146,8 +147,26 @@ public abstract class AbstractImmediateAsyncFuture {
     }
 
     @Test
+    public void testIsResolved() throws Exception {
+        assertEquals(resolvedTimes == 1, future.isResolved());
+    }
+
+    @Test
+    public void testIsFailed() throws Exception {
+        assertEquals(failedTimes == 1, future.isFailed());
+    }
+
+    @Test
     public void testIsCancelled() throws Exception {
         assertEquals(cancelledTimes == 1, future.isCancelled());
+    }
+
+    @Test
+    public void testCause() throws Exception {
+        if (cancelledTimes == 1 || resolvedTimes == 1)
+            except.expect(IllegalStateException.class);
+
+        assertNotNull(future.cause());
     }
 
     @Test
