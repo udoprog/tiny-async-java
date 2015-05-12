@@ -9,9 +9,4 @@ public class TransformException extends Exception {
     public TransformException(Throwable e) {
         super("error in transform", e);
     }
-
-    public TransformException(Throwable error, Exception suppressed) {
-        this(error);
-        addSuppressed(suppressed);
-    }
 }
