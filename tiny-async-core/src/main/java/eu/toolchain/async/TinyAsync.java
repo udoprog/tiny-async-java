@@ -89,33 +89,7 @@ public final class TinyAsync implements AsyncFramework {
     public <C, T> AsyncFuture<T> transform(final AsyncFuture<C> future,
             final Transform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-
-        future.on(new FutureDone<C>() {
-            @Override
-            public void failed(Throwable cause) throws Exception {
-                target.fail(cause);
-            }
-
-            @Override
-            public void resolved(C result) throws Exception {
-                final T value;
-
-                try {
-                    value = transform.transform(result);
-                } catch (Exception e) {
-                    target.fail(new TransformException(e));
-                    return;
-                }
-
-                target.resolve(value);
-            }
-
-            @Override
-            public void cancelled() throws Exception {
-                target.cancel();
-            }
-        });
-
+        future.on(new ResolvedTransformHelper<C, T>(transform, target));
         return target.bind(future);
     }
 
@@ -123,39 +97,13 @@ public final class TinyAsync implements AsyncFramework {
     public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
         future.on(new ResolvedLazyTransformHelper<C, T>(transform, target));
-        return target;
+        return target.bind(future);
     }
 
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final Transform<Throwable, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-
-        future.on(new FutureDone<T>() {
-            @Override
-            public void failed(Throwable cause) throws Exception {
-                final T value;
-
-                try {
-                    value = transform.transform(cause);
-                } catch (Exception e) {
-                    target.fail(new TransformException(e));
-                    return;
-                }
-
-                target.resolve(value);
-            }
-
-            @Override
-            public void resolved(T result) throws Exception {
-                target.resolve(result);
-            }
-
-            @Override
-            public void cancelled() throws Exception {
-                target.cancel();
-            }
-        });
-
+        future.on(new FailedTransformHelper<T>(transform, target));
         return target.bind(future);
     }
 
@@ -163,39 +111,13 @@ public final class TinyAsync implements AsyncFramework {
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
         future.on(new FailedLazyTransformHelper<T>(transform, target));
-        return target;
+        return target.bind(future);
     }
 
     @Override
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final Transform<Void, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-
-        future.on(new FutureDone<T>() {
-            @Override
-            public void failed(Throwable cause) throws Exception {
-                target.fail(cause);
-            }
-
-            @Override
-            public void resolved(T result) throws Exception {
-                target.resolve(result);
-            }
-
-            @Override
-            public void cancelled() throws Exception {
-                final T value;
-
-                try {
-                    value = transform.transform(null);
-                } catch (Exception e) {
-                    target.fail(new TransformException(e));
-                    return;
-                }
-
-                target.resolve(value);
-            }
-        });
-
+        future.on(new CancelledTransformHelper<T>(transform, target));
         return target.bind(future);
     }
 
@@ -203,7 +125,7 @@ public final class TinyAsync implements AsyncFramework {
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
         future.on(new CancelledLazyTransformHelper<T>(transform, target));
-        return target;
+        return target.bind(future);
     }
 
     @Override

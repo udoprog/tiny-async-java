@@ -1,6 +1,7 @@
 package eu.toolchain.async;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -26,6 +27,14 @@ public class TinyAsyncTest {
 
     private StreamCollector<Object, Object> streamCollector;
 
+    private AsyncFuture<Object> future;
+    private Transform<Object, Object> transform;
+    private LazyTransform<Object, Object> lazyTransform;
+    private Transform<Throwable, Object> errorTransform;
+    private LazyTransform<Throwable, Object> lazyErrorTransform;
+    private Transform<Void, Object> cancelledTransform;
+    private LazyTransform<Void, Object> lazyCancelledTransform;
+
     private TinyAsync underTest;
 
     @SuppressWarnings("unchecked")
@@ -36,6 +45,17 @@ public class TinyAsyncTest {
         threadedCaller = mock(AsyncCaller.class);
 
         streamCollector = mock(StreamCollector.class);
+
+        future = mock(AsyncFuture.class);
+
+        transform = mock(Transform.class);
+        lazyTransform = mock(LazyTransform.class);
+
+        errorTransform = mock(Transform.class);
+        lazyErrorTransform = mock(LazyTransform.class);
+
+        cancelledTransform = mock(Transform.class);
+        lazyCancelledTransform = mock(LazyTransform.class);
 
         underTest = new TinyAsync(executor, caller, threadedCaller);
     }
@@ -74,6 +94,48 @@ public class TinyAsyncTest {
         except.expect(IllegalStateException.class);
         except.expectMessage("no threaded caller");
         new TinyAsync(null, caller, null).threadedCaller();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTransform() {
+        underTest.transform(future, transform);
+        verify(future).on(any(ResolvedTransformHelper.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testLazyTransform() {
+        underTest.transform(future, lazyTransform);
+        verify(future).on(any(ResolvedLazyTransformHelper.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFailure() {
+        underTest.error(future, errorTransform);
+        verify(future).on(any(FailedTransformHelper.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testLazyFailure() {
+        underTest.error(future, lazyErrorTransform);
+        verify(future).on(any(FailedLazyTransformHelper.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCancelled() {
+        underTest.cancelled(future, cancelledTransform);
+        verify(future).on(any(CancelledTransformHelper.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testLazyCancelled() {
+        underTest.cancelled(future, lazyCancelledTransform);
+        verify(future).on(any(CancelledLazyTransformHelper.class));
     }
 
     @Test
