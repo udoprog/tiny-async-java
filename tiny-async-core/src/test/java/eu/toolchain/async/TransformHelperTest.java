@@ -16,6 +16,8 @@ public class TransformHelperTest {
     private static final Object result = new Object();
     private static final Object transformed = new Object();
 
+    private static final Throwable e = new Exception();
+
     private static final Throwable cause = new Exception();
     private static final Throwable transformedCause = new Exception();
 
@@ -95,9 +97,17 @@ public class TransformHelperTest {
         cancelled.resolved(result);
 
         verifyTransform(1, 0, 0);
-
         verify(target, times(1)).resolve(transformed);
         verify(target, times(2)).resolve(result);
+    }
+
+    @Test
+    public void testResolvedThrows() throws Exception {
+        when(transform.transform(result)).thenThrow(e);
+        resolved.resolved(result);
+
+        verifyTransform(1, 0, 0);
+        verify(target, times(1)).fail(any(TransformException.class));
     }
 
     @Test
@@ -107,9 +117,17 @@ public class TransformHelperTest {
         cancelled.failed(cause);
 
         verifyTransform(0, 1, 0);
-
         verify(target, times(1)).resolve(transformed);
         verify(target, times(2)).fail(cause);
+    }
+
+    @Test
+    public void testFailedThrows() throws Exception {
+        when(errorTransform.transform(cause)).thenThrow(e);
+        failed.failed(cause);
+
+        verifyTransform(0, 1, 0);
+        verify(target, times(1)).fail(any(TransformException.class));
     }
 
     @Test
@@ -119,9 +137,17 @@ public class TransformHelperTest {
         cancelled.cancelled();
 
         verifyTransform(0, 0, 1);
-
         verify(target, times(1)).resolve(transformed);
         verify(target, times(2)).cancel();
+    }
+
+    @Test
+    public void testCancelledThrows() throws Exception {
+        when(cancelledTransform.transform(null)).thenThrow(e);
+        cancelled.cancelled();
+
+        verifyTransform(0, 0, 1);
+        verify(target, times(1)).fail(any(TransformException.class));
     }
 
     private void verifyLazyTransform(int resolved, int failed, int cancelled) throws Exception {
@@ -145,6 +171,15 @@ public class TransformHelperTest {
     }
 
     @Test
+    public void testLazyResolvedThrows() throws Exception {
+        when(lazyTransform.transform(result)).thenThrow(e);
+        lazyResolved.resolved(result);
+
+        verifyLazyTransform(1, 0, 0);
+        verify(target, times(1)).fail(any(TransformException.class));
+    }
+
+    @Test
     public void testLazyFailed() throws Exception {
         lazyResolved.failed(cause);
         lazyFailed.failed(cause);
@@ -159,6 +194,15 @@ public class TransformHelperTest {
     }
 
     @Test
+    public void testLazyFailedThrows() throws Exception {
+        when(lazyErrorTransform.transform(cause)).thenThrow(e);
+        lazyFailed.failed(cause);
+
+        verifyLazyTransform(0, 1, 0);
+        verify(target, times(1)).fail(any(TransformException.class));
+    }
+
+    @Test
     public void testLazyCancelled() throws Exception {
         lazyResolved.cancelled();
         lazyFailed.cancelled();
@@ -169,5 +213,14 @@ public class TransformHelperTest {
         verify(target, times(1)).resolve(transformed);
         verify(target, times(1)).fail(transformedCause);
         verify(target, times(3)).cancel();
+    }
+
+    @Test
+    public void testLazyCancelledThrows() throws Exception {
+        when(lazyCancelledTransform.transform(null)).thenThrow(e);
+        lazyCancelled.cancelled();
+
+        verifyLazyTransform(0, 0, 1);
+        verify(target, times(1)).fail(any(TransformException.class));
     }
 }
