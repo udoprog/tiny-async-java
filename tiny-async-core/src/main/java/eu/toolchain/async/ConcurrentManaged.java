@@ -30,7 +30,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
     private final ManagedSetup<T> setup;
 
     // the managed reference.
-    private final AtomicReference<T> reference = new AtomicReference<>();
+    protected final AtomicReference<T> reference = new AtomicReference<>();
 
     // acts to allow only a single thread to setup the reference.
     private final ResolvableFuture<Void> startFuture;
@@ -40,9 +40,14 @@ public class ConcurrentManaged<T> implements Managed<T> {
     // composite future that depends on zero-lease, and stop-reference.
     private final AsyncFuture<Void> stopFuture;
 
-    private final AtomicReference<ManagedState> state = new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
+    protected final Set<ValidBorrowed<T>> traces;
 
-    private final Set<ValidBorrowed> traces;
+    protected final AtomicReference<ManagedState> state = new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
+
+    /**
+     * The number of borrowed references that are out in the wild.
+     */
+    protected final AtomicInteger leases = new AtomicInteger(1);
 
     public static <T> ConcurrentManaged<T> newManaged(final AsyncFramework async, final ManagedSetup<T> setup) {
         final ResolvableFuture<Void> startFuture = async.future();
@@ -76,16 +81,11 @@ public class ConcurrentManaged<T> implements Managed<T> {
         this.stopFuture = stopFuture;
 
         if (TRACING) {
-            traces = Collections.newSetFromMap(new ConcurrentHashMap<ValidBorrowed, Boolean>());
+            traces = Collections.newSetFromMap(new ConcurrentHashMap<ValidBorrowed<T>, Boolean>());
         } else {
             traces = null;
         }
     }
-
-    /**
-     * The number of borrowed references that are out there.
-     */
-    private final AtomicInteger leases = new AtomicInteger(1);
 
     @Override
     public <R> AsyncFuture<R> doto(final ManagedAction<T, R> action) {
@@ -124,7 +124,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
     public Borrowed<T> borrow() {
         // pre-emptively increase the number of leases in order to prevent the underlying object (if valid) to be
         // allocated.
-        leases.incrementAndGet();
+        retain();
 
         final T value = reference.get();
 
@@ -133,7 +133,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
             return (Borrowed<T>) INVALID;
         }
 
-        final ValidBorrowed b = new ValidBorrowed(value, getStackTrace());
+        final ValidBorrowed<T> b = new ValidBorrowed<T>(this, async, value, getStackTrace());
 
         if (TRACING)
             traces.add(b);
@@ -148,7 +148,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
      */
     @Override
     public boolean isReady() {
-        return startFuture != null && startFuture.isDone();
+        return startFuture.isDone();
     }
 
     @Override
@@ -173,7 +173,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
             @Override
             public void resolved(Void result) throws Exception {
-                startFuture.resolve(result);
+                startFuture.resolve(null);
             }
 
             @Override
@@ -195,15 +195,53 @@ public class ConcurrentManaged<T> implements Managed<T> {
         return stopFuture;
     }
 
-    private void release() {
+    protected void retain() {
+        leases.incrementAndGet();
+    }
+
+    protected void release() {
         final int lease = leases.decrementAndGet();
 
         if (lease == 0)
             zeroLeaseFuture.resolve(null);
     }
 
-    private static class InvalidBorrowed<T> implements Borrowed<T> {
-        private static FutureFinished FINISHED = new FutureFinished() {
+    @Override
+    public String toString() {
+        final T reference = this.reference.get();
+
+        if (!TRACING)
+            return String.format("Managed(%s, %s)", state, reference);
+
+        return toStringTracing(reference, new ArrayList<>(this.traces));
+    }
+
+    protected String toStringTracing(final T reference, List<ValidBorrowed<T>> traces) {
+        final StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("Managed(%s, %s:\n", state, reference));
+
+        int i = 0;
+
+        for (final ValidBorrowed<T> b : traces) {
+            builder.append(String.format("#%d\n", i++));
+            builder.append(TinyStackUtils.formatStack(b.stack()) + "\n");
+        }
+
+        builder.append(")");
+        return builder.toString();
+    }
+
+    protected StackTraceElement[] getStackTrace() {
+        if (!CAPTURE_STACK)
+            return EMPTY_STACK;
+
+        final StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        return Arrays.copyOfRange(stack, 0, stack.length - 2);
+    }
+
+    protected static class InvalidBorrowed<T> implements Borrowed<T> {
+        protected static FutureFinished FINISHED = new FutureFinished() {
             @Override
             public void finished() throws Exception {
             }
@@ -237,11 +275,13 @@ public class ConcurrentManaged<T> implements Managed<T> {
      * Wraps returned references that are taken from this SetupOnce instance.
      */
     @RequiredArgsConstructor
-    private class ValidBorrowed implements Borrowed<T> {
+    protected static class ValidBorrowed<T> implements Borrowed<T> {
+        private final ConcurrentManaged<T> managed;
+        private final AsyncFramework async;
         private final T reference;
-        private final StackTraceElement[] stack;
+        protected final StackTraceElement[] stack;
 
-        private final AtomicBoolean released = new AtomicBoolean(false);
+        protected final AtomicBoolean released = new AtomicBoolean(false);
 
         @Override
         public T get() {
@@ -254,9 +294,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
                 return;
 
             if (TRACING)
-                traces.remove(this);
+                managed.traces.remove(this);
 
-            ConcurrentManaged.this.release();
+            managed.release();
         }
 
         @Override
@@ -289,44 +329,13 @@ public class ConcurrentManaged<T> implements Managed<T> {
         public boolean isValid() {
             return true;
         }
-    }
 
-    @Override
-    public String toString() {
-        final List<ValidBorrowed> traces = TRACING ? new ArrayList<>(this.traces) : null;
-        final T reference = this.reference.get();
-
-        if (traces == null || traces.isEmpty())
-            return String.format("Managed(%s, %s)", state, reference);
-
-        return formatTraces(traces, reference);
-    }
-
-    private String formatTraces(final List<ValidBorrowed> traces, final T reference) {
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append(String.format("Managed(%s, %s:\n", state, reference));
-
-        int i = 0;
-
-        for (final ValidBorrowed b : traces) {
-            builder.append(String.format("#%d\n", i++));
-            builder.append(TinyStackUtils.formatStack(b.stack) + "\n");
+        public StackTraceElement[] stack() {
+            return stack;
         }
-
-        builder.append(")");
-        return builder.toString();
     }
 
-    private StackTraceElement[] getStackTrace() {
-        if (!CAPTURE_STACK)
-            return EMPTY_STACK;
-
-        final StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        return Arrays.copyOfRange(stack, 0, stack.length - 2);
-    }
-
-    private static enum ManagedState {
+    protected static enum ManagedState {
         INITIALIZED, STARTED, STOPPED
     }
 }
