@@ -40,7 +40,7 @@ a dependency to your public API.
 <dependency>
   <groupId>eu.toolchain.async</groupId>
   <artifactId>tiny-async</artifactId>
-  <version>1.0.3</version>
+  <version>1.4.1</version>
 </dependency>
 ```
 
