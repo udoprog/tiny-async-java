@@ -86,7 +86,6 @@ futures.
 * ```AsyncFuture<T> AsyncFuture#on(FutureDone<T>)```
 * ```AsyncFuture<T> AsyncFuture#on(FutureFinished)```
 * ```AsyncFuture<T> AsyncFuture#on(FutureCancelled)```
-* ```AsyncFuture<T> AsyncFuture#onAny(FutureDone<Object>)```
 
 If the event handlers throw an exception, this is intepreted as an 'internal'
 error, and will be reported as such in the provided ```AsyncCaller```.
@@ -135,25 +134,56 @@ See examples:
 
 ## Collecting Many Results
 
-When you have a collection of asynchronous operations that needs to be
-'collected', the process is called collecting.
+When you have a collection of asynchronous computations, and you want a single
+future that is resolved by them instead.
 
-* ```AsyncFuture<Collection<T>> TinyAsync#collect(Collection<AsyncFuture<C>>)```
-* ```AsyncFuture<Void> TinyAsync#collectAndIgnore(Collection<AsyncFuture<C>>)```
-* ```AsyncFuture<T> TinyAsync#collect(Collection<AsyncFuture<C>>, Collector<C, T>)```
-* ```AsyncFuture<T> TinyAsync#collect(Collection<AsyncFuture<C>>, StreamCollector<C, T>)```
+* ```AsyncFuture<Collection<T>> AsyncFramework#collect(Collection<AsyncFuture<C>>)```
+* ```AsyncFuture<Void> AsyncFramework#collectAndDiscard(Collection<AsyncFuture<C>>)```
+* ```AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, Collector<C, T>)```
+* ```AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, StreamCollector<C, T>)```
 
-The first type ```Collector``` collects the result from all the futures and
-executes the reduction.
-This has the benefit of not requiring to synchronize.
+The methods taking the ```Collector``` gathers the result of all computations,
+and provides them to the ```Collector#collect(Collection<C>)``` method.
+Since this is guaranteed to only be called once, it is very convenient.
+It has the downside of requiring the result of all the collected futures to be
+in memory at once.
 
-The second type ```StreamCollector``` is called with the results as they
-resolve or fail.
-This has the benefit of using less memory overall, since the framework does not
-have to maintain all the seen reults so far, but requires synchronization from
-the user.
+The methods taking the ```StreamCollector``` also gathers the result of all
+computations. However in contrast with ```Collector``` it provides methods to
+incrementally gather the result of all the computations.
+The intermidate result is discarded and can be effectivelly garbage collected
+by the JVM.
+Similarly to ```Collector```, ```StreamCollector``` has the
+```StreamCollector#end(int, int, int)``` method that will be called when all
+the computations have been finished.
 
 See examples:
 
 * [collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
 * [stream collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
+
+## Managed References
+
+Managed references are values which are reference counted by the framework.
+These are intended to be used for expensive setup, and teardown operations,
+where abruptly tearing the reference down while there are sessions using it can
+cause underirable behaviour.
+
+* ```Managed<T> AsyncFramework#managed(ManagedSetup<T>)```
+* ```AsyncFuture<Void> Managed#start()```
+* ```AsyncFuture<Void> Managed#stop()```
+* ```AsyncFuture<R> Managed#doto(ManagedAction<T>)```
+
+The ```#managed(ManagerSetup<T>)``` method defines a constructor, and
+a destructor for the given reference of type ```<T>```. The user is then
+responsible for *borrowing* this reference through the
+```Borrowed<T> Managed#borrow()``` method. As soon as this reference is no
+longer needed, the user must manually de-allocate it.
+
+The user should start and stop the managed reference. After
+```Managed#stop()``` the reference will be destructed once the last borrowed
+references are released.
+
+The ```Managed#doto(ManagedAction<T>)``` method provides a convenience method
+that will retain the managed reference, until the future returned is finished.
+This is typically a strong indication that the reference is no longer required.
