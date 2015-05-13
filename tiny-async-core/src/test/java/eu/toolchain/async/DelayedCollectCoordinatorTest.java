@@ -66,9 +66,9 @@ public class DelayedCollectCoordinatorTest {
         coordinator.failed(cause);
 
         verify(mutex, times(3)).release();
-        verify(caller).cancelStreamCollector(collector);
-        verify(caller).resolveStreamCollector(collector, result);
-        verify(caller).failStreamCollector(collector, cause);
+        verify(caller).cancel(collector);
+        verify(caller).resolve(collector, result);
+        verify(caller).fail(collector, cause);
     }
 
     @Test
@@ -95,9 +95,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future, never()).fail(any(Throwable.class));
         verify(future, never()).cancel();
 
-        verify(caller, never()).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, never()).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, never()).fail(eq(collector), any(Throwable.class));
     }
 
     @Test
@@ -122,9 +122,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future).fail(e);
         verify(future, never()).cancel();
 
-        verify(caller, never()).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, never()).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, never()).fail(eq(collector), any(Throwable.class));
     }
 
     @Test
@@ -160,9 +160,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future, never()).resolve(any());
         verify(future, never()).cancel();
 
-        verify(caller, times(1)).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, times(1)).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, never()).fail(eq(collector), any(Throwable.class));
     }
 
     @Test
@@ -195,9 +195,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future).resolve(any());
         verify(future, never()).cancel();
 
-        verify(caller, times(2)).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, times(2)).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, never()).fail(eq(collector), any(Throwable.class));
     }
 
     @Test
@@ -224,9 +224,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future).resolve(reference);
         verify(future, never()).cancel();
 
-        verify(caller, never()).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, never()).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, never()).fail(eq(collector), any(Throwable.class));
     }
 
     @Test
@@ -257,9 +257,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future).resolve(reference);
         verify(future, never()).cancel();
 
-        verify(caller, never()).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, times(1)).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, never()).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, times(1)).fail(eq(collector), any(Throwable.class));
     }
 
     /**
@@ -292,9 +292,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future).resolve(reference);
         verify(future, never()).cancel();
 
-        verify(caller, times(1)).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, times(1)).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, times(1)).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, times(1)).fail(eq(collector), any(Throwable.class));
     }
 
     @Test
@@ -322,9 +322,9 @@ public class DelayedCollectCoordinatorTest {
         verify(future, never()).resolve(reference);
         verify(future, never()).cancel();
 
-        verify(caller, never()).cancelStreamCollector(eq(collector));
-        verify(caller, never()).resolveStreamCollector(eq(collector), any(Object.class));
-        verify(caller, never()).failStreamCollector(eq(collector), any(Throwable.class));
+        verify(caller, never()).cancel(eq(collector));
+        verify(caller, never()).resolve(eq(collector), any(Object.class));
+        verify(caller, never()).fail(eq(collector), any(Throwable.class));
     }
 
     private DelayedCollectCoordinator<Object, Object> setupCoordinator(

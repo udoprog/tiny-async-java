@@ -36,7 +36,7 @@ public class CancelledAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureDone<? super T> handle) {
-        caller.cancelFutureDone(handle);
+        caller.cancel(handle);
         return this;
     }
 
@@ -54,13 +54,13 @@ public class CancelledAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureFinished finishable) {
-        caller.runFutureFinished(finishable);
+        caller.finish(finishable);
         return this;
     }
 
     @Override
     public AsyncFuture<T> on(FutureCancelled cancelled) {
-        caller.runFutureCancelled(cancelled);
+        caller.cancel(cancelled);
         return this;
     }
 

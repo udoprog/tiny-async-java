@@ -216,15 +216,23 @@ public class ConcurrentManagedTest {
      * @param initial If the startup method has an initial state that will cause an initialization.
      * @param result
      * @param cancelled
+     * @throws Exception
      */
     @SuppressWarnings("unchecked")
-    private void setupStart(boolean initial, final Object result, final boolean cancelled) {
+    private void setupStart(boolean initial, final Object result, final boolean cancelled, final boolean constructThrows)
+            throws Exception {
         underTest.state.set(initial ? ConcurrentManaged.ManagedState.INITIALIZED
                 : ConcurrentManaged.ManagedState.STARTED);
 
         final AsyncFuture<Object> constructor = mock(AsyncFuture.class);
 
-        doReturn(constructor).when(setup).construct();
+        doReturn(startFuture).when(async).failed(e);
+
+        if (constructThrows) {
+            doThrow(e).when(setup).construct();
+        } else {
+            doReturn(constructor).when(setup).construct();
+        }
 
         doAnswer(new Answer<AsyncFuture<Void>>() {
             @Override
@@ -269,56 +277,64 @@ public class ConcurrentManagedTest {
         }).when(constructor).transform(any(Transform.class));
     }
 
-    private void verifyStart(boolean initial, final Object result, final boolean cancelled) {
-        if (initial && result != null) {
-            assertEquals(reference, underTest.reference.get());
-        } else {
-            assertEquals(null, underTest.reference.get());
-        }
+    @Test
+    public void testStartConstructThrows() throws Exception {
+        setupStart(true, null, false, true);
+        assertEquals(startFuture, underTest.start());
 
-        if (initial) {
-            if (cancelled) {
-                verify(startFuture, never()).fail(e);
-                verify(startFuture, never()).resolve(null);
-                verify(startFuture).cancel();
-            } else {
-                verify(startFuture, times(result == null ? 1 : 0)).fail(e);
-                verify(startFuture, times(result != null ? 1 : 0)).resolve(null);
-                verify(startFuture, never()).cancel();
-            }
-        } else {
-            verify(startFuture, never()).fail(e);
-            verify(startFuture, never()).resolve(null);
-            verify(startFuture, never()).cancel();
-        }
+        assertEquals(null, underTest.reference.get());
+
+        verify(startFuture, never()).fail(e);
+        verify(startFuture, never()).resolve(null);
+        verify(startFuture, never()).cancel();
     }
 
     @Test
-    public void testStartWrongInitial() {
-        setupStart(false, reference, true);
+    public void testStartWrongInitial() throws Exception {
+        setupStart(false, reference, true, false);
         assertEquals(startFuture, underTest.start());
-        verifyStart(false, reference, true);
+
+        assertEquals(null, underTest.reference.get());
+
+        verify(startFuture, never()).fail(e);
+        verify(startFuture, never()).resolve(null);
+        verify(startFuture, never()).cancel();
     }
 
     @Test
-    public void testStartSetupNull() {
-        setupStart(true, null, false);
+    public void testStartSetupNull() throws Exception {
+        setupStart(true, null, false, false);
         assertEquals(startFuture, underTest.start());
-        verifyStart(true, null, false);
+
+        assertEquals(null, underTest.reference.get());
+
+        verify(startFuture).fail(e);
+        verify(startFuture, never()).resolve(null);
+        verify(startFuture, never()).cancel();
     }
 
     @Test
-    public void testStartCancel() {
-        setupStart(true, null, true);
+    public void testStartCancel() throws Exception {
+        setupStart(true, null, true, false);
         assertEquals(startFuture, underTest.start());
-        verifyStart(true, null, true);
+
+        assertEquals(null, underTest.reference.get());
+
+        verify(startFuture, never()).fail(e);
+        verify(startFuture, never()).resolve(null);
+        verify(startFuture).cancel();
     }
 
     @Test
-    public void testStart() {
-        setupStart(true, reference, false);
+    public void testStart() throws Exception {
+        setupStart(true, reference, false, false);
         assertEquals(startFuture, underTest.start());
-        verifyStart(true, reference, false);
+
+        assertEquals(reference, underTest.reference.get());
+
+        verify(startFuture, never()).fail(e);
+        verify(startFuture).resolve(null);
+        verify(startFuture, never()).cancel();
     }
 
     @Test
@@ -365,6 +381,7 @@ public class ConcurrentManagedTest {
         assertEquals("Managed(INITIALIZED, null)", underTest.toString());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testToStringTracing() {
         final ConcurrentManaged.ValidBorrowed<Object> b1 = mock(ConcurrentManaged.ValidBorrowed.class);
@@ -396,6 +413,7 @@ public class ConcurrentManagedTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testValidBorrowedBasics() throws Exception {
         final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
@@ -405,6 +423,7 @@ public class ConcurrentManagedTest {
         assertArrayEquals(stack, valid.stack());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testValidBorrowedRelease() throws Exception {
         final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
@@ -420,6 +439,7 @@ public class ConcurrentManagedTest {
         verify(managed, times(1)).release();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testValidBorrowedClose() throws Exception {
         final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
@@ -430,6 +450,7 @@ public class ConcurrentManagedTest {
         verify(valid).release();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testReleasing() throws Exception {
         final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
@@ -440,6 +461,7 @@ public class ConcurrentManagedTest {
         verify(valid).release();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testFinalizeDoNothing() throws Throwable {
         final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
@@ -451,9 +473,10 @@ public class ConcurrentManagedTest {
         valid.released.set(true);
         valid.finalize();
         verify(async, never()).caller();
-        verify(caller, never()).leakedManagedReference(reference, stack);
+        verify(caller, never()).referenceLeaked(reference, stack);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testFinalizeReportLeak() throws Throwable {
         final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
@@ -464,6 +487,6 @@ public class ConcurrentManagedTest {
         doReturn(caller).when(async).caller();
         valid.finalize();
         verify(async).caller();
-        verify(caller).leakedManagedReference(reference, stack);
+        verify(caller).referenceLeaked(reference, stack);
     }
 }

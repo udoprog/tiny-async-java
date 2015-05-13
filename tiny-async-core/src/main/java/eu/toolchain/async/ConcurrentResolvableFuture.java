@@ -158,17 +158,17 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         }
 
         if (state == RESOLVED) {
-            caller.resolveFutureDone(done, (T) this.sync.result(state));
+            caller.resolve(done, (T) this.sync.result(state));
             return this;
         }
 
         if (state == FAILED) {
-            caller.failFutureDone(done, (Throwable) this.sync.result(state));
+            caller.fail(done, (Throwable) this.sync.result(state));
             return this;
         }
 
         if (state == CANCELLED) {
-            caller.cancelFutureDone(done);
+            caller.cancel(done);
             return this;
         }
 
@@ -193,7 +193,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         }
 
         if (state == CANCELLED)
-            caller.runFutureCancelled(cancelled);
+            caller.cancel(cancelled);
 
         return this;
     }
@@ -207,7 +207,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
                 return this;
         }
 
-        caller.runFutureFinished(finishable);
+        caller.finish(finishable);
         return this;
     }
 
@@ -224,7 +224,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         }
 
         if (state == RESOLVED)
-            caller.runFutureResolved(resolved, (T) this.sync.result(state));
+            caller.resolve(resolved, (T) this.sync.result(state));
 
         return this;
     }
@@ -241,7 +241,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         }
 
         if (state == FAILED)
-            caller.runFutureFailed(failed, (Throwable) this.sync.result(state));
+            caller.fail(failed, (Throwable) this.sync.result(state));
 
         return this;
     }
@@ -555,17 +555,17 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         @Override
         public void resolved(T result) {
-            caller.resolveFutureDone(callback, result);
+            caller.resolve(callback, result);
         }
 
         @Override
         public void failed(Throwable error) {
-            caller.failFutureDone(callback, error);
+            caller.fail(callback, error);
         }
 
         @Override
         public void cancelled() {
-            caller.cancelFutureDone(callback);
+            caller.cancel(callback);
         }
     }
 
@@ -579,7 +579,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         @Override
         public void failed(Throwable cause) {
-            caller.runFutureFailed(callback, cause);
+            caller.fail(callback, cause);
         }
 
         @Override
@@ -593,7 +593,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         @Override
         public void resolved(T result) {
-            caller.runFutureResolved(callback, result);
+            caller.resolve(callback, result);
         }
 
         @Override
@@ -611,17 +611,17 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         @Override
         public void resolved(T result) {
-            caller.runFutureFinished(callback);
+            caller.finish(callback);
         }
 
         @Override
         public void failed(Throwable error) {
-            caller.runFutureFinished(callback);
+            caller.finish(callback);
         }
 
         @Override
         public void cancelled() {
-            caller.runFutureFinished(callback);
+            caller.finish(callback);
         }
     }
 
@@ -639,7 +639,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         @Override
         public void cancelled() {
-            caller.runFutureCancelled(callback);
+            caller.cancel(callback);
         }
     }
 

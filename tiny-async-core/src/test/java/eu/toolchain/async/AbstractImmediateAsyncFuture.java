@@ -98,17 +98,17 @@ public abstract class AbstractImmediateAsyncFuture {
     @Test
     public void testOnFutureDone() throws Exception {
         future.on(done);
-        verify(caller, times(cancelledTimes)).cancelFutureDone(done);
-        verify(caller, times(resolvedTimes)).resolveFutureDone(done, result);
-        verify(caller, times(failedTimes)).failFutureDone(done, cause);
+        verify(caller, times(cancelledTimes)).cancel(done);
+        verify(caller, times(resolvedTimes)).resolve(done, result);
+        verify(caller, times(failedTimes)).fail(done, cause);
     }
 
     @Test
     public void testOnAnyFuturedone() throws Exception {
         future.onAny(done);
-        verify(caller, times(cancelledTimes)).cancelFutureDone(done);
-        verify(caller, times(resolvedTimes)).resolveFutureDone(done, result);
-        verify(caller, times(failedTimes)).failFutureDone(done, cause);
+        verify(caller, times(cancelledTimes)).cancel(done);
+        verify(caller, times(resolvedTimes)).resolve(done, result);
+        verify(caller, times(failedTimes)).fail(done, cause);
     }
 
     @Test
@@ -120,25 +120,25 @@ public abstract class AbstractImmediateAsyncFuture {
     @Test
     public void testOnFutureFinished() throws Exception {
         future.on(finished);
-        verify(caller, times(1)).runFutureFinished(finished);
+        verify(caller, times(1)).finish(finished);
     }
 
     @Test
     public void testOnFutureFailed() throws Exception {
         future.on(failed);
-        verify(caller, times(failedTimes)).runFutureFailed(failed, cause);
+        verify(caller, times(failedTimes)).fail(failed, cause);
     }
 
     @Test
     public void testOnFutureCancelled() throws Exception {
         future.on(cancelled);
-        verify(caller, times(cancelledTimes)).runFutureCancelled(cancelled);
+        verify(caller, times(cancelledTimes)).cancel(cancelled);
     }
 
     @Test
     public void testOnFutureResolved() throws Exception {
         future.on(resolved);
-        verify(caller, times(resolvedTimes)).runFutureResolved(resolved, result);
+        verify(caller, times(resolvedTimes)).resolve(resolved, result);
     }
 
     @Test

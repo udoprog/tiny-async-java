@@ -5,10 +5,20 @@ import java.util.Collection;
 /**
  * Simplified abstraction on top of CallbackGroup meant to reduce the result of multiple queries into one.
  *
- * Will be called when the entire result is available. If this is undesirable, use {@link #StreamReducer}.
+ * <p>
+ * Will be called when the entire result is available which could be a memory hog. If this is undesirable, use
+ * {@link StreamCollector}.
+ * </p>
  *
  * @author udoprog
  */
-public interface Collector<C, R> {
-    R collect(Collection<C> results) throws Exception;
+public interface Collector<S, T> {
+    /**
+     * Collect the given results by transforming them to the target type.
+     *
+     * @param results A collection of collected objects.
+     * @return An implementation of the target type.
+     * @throws Exception If unable to collect the results into a target.
+     */
+    T collect(Collection<S> results) throws Exception;
 }

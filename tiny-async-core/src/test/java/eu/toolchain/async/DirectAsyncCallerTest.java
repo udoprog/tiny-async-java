@@ -100,12 +100,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testResolveFutureDone() throws Exception {
-        caller.resolveFutureDone(done, reference);
+        caller.resolve(done, reference);
         verify(done).resolved(reference);
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.resolveFutureDone(throwingDone, reference);
+        caller.resolve(throwingDone, reference);
         verify(throwingDone).resolved(reference);
         assertEquals(1, internalErrors.get());
         assertEquals("FutureDone#resolved(T)", errorMessage);
@@ -113,12 +113,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testCancelFutureDone() throws Exception {
-        caller.cancelFutureDone(done);
+        caller.cancel(done);
         verify(done).cancelled();
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.cancelFutureDone(throwingDone);
+        caller.cancel(throwingDone);
         verify(throwingDone).cancelled();
         assertEquals(1, internalErrors.get());
         assertEquals("FutureDone#cancelled()", errorMessage);
@@ -126,12 +126,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testFailFutureDone() throws Exception {
-        caller.failFutureDone(done, e);
+        caller.fail(done, e);
         verify(done).failed(e);
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.failFutureDone(throwingDone, e);
+        caller.fail(throwingDone, e);
         verify(throwingDone).failed(e);
         assertEquals(1, internalErrors.get());
         assertEquals("FutureDone#failed(Throwable)", errorMessage);
@@ -139,12 +139,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testRunFutureFinished() throws Exception {
-        caller.runFutureFinished(finished);
+        caller.finish(finished);
         verify(finished).finished();
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.runFutureFinished(throwingFinished);
+        caller.finish(throwingFinished);
         verify(throwingFinished).finished();
         assertEquals(1, internalErrors.get());
         assertEquals("FutureFinished#finished()", errorMessage);
@@ -152,12 +152,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testRunFutureCancelled() throws Exception {
-        caller.runFutureCancelled(cancelled);
+        caller.cancel(cancelled);
         verify(cancelled).cancelled();
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.runFutureCancelled(throwingCancelled);
+        caller.cancel(throwingCancelled);
         verify(throwingCancelled).cancelled();
         assertEquals(1, internalErrors.get());
         assertEquals("FutureCancelled#cancelled()", errorMessage);
@@ -165,12 +165,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testRunFutureFailed() throws Exception {
-        caller.runFutureFailed(failed, e);
+        caller.fail(failed, e);
         verify(failed).failed(e);
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.runFutureFailed(throwingFailed, e);
+        caller.fail(throwingFailed, e);
         verify(throwingFailed).failed(e);
         assertEquals(1, internalErrors.get());
         assertEquals("FutureFailed#failed(Throwable)", errorMessage);
@@ -178,12 +178,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testRunFutureResolved() throws Exception {
-        caller.runFutureResolved(resolved, reference);
+        caller.resolve(resolved, reference);
         verify(resolved).resolved(reference);
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.runFutureResolved(throwingResolved, reference);
+        caller.resolve(throwingResolved, reference);
         verify(throwingResolved).resolved(reference);
         assertEquals(1, internalErrors.get());
         assertEquals("FutureResolved#resolved(T)", errorMessage);
@@ -191,12 +191,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testResolveStreamCollector() throws Exception {
-        caller.resolveStreamCollector(streamCollector, reference);
+        caller.resolve(streamCollector, reference);
         verify(streamCollector).resolved(reference);
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.resolveStreamCollector(throwingStreamCollector, reference);
+        caller.resolve(throwingStreamCollector, reference);
         verify(throwingStreamCollector).resolved(reference);
         assertEquals(1, internalErrors.get());
         assertEquals("StreamCollector#resolved(T)", errorMessage);
@@ -204,12 +204,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testFailStreamCollector() throws Exception {
-        caller.failStreamCollector(streamCollector, e);
+        caller.fail(streamCollector, e);
         verify(streamCollector).failed(e);
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.failStreamCollector(throwingStreamCollector, e);
+        caller.fail(throwingStreamCollector, e);
         verify(throwingStreamCollector).failed(e);
         assertEquals(1, internalErrors.get());
         assertEquals("StreamCollector#failed(Throwable)", errorMessage);
@@ -217,12 +217,12 @@ public class DirectAsyncCallerTest {
 
     @Test
     public void testCancelStreamCollector() throws Exception {
-        caller.cancelStreamCollector(streamCollector);
+        caller.cancel(streamCollector);
         verify(streamCollector).cancelled();
         assertEquals(0, internalErrors.get());
         assertEquals(null, errorMessage);
 
-        caller.cancelStreamCollector(throwingStreamCollector);
+        caller.cancel(throwingStreamCollector);
         verify(throwingStreamCollector).cancelled();
         assertEquals(1, internalErrors.get());
         assertEquals("StreamCollector#cancel()", errorMessage);
@@ -231,7 +231,7 @@ public class DirectAsyncCallerTest {
     @Test
     public void testLeakedManagedReferenceEmptyStack() {
         final StackTraceElement[] empty = new StackTraceElement[0];
-        caller.leakedManagedReference(reference, empty);
+        caller.referenceLeaked(reference, empty);
         assertEquals(1, internalErrors.get());
         assertEquals("reference foo leaked @ unknown", errorMessage);
     }
@@ -239,7 +239,7 @@ public class DirectAsyncCallerTest {
     @Test
     public void testLeakedManagedReferenceUnknownStack() {
         final StackTraceElement[] unknown = null;
-        caller.leakedManagedReference(reference, unknown);
+        caller.referenceLeaked(reference, unknown);
         assertEquals(1, internalErrors.get());
         assertEquals("reference foo leaked @ unknown", errorMessage);
     }
@@ -249,7 +249,7 @@ public class DirectAsyncCallerTest {
         final StackTraceElement[] populated = new StackTraceElement[2];
         populated[0] = new StackTraceElement("SomeClass", "method", "file", 0);
         populated[1] = new StackTraceElement("SomeOtherClass", "method", "file", 0);
-        caller.leakedManagedReference(reference, populated);
+        caller.referenceLeaked(reference, populated);
         assertEquals(1, internalErrors.get());
         assertEquals("reference foo leaked @ SomeClass.method (file:0)\n  SomeOtherClass.method (file:0)", errorMessage);
     }

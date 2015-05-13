@@ -46,9 +46,9 @@ public class ConcurrentResolvableFutureTest {
     }
 
     private void verifyEndState(int resolved, int failed, int cancelled) {
-        verify(caller, times(resolved)).resolveFutureDone(done, result);
-        verify(caller, times(failed)).failFutureDone(done, cause);
-        verify(caller, times(cancelled)).cancelFutureDone(done);
+        verify(caller, times(resolved)).resolve(done, result);
+        verify(caller, times(failed)).fail(done, cause);
+        verify(caller, times(cancelled)).cancel(done);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class ConcurrentResolvableFutureTest {
         future.on(done);
         when(sync.complete(ConcurrentResolvableFuture.RESOLVED, result)).thenReturn(true);
         assertTrue(future.resolve(result));
-        verify(caller).resolveFutureDone(done, result);
+        verify(caller).resolve(done, result);
         verifyEndState(1, 0, 0);
     }
 
@@ -211,9 +211,9 @@ public class ConcurrentResolvableFutureTest {
     private void verifyOnFutureDone(int state, int poll, int resolve, int fail, int cancel) {
         verify(sync, times(state)).state();
         verify(sync, times(poll)).poll();
-        verify(caller, times(resolve)).resolveFutureDone(done, result);
-        verify(caller, times(fail)).failFutureDone(done, cause);
-        verify(caller, times(cancel)).cancelFutureDone(done);
+        verify(caller, times(resolve)).resolve(done, result);
+        verify(caller, times(fail)).fail(done, cause);
+        verify(caller, times(cancel)).cancel(done);
     }
 
     @Test
@@ -273,7 +273,7 @@ public class ConcurrentResolvableFutureTest {
     private void verifyOnFutureCancelled(int state, int poll, int cancel) {
         verify(sync, times(state)).state();
         verify(sync, times(poll)).poll();
-        verify(caller, times(cancel)).runFutureCancelled(cancelled);
+        verify(caller, times(cancel)).cancel(cancelled);
     }
 
     @Test
@@ -315,7 +315,7 @@ public class ConcurrentResolvableFutureTest {
     private void verifyOnFutureFinished(int state, int poll, int finished) {
         verify(sync, times(state)).state();
         verify(sync, times(poll)).poll();
-        verify(caller, times(finished)).runFutureFinished(this.finished);
+        verify(caller, times(finished)).finish(this.finished);
     }
 
     @Test
@@ -349,7 +349,7 @@ public class ConcurrentResolvableFutureTest {
     private void verifyOnFutureResolved(int state, int poll, int resolved) {
         verify(sync, times(state)).state();
         verify(sync, times(poll)).poll();
-        verify(caller, times(resolved)).runFutureResolved(this.resolved, result);
+        verify(caller, times(resolved)).resolve(this.resolved, result);
     }
 
     @Test
@@ -393,7 +393,7 @@ public class ConcurrentResolvableFutureTest {
     private void verifyOnFutureFailed(int state, int poll, int failed) {
         verify(sync, times(state)).state();
         verify(sync, times(poll)).poll();
-        verify(caller, times(failed)).runFutureFailed(this.failed, cause);
+        verify(caller, times(failed)).fail(this.failed, cause);
     }
 
     @Test

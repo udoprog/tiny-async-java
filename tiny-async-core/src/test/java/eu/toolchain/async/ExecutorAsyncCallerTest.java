@@ -65,78 +65,78 @@ public class ExecutorAsyncCallerTest {
 
     @Test
     public void testResolveFutureDone() {
-        underTest.resolveFutureDone(done, result);
+        underTest.resolve(done, result);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).resolveFutureDone(done, result);
+        verify(caller).resolve(done, result);
     }
 
     @Test
     public void testFailFutureDone() {
-        underTest.failFutureDone(done, cause);
+        underTest.fail(done, cause);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).failFutureDone(done, cause);
+        verify(caller).fail(done, cause);
     }
 
     @Test
     public void testCancelFutureDone() {
-        underTest.cancelFutureDone(done);
+        underTest.cancel(done);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).cancelFutureDone(done);
+        verify(caller).cancel(done);
     }
 
     @Test
     public void testRunFutureCancelled() {
-        underTest.runFutureCancelled(cancelled);
+        underTest.cancel(cancelled);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).runFutureCancelled(cancelled);
+        verify(caller).cancel(cancelled);
     }
 
     @Test
     public void testRunFutureFinished() {
-        underTest.runFutureFinished(finished);
+        underTest.finish(finished);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).runFutureFinished(finished);
+        verify(caller).finish(finished);
     }
 
     @Test
     public void testRunFutureResolved() {
-        underTest.runFutureResolved(resolved, result);
+        underTest.resolve(resolved, result);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).runFutureResolved(resolved, result);
+        verify(caller).resolve(resolved, result);
     }
 
     @Test
     public void testRunFutureFailed() {
-        underTest.runFutureFailed(failed, cause);
+        underTest.fail(failed, cause);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).runFutureFailed(failed, cause);
+        verify(caller).fail(failed, cause);
     }
 
     @Test
     public void testResolveStreamCollector() {
-        underTest.resolveStreamCollector(streamCollector, result);
+        underTest.resolve(streamCollector, result);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).resolveStreamCollector(streamCollector, result);
+        verify(caller).resolve(streamCollector, result);
     }
 
     @Test
     public void testFailStreamCollector() {
-        underTest.failStreamCollector(streamCollector, cause);
+        underTest.fail(streamCollector, cause);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).failStreamCollector(streamCollector, cause);
+        verify(caller).fail(streamCollector, cause);
     }
 
     @Test
     public void testCancelStreamCollector() {
-        underTest.cancelStreamCollector(streamCollector);
+        underTest.cancel(streamCollector);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).cancelStreamCollector(streamCollector);
+        verify(caller).cancel(streamCollector);
     }
 
     @Test
     public void testLeakedManagedReference() {
-        underTest.leakedManagedReference(result, stack);
+        underTest.referenceLeaked(result, stack);
         verify(executor).execute(any(Runnable.class));
-        verify(caller).leakedManagedReference(result, stack);
+        verify(caller).referenceLeaked(result, stack);
     }
 }

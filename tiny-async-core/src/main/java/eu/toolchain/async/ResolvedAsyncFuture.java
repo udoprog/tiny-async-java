@@ -41,7 +41,7 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureDone<? super T> handle) {
-        caller.resolveFutureDone(handle, result);
+        caller.resolve(handle, result);
         return this;
     }
 
@@ -53,7 +53,7 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureFinished finishable) {
-        caller.runFutureFinished(finishable);
+        caller.finish(finishable);
         return this;
     }
 
@@ -64,7 +64,7 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
-        caller.runFutureResolved(resolved, result);
+        caller.resolve(resolved, result);
         return this;
     }
 

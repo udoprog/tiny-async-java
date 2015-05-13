@@ -1,31 +1,31 @@
 package eu.toolchain.async;
 
 /**
- * Handle to implement when catching a future's transition into done.
+ * Handle to implement that can catch all the different future states.
  *
- * Implement methods to figure out what happened.
+ * @author udoprog
  */
 public interface FutureDone<T> {
     /**
-     * The done future failed.
+     * Handle to be called when the underlying future is failed.
      *
-     * @param cause The cause of the failure.
-     * @throws Exception If the handle throws an exception.
+     * @param cause The reason that the underlying future is failed.
+     * @throws Exception if the failed future cannot be handled, will cause the target future to be failed.
      */
     void failed(Throwable cause) throws Exception;
 
     /**
-     * The done future was resolved.
+     * Handle to be called when the underlying future is resolved.
      *
-     * @param result The result from the resolved future.
-     * @throws Exception If the handle throws an exception.
+     * @param value The resolved value.
+     * @throws Exception if the resolved future cannot be handled, will cause the target future to be failed.
      */
     void resolved(T result) throws Exception;
 
     /**
      * The future was cancelled.
      *
-     * @throws Exception If the handle throws an exception.
+     * @throws Exception if unable to handle the cancelled future, will cause the target future to be failed.
      */
     void cancelled() throws Exception;
 }

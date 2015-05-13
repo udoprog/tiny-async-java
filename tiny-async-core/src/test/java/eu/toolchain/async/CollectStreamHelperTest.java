@@ -40,12 +40,12 @@ public class CollectStreamHelperTest {
         when(collector.end(1, 1, 0)).thenReturn(transformed);
 
         helper.resolved(result);
-        verify(caller).resolveStreamCollector(collector, result);
+        verify(caller).resolve(collector, result);
         verify(target, never()).resolve(transformed);
 
         helper.failed(e);
         verify(collector).end(1, 1, 0);
-        verify(caller).failStreamCollector(collector, e);
+        verify(caller).fail(collector, e);
         verify(target).resolve(transformed);
     }
 
@@ -57,12 +57,12 @@ public class CollectStreamHelperTest {
         when(collector.end(1, 0, 1)).thenReturn(transformed);
 
         helper.resolved(result);
-        verify(caller).resolveStreamCollector(collector, result);
+        verify(caller).resolve(collector, result);
         verify(target, never()).resolve(transformed);
 
         helper.cancelled();
         verify(collector).end(1, 0, 1);
-        verify(caller).cancelStreamCollector(collector);
+        verify(caller).cancel(collector);
         verify(target).resolve(transformed);
     }
 
@@ -74,12 +74,12 @@ public class CollectStreamHelperTest {
         when(collector.end(2, 0, 0)).thenReturn(transformed);
 
         helper.resolved(result);
-        verify(caller).resolveStreamCollector(collector, result);
+        verify(caller).resolve(collector, result);
         verify(target, never()).resolve(transformed);
 
         helper.resolved(result);
         verify(collector).end(2, 0, 0);
-        verify(caller, times(2)).resolveStreamCollector(collector, result);
+        verify(caller, times(2)).resolve(collector, result);
         verify(target).resolve(transformed);
     }
 
@@ -91,7 +91,7 @@ public class CollectStreamHelperTest {
         when(collector.end(1, 0, 0)).thenThrow(e);
 
         helper.resolved(result);
-        verify(caller).resolveStreamCollector(collector, result);
+        verify(caller).resolve(collector, result);
         verify(target).fail(any(Exception.class));
     }
 }

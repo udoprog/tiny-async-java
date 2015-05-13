@@ -7,10 +7,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
- * An Async framework implementation.
+ * The asynchronous framework.
  *
- * There is only one implementation {@link TinyAsync}, but this simplifies passing it around your application and
- * testing.
+ * This type is intended to be passed around in your application, preferably through dependency injection.
+ *
+ * It makes the contract between the framework and your application decoupled, which has several benefits for your
+ * application's code (see README for details).
+ *
+ * All methods exposed are fully thread-safe.
  *
  * @author udoprog
  */

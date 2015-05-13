@@ -13,7 +13,7 @@ import eu.toolchain.async.StreamCollector;
  */
 public abstract class DirectAsyncCaller implements AsyncCaller {
     @Override
-    public <T> void resolveFutureDone(final FutureDone<T> handle, final T result) {
+    public <T> void resolve(final FutureDone<T> handle, final T result) {
         try {
             handle.resolved(result);
         } catch (final Exception e) {
@@ -22,7 +22,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T> void failFutureDone(FutureDone<T> handle, Throwable error) {
+    public <T> void fail(FutureDone<T> handle, Throwable error) {
         try {
             handle.failed(error);
         } catch (final Exception e) {
@@ -31,7 +31,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T> void cancelFutureDone(FutureDone<T> handle) {
+    public <T> void cancel(FutureDone<T> handle) {
         try {
             handle.cancelled();
         } catch (final Exception e) {
@@ -40,7 +40,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public void runFutureFinished(FutureFinished finishable) {
+    public void finish(FutureFinished finishable) {
         try {
             finishable.finished();
         } catch (final Exception e) {
@@ -49,7 +49,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public void runFutureCancelled(FutureCancelled cancelled) {
+    public void cancel(FutureCancelled cancelled) {
         try {
             cancelled.cancelled();
         } catch (final Exception e) {
@@ -58,7 +58,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T> void runFutureResolved(FutureResolved<T> resolved, T value) {
+    public <T> void resolve(FutureResolved<T> resolved, T value) {
         try {
             resolved.resolved(value);
         } catch (final Exception e) {
@@ -67,7 +67,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public void runFutureFailed(FutureFailed failed, Throwable cause) {
+    public void fail(FutureFailed failed, Throwable cause) {
         try {
             failed.failed(cause);
         } catch (final Exception e) {
@@ -76,7 +76,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T, R> void resolveStreamCollector(StreamCollector<T, R> collector, T result) {
+    public <T, R> void resolve(StreamCollector<T, R> collector, T result) {
         try {
             collector.resolved(result);
         } catch (final Exception e) {
@@ -85,7 +85,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T, R> void failStreamCollector(StreamCollector<T, R> collector, Throwable error) {
+    public <T, R> void fail(StreamCollector<T, R> collector, Throwable error) {
         try {
             collector.failed(error);
         } catch (final Exception e) {
@@ -94,7 +94,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T, R> void cancelStreamCollector(StreamCollector<T, R> collector) {
+    public <T, R> void cancel(StreamCollector<T, R> collector) {
         try {
             collector.cancelled();
         } catch (final Exception e) {
@@ -103,7 +103,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T> void leakedManagedReference(T reference, StackTraceElement[] stack) {
+    public <T> void referenceLeaked(T reference, StackTraceElement[] stack) {
         internalError(String.format("reference %s leaked @ %s", reference, formatStack(stack)), null);
     }
 

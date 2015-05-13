@@ -37,7 +37,7 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
 
     @Override
     public void failed(Throwable cause) {
-        caller.failStreamCollector(collector, cause);
+        caller.fail(collector, cause);
         failed.incrementAndGet();
         cancel.set(true);
         mutex.release();
@@ -45,13 +45,13 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
 
     @Override
     public void resolved(C result) {
-        caller.resolveStreamCollector(collector, result);
+        caller.resolve(collector, result);
         mutex.release();
     }
 
     @Override
     public void cancelled() {
-        caller.cancelStreamCollector(collector);
+        caller.cancel(collector);
         cancelled.incrementAndGet();
         cancel.set(true);
         mutex.release();

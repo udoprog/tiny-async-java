@@ -1,30 +1,49 @@
 package eu.toolchain.async;
 
-public interface StreamCollector<C, R> {
+/**
+ * Collect the result of multiple asynchronous computations as they become available.
+ *
+ * @author udoprog
+ *
+ * @param <S> The source type of the collector.
+ * @param <T> The target type of the collector.
+ */
+public interface StreamCollector<S, T> {
     /**
-     * Implement to trigger on one resolved future.
+     * Is called when a future is resolved.
      *
-     * @param result The result of the future.
+     * @param result The result of the resolved future.
+     * @throws Exception if unable to process the result of the future, this will cause the target future to be failed.
+     *             {@link #end(int, int, int)} will not be called, and all other futures associated with the collector
+     *             will be cancelled.
      */
-    void resolved(C result) throws Exception;
+    void resolved(S result) throws Exception;
 
     /**
-     * Implement to trigger on one failed future.
+     * Is called when a future is failed.
      *
      * @param cause The cause of the failed future.
+     * @throws Exception if unable to process the failed future, this will cause the target future to be failed.
+     *             {@link #end(int, int, int)} will not be called will not be called, and all other futures associated
+     *             with the collector will be cancelled.
      */
     void failed(Throwable cause) throws Exception;
 
     /**
-     * Implement to trigger on one cancelled future.
+     * Is called when a future is cancelled.
+     *
+     * @throws Exception if unable to process the cancelled future, this will cause the target future to be failed.
+     *             {@link #end(int, int, int)} will not be called, and all other futures associated with the collector
+     *             will be cancelled.
      */
     void cancelled() throws Exception;
 
     /**
      * Implement to fire when all callbacks have been resolved.
      *
-     * @param resolved How many futures were resolved.
-     * @param failed How many futures were failed.
+     * @param resolved How many of the collected futures were resolved.
+     * @param failed How many of the collected futures were failed.
+     * @param cancelled How many of the collected futures were cancelled.
      */
-    R end(int resolved, int failed, int cancelled) throws Exception;
+    T end(int resolved, int failed, int cancelled) throws Exception;
 }

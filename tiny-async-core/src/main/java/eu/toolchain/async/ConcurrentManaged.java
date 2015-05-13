@@ -156,7 +156,15 @@ public class ConcurrentManaged<T> implements Managed<T> {
         if (!state.compareAndSet(ManagedState.INITIALIZED, ManagedState.STARTED))
             return startFuture;
 
-        return setup.construct().transform(new Transform<T, Void>() {
+        final AsyncFuture<T> constructor;
+
+        try {
+            constructor = setup.construct();
+        } catch (Exception e) {
+            return async.failed(e);
+        }
+
+        return constructor.transform(new Transform<T, Void>() {
             @Override
             public Void transform(T result) throws Exception {
                 if (result == null)
@@ -322,7 +330,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
             if (released.get())
                 return;
 
-            async.caller().leakedManagedReference(reference, stack);
+            async.caller().referenceLeaked(reference, stack);
         }
 
         @Override

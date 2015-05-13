@@ -17,111 +17,111 @@ public final class ExecutorAsyncCaller implements AsyncCaller {
     private final AsyncCaller caller;
 
     @Override
-    public <T> void resolveFutureDone(final FutureDone<T> handle, final T result) {
+    public <T> void resolve(final FutureDone<T> handle, final T result) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.resolveFutureDone(handle, result);
+                caller.resolve(handle, result);
             }
         });
     }
 
     @Override
-    public <T> void failFutureDone(final FutureDone<T> handle, final Throwable error) {
+    public <T> void fail(final FutureDone<T> handle, final Throwable error) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.failFutureDone(handle, error);
+                caller.fail(handle, error);
             }
         });
     }
 
     @Override
-    public <T> void cancelFutureDone(final FutureDone<T> handle) {
+    public <T> void cancel(final FutureDone<T> handle) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.cancelFutureDone(handle);
+                caller.cancel(handle);
             }
         });
     }
 
     @Override
-    public void runFutureCancelled(final FutureCancelled cancelled) {
+    public void cancel(final FutureCancelled cancelled) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.runFutureCancelled(cancelled);
+                caller.cancel(cancelled);
             }
         });
     }
 
     @Override
-    public void runFutureFinished(final FutureFinished finishable) {
+    public void finish(final FutureFinished finishable) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.runFutureFinished(finishable);
+                caller.finish(finishable);
             }
         });
     }
 
     @Override
-    public <T> void runFutureResolved(final FutureResolved<T> resolved, final T value) {
+    public <T> void resolve(final FutureResolved<T> resolved, final T value) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.runFutureResolved(resolved, value);
+                caller.resolve(resolved, value);
             }
         });
     }
 
     @Override
-    public <T, R> void resolveStreamCollector(final StreamCollector<T, R> collector, final T result) {
+    public <T, R> void resolve(final StreamCollector<T, R> collector, final T result) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.resolveStreamCollector(collector, result);
+                caller.resolve(collector, result);
             }
         });
     }
 
     @Override
-    public <T, R> void failStreamCollector(final StreamCollector<T, R> collector, final Throwable error) {
+    public <T, R> void fail(final StreamCollector<T, R> collector, final Throwable error) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.failStreamCollector(collector, error);
+                caller.fail(collector, error);
             }
         });
     }
 
     @Override
-    public <T, R> void cancelStreamCollector(final StreamCollector<T, R> collector) {
+    public <T, R> void cancel(final StreamCollector<T, R> collector) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.cancelStreamCollector(collector);
+                caller.cancel(collector);
             }
         });
     }
 
     @Override
-    public void runFutureFailed(final FutureFailed failed, final Throwable cause) {
+    public void fail(final FutureFailed failed, final Throwable cause) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.runFutureFailed(failed, cause);
+                caller.fail(failed, cause);
             }
         });
     }
 
     @Override
-    public <T> void leakedManagedReference(final T reference, final StackTraceElement[] stack) {
+    public <T> void referenceLeaked(final T reference, final StackTraceElement[] stack) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                caller.leakedManagedReference(reference, stack);
+                caller.referenceLeaked(reference, stack);
             }
         });
     }

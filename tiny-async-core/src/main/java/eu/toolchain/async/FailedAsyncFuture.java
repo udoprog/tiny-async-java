@@ -42,7 +42,7 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureDone<? super T> handle) {
-        caller.failFutureDone(handle, cause);
+        caller.fail(handle, cause);
         return this;
     }
 
@@ -54,7 +54,7 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureFinished finishable) {
-        caller.runFutureFinished(finishable);
+        caller.finish(finishable);
         return this;
     }
 
@@ -70,7 +70,7 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> on(FutureFailed failed) {
-        caller.runFutureFailed(failed, cause);
+        caller.fail(failed, cause);
         return this;
     }
 

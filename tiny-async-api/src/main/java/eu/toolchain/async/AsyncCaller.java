@@ -1,15 +1,34 @@
 package eu.toolchain.async;
 
 /**
- * The interface that governs in which thread context a specific callback should be invoked.
+ * User-defined functions to handle unexpected circumstances.
  *
- * The implementation of these methods will be invoked from the calling thread that interacts with the future. It also
- * provides the framework with an ability to allow the user to handle unexpected circumstances by catching and handling
- * the case when a callback invocation throw an exception.
+ * The implementation of these methods will be invoked from the calling thread that interacts with the future.
  *
- * See the core frameworks {@code DirectAsyncCaller} for a helper implementation to accomplish this.
+ * None of the below methods throw checked exceptions, and they are intended to never throw anything, with the exception
+ * of {@code Error}. This means that the implementor is required to make sure this doesn't happen, the best way to
+ * accomplish this is to wrap each callback in a try-catch statement like below.
  *
- * @see ConcurrentFuture
+ * <pre>
+ * {@code
+ * new AsyncCaller() {
+ *   public <T> void resolve(FutureDone<T> handle, T result) {
+ *     try {
+ *       handle.resolved(result);
+ *     } catch(Exception e) {
+ *       // log unexpected error
+ *     }
+ *   }
+ *
+ *   // .. other methods
+ * }
+ * }
+ * </pre>
+ *
+ * The core of the framework provides some base classes for easily accomplishing this, most notable is
+ * {@code DirectAsyncCaller}.
+ *
+ * @author udoprog
  */
 public interface AsyncCaller {
     /**
@@ -18,28 +37,30 @@ public interface AsyncCaller {
      * @param reference The reference that was leaked.
      * @param stack The stacktrace for where it was leaked, can be {@code null} if information is unavailable.
      */
-    public <T> void leakedManagedReference(T reference, StackTraceElement[] stack);
+    public <T> void referenceLeaked(T reference, StackTraceElement[] stack);
 
     /**
-     * @return {@code true} if this caller implementation defers task to a thread, {@code false} otherwise.
+     * Returns {@code true} if this caller defers invocations to a separate thread.
+     *
+     * @return {@code true} if this caller is threaded.
      */
     public boolean isThreaded();
 
     /**
      * Run resolved handle on {@code FutureDone}.
      *
-     * @param handle The handle to run on.
+     * @param handle The handle to run.
      * @see FutureDone#resolved(T)
      */
-    public <T> void resolveFutureDone(FutureDone<T> handle, T result);
+    public <T> void resolve(FutureDone<T> handle, T result);
 
     /**
      * Run failed handle on {@code FutureDone}.
      *
-     * @param handle The handle to run on.
+     * @param handle The handle to run.
      * @see FutureDone#failed(Throwable)
      */
-    public <T> void failFutureDone(FutureDone<T> handle, Throwable error);
+    public <T> void fail(FutureDone<T> handle, Throwable error);
 
     /**
      * Run cancelled handle on {@code FutureDone}.
@@ -47,15 +68,15 @@ public interface AsyncCaller {
      * @param handle The handle to run on.
      * @see FutureDone#cancelled(Throwable)
      */
-    public <T> void cancelFutureDone(FutureDone<T> handle);
+    public <T> void cancel(FutureDone<T> handle);
 
     /**
      * Run finished handle on {@code FutureFinished}.
      *
-     * @param finishable The handle to run on.
+     * @param finishable The handle to run.
      * @see FutureFinished#finished()
      */
-    public void runFutureFinished(FutureFinished finishable);
+    public void finish(FutureFinished finishable);
 
     /**
      * Run cancelled handle on {@code FutureCancelled}.
@@ -63,16 +84,16 @@ public interface AsyncCaller {
      * @param finishable The handle to run on.
      * @see FutureFinished#finished()
      */
-    public void runFutureCancelled(FutureCancelled cancelled);
+    public void cancel(FutureCancelled cancelled);
 
     /**
      * Run resolved handle on {@code FutureResolved<T>}.
      *
-     * @param resolved The handle to run on.
+     * @param resolved The handle to run.
      * @param <T> the type of the resolved value.
      * @see FutureResolved#resolved(T)
      */
-    public <T> void runFutureResolved(FutureResolved<T> resolved, T result);
+    public <T> void resolve(FutureResolved<T> resolved, T result);
 
     /**
      * Run failed handle on {@code FutureFailed}.
@@ -81,16 +102,16 @@ public interface AsyncCaller {
      * @param cause The error thrown.
      * @see FutureResolved#fail(Throwable)
      */
-    public void runFutureFailed(FutureFailed failed, Throwable cause);
+    public void fail(FutureFailed failed, Throwable cause);
 
     /**
      * Run resolved handle on {@code StreamCollector}.
      *
-     * @param collector Collector to run handle on.
+     * @param collector Collector to run handle.
      * @param result Result to provide to collector.
      * @see StreamCollector#resolved(T)
      */
-    public <T, R> void resolveStreamCollector(StreamCollector<T, R> collector, T result);
+    public <T, R> void resolve(StreamCollector<T, R> collector, T result);
 
     /**
      * Run failed handle on {@code StreamCollector}.
@@ -99,7 +120,7 @@ public interface AsyncCaller {
      * @param cause Error to provide to collector.
      * @see StreamCollector#failed(Throwable)
      */
-    public <T, R> void failStreamCollector(StreamCollector<T, R> collector, Throwable cause);
+    public <T, R> void fail(StreamCollector<T, R> collector, Throwable cause);
 
     /**
      * Run cancelled handle on {@code StreamCollector}.
@@ -107,5 +128,5 @@ public interface AsyncCaller {
      * @param collector Collector to run handle on.
      * @see StreamCollector#cancelled()
      */
-    public <T, R> void cancelStreamCollector(StreamCollector<T, R> collector);
+    public <T, R> void cancel(StreamCollector<T, R> collector);
 }

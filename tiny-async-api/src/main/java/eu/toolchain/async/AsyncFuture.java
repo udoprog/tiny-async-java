@@ -3,25 +3,40 @@ package eu.toolchain.async;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
-// @formatter:off
 /**
  * An interface that defines a contract with a computation that could be asynchronous.
  *
+ * <h4>Thread Safety</h4>
+ *
+ * <p>
+ * All public methods exposed in {@code AsyncFuture} are fully <em>thread-safe</em>, guaranteeing that interactions with
+ * the future atomic.
+ * </p>
+ *
+ * <h4>States</h4>
+ *
+ * <p>
  * A future has four states.
+ * </p>
  *
  * <ul>
- *   <li>running, which indicates that the future is currently active, and has not reached an end-state.</li>
- *   <li>resolved, which indicates that the computation was successful, and produced a result.</li>
- *   <li>failed, which indicates that the computation failed through an exception, which can be fetched for inspection.</li>
- *   <li>cancelled, which indicates that the computation was cancelled.</li>
+ * <li><em>running</em>, which indicates that the future is currently active, and has not reached an end-state.</li>
+ * <li><em>resolved</em>, which indicates that the computation was successful, and produced a result.</li>
+ * <li><em>failed</em>, which indicates that the computation failed through an exception, which can be fetched for
+ * inspection.</li>
+ * <li><em>cancelled</em>, which indicates that the computation was cancelled.</li>
  * </ul>
  *
- * The last three states are characterized as <em>end states</em>, a future can only transition into one of these, and when in an end-state will never go into another state.
- * If a future is in and end state it is considered <em>done</em>, as is indicated by the {@link #isDone()} method.
+ * <p>
+ * The last three states are characterized as <em>end states</em>, a future can only transition into one of these, and
+ * when in an end-state will never go into another state. If a future is in and end state it is considered <em>done</em>
+ * , as is indicated by the {@link #isDone()} method.
+ * </p>
  *
  * @param <T> The type being provided by the future.
+ *
+ * @author udoprog
  */
-// @formatter:on
 public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     /**
      * Check if future is resolved.
@@ -147,13 +162,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     * 
+     *
      *   Future<Double> second = first.transform(new Transformer<Integer, Double>() {
      *     void transform(Integer result, Future<Double> future) {
      *       future.finish(result.doubleValue());
      *     }
      *   };
-     * 
+     *
      *   # use second
      * }
      * </pre>
@@ -175,13 +190,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     * 
+     *
      *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
      *     Double transform(Integer result) {
      *       return result.doubleValue();
      *     }
      *   };
-     * 
+     *
      *   # use second
      * }
      * </pre>

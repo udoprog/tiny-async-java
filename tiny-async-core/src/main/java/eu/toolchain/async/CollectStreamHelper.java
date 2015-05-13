@@ -34,21 +34,21 @@ public class CollectStreamHelper<S, T> implements FutureDone<S> {
     @Override
     public void failed(Throwable e) throws Exception {
         failed.incrementAndGet();
-        caller.failStreamCollector(collector, e);
+        caller.fail(collector, e);
         check();
     }
 
     @Override
     public void resolved(S result) throws Exception {
         successful.incrementAndGet();
-        caller.resolveStreamCollector(collector, result);
+        caller.resolve(collector, result);
         check();
     }
 
     @Override
     public void cancelled() throws Exception {
         cancelled.incrementAndGet();
-        caller.cancelStreamCollector(collector);
+        caller.cancel(collector);
         check();
     }
 
