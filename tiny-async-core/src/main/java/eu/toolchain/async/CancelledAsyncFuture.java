@@ -100,7 +100,7 @@ public class CancelledAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public Throwable cause() {
-        throw TinyThrowableUtils.illegalState();
+        throw new IllegalStateException("future is not in a failed state");
     }
 
     @Override

@@ -1,30 +1,26 @@
 package eu.toolchain.async;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 public class TinyThrowableUtils {
     public static String formatMultiMessage(Collection<Throwable> errors) {
         final StringBuilder builder = new StringBuilder();
 
-        int i = 0;
+        final Iterator<Throwable> iter = errors.iterator();
 
-        for (final Throwable e : errors) {
-            builder.append(e.getMessage());
+        while (iter.hasNext()) {
+            builder.append(iter.next().getMessage());
 
-            if (++i < errors.size())
+            if (iter.hasNext())
                 builder.append(", ");
         }
 
         return builder.toString();
     }
 
-    public static RuntimeException illegalState() {
-        return new IllegalStateException("future is not in the expected state for the given operation");
-    }
-
     public static Throwable buildCollectedException(Collection<Throwable> errors) {
-        final Exception e = new Exception(errors.size() + " exception(s) caught: "
-                + TinyThrowableUtils.formatMultiMessage(errors));
+        final Exception e = new Exception(errors.size() + " exception(s) caught: " + formatMultiMessage(errors));
 
         for (final Throwable s : errors)
             e.addSuppressed(s);

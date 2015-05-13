@@ -275,7 +275,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         final int state = sync.state();
 
         if (state != FAILED)
-            throw TinyThrowableUtils.illegalState();
+            throw new IllegalStateException("future is not in a failed state");
 
         return (Throwable) sync.result(state);
     }
