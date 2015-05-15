@@ -46,10 +46,9 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> onAny(FutureDone<?> handle) {
-        return on((FutureDone<T>) handle);
+    public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
+        return on(handle);
     }
 
     @Override
@@ -121,12 +120,12 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
     /* transform */
 
     @Override
-    public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
+    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform) {
         return async.failed(new TransformException(cause));
     }
 
     @Override
-    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
+    public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform) {
         return async.failed(new TransformException(cause));
     }
 
@@ -145,11 +144,10 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
         return async.resolved(result);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
+    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
         try {
-            return (AsyncFuture<T>) transform.transform(cause);
+            return transform.transform(cause);
         } catch (Exception e) {
             final TransformException inner = new TransformException(e);
             inner.addSuppressed(cause);
@@ -163,7 +161,7 @@ public class FailedAsyncFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
+    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
         return this;
     }
 }

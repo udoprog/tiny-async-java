@@ -45,10 +45,9 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> onAny(FutureDone<?> handle) {
-        return on((FutureDone<T>) handle);
+    public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
+        return on(handle);
     }
 
     @Override
@@ -119,19 +118,9 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
 
     /* transform */
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform) {
-        try {
-            return (AsyncFuture<C>) transform.transform(result);
-        } catch (Exception e) {
-            return async.failed(e);
-        }
-    }
-
-    @Override
-    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
-        C value;
+    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform) {
+        R value;
 
         try {
             value = transform.transform(result);
@@ -143,12 +132,21 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
+    public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform) {
+        try {
+            return transform.transform(result);
+        } catch (Exception e) {
+            return async.failed(e);
+        }
+    }
+
+    @Override
     public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
+    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
         return this;
     }
 
@@ -158,7 +156,7 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
+    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
         return this;
     }
 }

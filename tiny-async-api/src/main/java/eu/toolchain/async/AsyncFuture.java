@@ -146,8 +146,38 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param done Listener to fire.
      * @return This future.
+     * @deprecated Use {@link #on(FutureDone)} instead after it got looser signature.
      */
-    public AsyncFuture<T> onAny(FutureDone<?> done);
+    @Deprecated
+    public AsyncFuture<T> onAny(FutureDone<? super T> done);
+
+    /**
+     * Transforms the value of this future into another type using a transformer function.
+     *
+     * <pre>
+     * Future<T> (this) - *using transformer* -> Future<C>
+     * </pre>
+     *
+     * Use this if the transformation performed does not require any more async operations.
+     *
+     * <pre>
+     * {@code
+     *   Future<Integer> first = asyncOperation();
+     *
+     *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
+     *     Double transform(Integer result) {
+     *       return result.doubleValue();
+     *     }
+     *   };
+     *
+     *   # use second
+     * }
+     * </pre>
+     *
+     * @param transform
+     * @return
+     */
+    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform);
 
     /**
      * Transforms the value of one future into another using a deferred transformer function.
@@ -176,35 +206,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param transform The function to use when transforming the value.
      * @return A future of type <C> which resolves with the transformed value.
      */
-    public <C> AsyncFuture<C> transform(LazyTransform<? super T, ? extends C> transform);
-
-    /**
-     * Transforms the value of this future into another type using a transformer function.
-     *
-     * <pre>
-     * Future<T> (this) - *using transformer* -> Future<C>
-     * </pre>
-     *
-     * Use this if the transformation performed does not require any more async operations.
-     *
-     * <pre>
-     * {@code
-     *   Future<Integer> first = asyncOperation();
-     *
-     *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
-     *     Double transform(Integer result) {
-     *       return result.doubleValue();
-     *     }
-     *   };
-     *
-     *   # use second
-     * }
-     * </pre>
-     *
-     * @param transform
-     * @return
-     */
-    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform);
+    public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform);
 
     /**
      * Transform an error into something useful.
@@ -218,7 +220,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform);
+    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform);
 
     /**
      * Transform something cancelled into something useful.
@@ -232,5 +234,5 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform);
+    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform);
 }

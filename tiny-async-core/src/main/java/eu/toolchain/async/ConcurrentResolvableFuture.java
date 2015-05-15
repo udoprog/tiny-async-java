@@ -145,7 +145,6 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public AsyncFuture<T> on(final FutureDone<? super T> done) {
         int state = this.sync.state();
@@ -158,7 +157,9 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         }
 
         if (state == RESOLVED) {
-            caller.resolve(done, (T) this.sync.result(state));
+            @SuppressWarnings("unchecked")
+            final T result = (T) this.sync.result(state);
+            caller.resolve(done, result);
             return this;
         }
 
@@ -175,10 +176,9 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> onAny(FutureDone<?> handle) {
-        return on((FutureDone<T>) handle);
+    public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
+        return on(handle);
     }
 
     @Override
@@ -330,7 +330,6 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
     /* transform */
 
-    @SuppressWarnings("unchecked")
     @Override
     public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
         final int state = sync.state();
@@ -348,6 +347,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
             return async.failed(e);
         }
 
+        @SuppressWarnings("unchecked")
         final T result = (T) sync.result(state);
         final C transformed;
 
@@ -360,9 +360,8 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         return async.resolved(transformed);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <C> AsyncFuture<C> transform(final LazyTransform<? super T, ? extends C> transform) {
+    public <C> AsyncFuture<C> transform(final LazyTransform<? super T, C> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -378,10 +377,11 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
             return async.failed(e);
         }
 
+        @SuppressWarnings("unchecked")
         final T result = (T) sync.result(state);
 
         try {
-            return (AsyncFuture<C>) transform.transform(result);
+            return transform.transform(result);
         } catch (Exception e) {
             return async.failed(new TransformException(e));
         }
@@ -413,9 +413,8 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, ? extends T> transform) {
+    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -427,7 +426,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
             final Throwable cause = (Throwable) sync.result(state);
 
             try {
-                return (AsyncFuture<T>) transform.transform(cause);
+                return transform.transform(cause);
             } catch (Exception e) {
                 return async.failed(new TransformException(e));
             }
@@ -460,9 +459,8 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, ? extends T> transform) {
+    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -472,7 +470,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
 
         if (state == CANCELLED) {
             try {
-                return (AsyncFuture<T>) transform.transform(null);
+                return transform.transform(null);
             } catch (Exception e) {
                 return async.failed(new TransformException(e));
             }

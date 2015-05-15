@@ -104,6 +104,41 @@ public class TypeInferenceIntegrationTest {
         // @formatter:on
     }
 
+    @Test
+    public void testError() {
+        final Transform<Throwable, A> A = Mockito.mock(Transform.class);
+        final Transform<Throwable, B> B = Mockito.mock(Transform.class);
+
+        final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
+
+        { a.error(A); }
+        { a.error(B); }
+    }
+
+    @Test
+    public void testLazyError() {
+        final LazyTransform<Throwable, A> A = Mockito.mock(LazyTransform.class);
+        final LazyTransform<Throwable, B> B = Mockito.mock(LazyTransform.class);
+
+        final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
+
+        { a.error(A); }
+        // TODO: make this valid?
+        // { a.error(B); }
+    }
+
+    @Test
+    public void testLazyCancelled() {
+        final LazyTransform<Void, A> A = Mockito.mock(LazyTransform.class);
+        final LazyTransform<Void, B> B = Mockito.mock(LazyTransform.class);
+
+        final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
+
+        { a.cancelled(A); }
+        // TODO: make this valid?
+        // { a.error(B); }
+    }
+
     private static interface A {
     }
 
