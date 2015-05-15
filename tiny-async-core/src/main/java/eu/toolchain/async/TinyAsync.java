@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import eu.toolchain.async.concurrent.ConcurrentManaged;
 import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
 import eu.toolchain.async.helper.CancelledLazyTransformHelper;
 import eu.toolchain.async.helper.CancelledTransformHelper;

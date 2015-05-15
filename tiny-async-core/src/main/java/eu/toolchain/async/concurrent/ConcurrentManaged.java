@@ -1,4 +1,4 @@
-package eu.toolchain.async;
+package eu.toolchain.async.concurrent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.Borrowed;
+import eu.toolchain.async.FutureDone;
+import eu.toolchain.async.FutureFinished;
+import eu.toolchain.async.LazyTransform;
+import eu.toolchain.async.Managed;
+import eu.toolchain.async.ManagedAction;
+import eu.toolchain.async.ManagedSetup;
+import eu.toolchain.async.ResolvableFuture;
+import eu.toolchain.async.TinyStackUtils;
+import eu.toolchain.async.Transform;
 import lombok.RequiredArgsConstructor;
 
 public class ConcurrentManaged<T> implements Managed<T> {

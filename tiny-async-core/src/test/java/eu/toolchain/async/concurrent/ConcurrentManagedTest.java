@@ -1,4 +1,4 @@
-package eu.toolchain.async;
+package eu.toolchain.async.concurrent;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -31,7 +31,19 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import eu.toolchain.async.ConcurrentManaged.ValidBorrowed;
+import eu.toolchain.async.AsyncCaller;
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.Borrowed;
+import eu.toolchain.async.FutureDone;
+import eu.toolchain.async.FutureFinished;
+import eu.toolchain.async.LazyTransform;
+import eu.toolchain.async.ManagedAction;
+import eu.toolchain.async.ManagedSetup;
+import eu.toolchain.async.ResolvableFuture;
+import eu.toolchain.async.Transform;
+import eu.toolchain.async.concurrent.ConcurrentManaged;
+import eu.toolchain.async.concurrent.ConcurrentManaged.ValidBorrowed;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConcurrentManagedTest {

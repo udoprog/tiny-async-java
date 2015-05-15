@@ -35,6 +35,7 @@ import org.mockito.stubbing.Answer;
 
 import com.google.common.collect.ImmutableList;
 
+import eu.toolchain.async.concurrent.ConcurrentManaged;
 import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
 import eu.toolchain.async.helper.CancelledLazyTransformHelper;
 import eu.toolchain.async.helper.CancelledTransformHelper;
