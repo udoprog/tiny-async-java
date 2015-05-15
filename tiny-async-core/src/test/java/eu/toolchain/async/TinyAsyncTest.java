@@ -35,6 +35,19 @@ import org.mockito.stubbing.Answer;
 
 import com.google.common.collect.ImmutableList;
 
+import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
+import eu.toolchain.async.helper.CancelledLazyTransformHelper;
+import eu.toolchain.async.helper.CancelledTransformHelper;
+import eu.toolchain.async.helper.CollectAndDiscardHelper;
+import eu.toolchain.async.helper.CollectHelper;
+import eu.toolchain.async.helper.FailedLazyTransformHelper;
+import eu.toolchain.async.helper.FailedTransformHelper;
+import eu.toolchain.async.helper.ResolvedLazyTransformHelper;
+import eu.toolchain.async.helper.ResolvedTransformHelper;
+import eu.toolchain.async.immediate.ImmediateCancelledAsyncFuture;
+import eu.toolchain.async.immediate.ImmediateFailedAsyncFuture;
+import eu.toolchain.async.immediate.ImmediateResolvedAsyncFuture;
+
 @RunWith(MockitoJUnitRunner.class)
 public class TinyAsyncTest {
     private static final Object result = new Object();
@@ -628,17 +641,17 @@ public class TinyAsyncTest {
 
     @Test
     public void testResolved() {
-        assertTrue(underTest.resolved(null) instanceof ResolvedAsyncFuture);
+        assertTrue(underTest.resolved(null) instanceof ImmediateResolvedAsyncFuture);
     }
 
     @Test
     public void testFailed() {
-        assertTrue(underTest.failed(e) instanceof FailedAsyncFuture);
+        assertTrue(underTest.failed(e) instanceof ImmediateFailedAsyncFuture);
     }
 
     @Test
     public void testCancelled() {
-        assertTrue(underTest.cancelled() instanceof CancelledAsyncFuture);
+        assertTrue(underTest.cancelled() instanceof ImmediateCancelledAsyncFuture);
     }
 
     @Test

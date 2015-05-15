@@ -9,6 +9,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
+import eu.toolchain.async.helper.CancelledLazyTransformHelper;
+import eu.toolchain.async.helper.CancelledTransformHelper;
+import eu.toolchain.async.helper.CollectAndDiscardHelper;
+import eu.toolchain.async.helper.CollectHelper;
+import eu.toolchain.async.helper.FailedLazyTransformHelper;
+import eu.toolchain.async.helper.FailedTransformHelper;
+import eu.toolchain.async.helper.ResolvedLazyTransformHelper;
+import eu.toolchain.async.helper.ResolvedTransformHelper;
+import eu.toolchain.async.immediate.ImmediateCancelledAsyncFuture;
+import eu.toolchain.async.immediate.ImmediateFailedAsyncFuture;
+import eu.toolchain.async.immediate.ImmediateResolvedAsyncFuture;
+
 // @formatter:off
 /**
  * Entry point to the tiny async framework.
@@ -193,17 +206,17 @@ public class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> resolved(T value) {
-        return new ResolvedAsyncFuture<T>(this, caller, value);
+        return new ImmediateResolvedAsyncFuture<T>(this, caller, value);
     }
 
     @Override
     public <T> AsyncFuture<T> failed(Throwable e) {
-        return new FailedAsyncFuture<T>(this, caller, e);
+        return new ImmediateFailedAsyncFuture<T>(this, caller, e);
     }
 
     @Override
     public <T> AsyncFuture<T> cancelled() {
-        return new CancelledAsyncFuture<T>(this, caller);
+        return new ImmediateCancelledAsyncFuture<T>(this, caller);
     }
 
     @SuppressWarnings("unchecked")
