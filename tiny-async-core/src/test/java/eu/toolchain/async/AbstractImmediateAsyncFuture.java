@@ -268,7 +268,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(cause)).thenReturn(transfomed);
 
-        future.error(transform);
+        future.catchFailed(transform);
 
         verify(transform, times(failedTimes)).transform(cause);
         verify(async, never()).failed(any(TransformException.class));
@@ -281,7 +281,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(cause)).thenThrow(e);
 
-        future.error(transform);
+        future.lazyCatchFailed(transform);
 
         verify(transform, times(failedTimes)).transform(cause);
         verify(async, times(failedTimes)).failed(any(TransformException.class));
@@ -295,7 +295,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(cause)).thenReturn(f);
 
-        final AsyncFuture<Object> transformed = future.error(transform);
+        final AsyncFuture<Object> transformed = future.lazyCatchFailed(transform);
 
         verify(transform, times(failedTimes)).transform(cause);
         verify(async, never()).failed(any(TransformException.class));
@@ -311,7 +311,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(cause)).thenThrow(e);
 
-        future.error(transform);
+        future.catchFailed(transform);
 
         verify(transform, times(failedTimes)).transform(cause);
         verify(async, times(failedTimes)).failed(any(TransformException.class));
@@ -325,7 +325,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(null)).thenReturn(transfomed);
 
-        future.cancelled(transform);
+        future.catchCancelled(transform);
 
         verify(transform, times(cancelledTimes)).transform(null);
         verify(async, never()).failed(any(TransformException.class));
@@ -338,7 +338,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(null)).thenThrow(e);
 
-        future.cancelled(transform);
+        future.catchCancelled(transform);
 
         verify(transform, times(cancelledTimes)).transform(null);
         verify(async, times(cancelledTimes)).failed(any(TransformException.class));
@@ -352,7 +352,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(null)).thenReturn(f);
 
-        final AsyncFuture<Object> transformed = future.cancelled(transform);
+        final AsyncFuture<Object> transformed = future.lazyCatchCancelled(transform);
 
         verify(transform, times(cancelledTimes)).transform(null);
         verify(async, never()).failed(any(TransformException.class));
@@ -368,7 +368,7 @@ public abstract class AbstractImmediateAsyncFuture {
 
         when(transform.transform(null)).thenThrow(e);
 
-        future.cancelled(transform);
+        future.lazyCatchCancelled(transform);
 
         verify(async, times(cancelledTimes)).failed(any(TransformException.class));
     }

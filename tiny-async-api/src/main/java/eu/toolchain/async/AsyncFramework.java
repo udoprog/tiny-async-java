@@ -100,7 +100,7 @@ public interface AsyncFramework {
     /**
      * Transform a failing future into a resolved future.
      *
-     * Use {@link AsyncFuture#error(Transform)} instead of this directly.
+     * Use {@link AsyncFuture#catchFailed(Transform)} instead of this directly.
      *
      * @param future The failing future to transform.
      * @param transform The transform implementation to use.
@@ -111,7 +111,7 @@ public interface AsyncFramework {
     /**
      * Transform a failing future into a resolved future.
      *
-     * Use {@link AsyncFuture#error(Transform)} instead of this directly.
+     * Use {@link AsyncFuture#catchFailed(Transform)} instead of this directly.
      *
      * Lazy transformations returns another future instead of the result directly.
      *
@@ -127,7 +127,7 @@ public interface AsyncFramework {
      * @param future The failing future to transform.
      * @param transform The transform implementation to use.
      * @return A new future which does not cancel.
-     * @see AsyncFuture#cancelled(Transform)
+     * @see AsyncFuture#catchCancelled(Transform)
      */
     public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, Transform<Void, ? extends T> transform);
 
@@ -139,7 +139,7 @@ public interface AsyncFramework {
      * @param future The failing future to transform.
      * @param transform The transform implementation to use.
      * @return A new future which does not cancel.
-     * @see AsyncFuture#cancelled(LazyTransform)
+     * @see AsyncFuture#lazyCatchCancelled(LazyTransform)
      */
     public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform);
 

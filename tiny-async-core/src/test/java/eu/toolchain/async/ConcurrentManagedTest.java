@@ -92,7 +92,7 @@ public class ConcurrentManagedTest {
                 transform1.set(invocation.getArgumentAt(0, LazyTransform.class));
                 return stopFuture;
             }
-        }).when(zeroLeaseFuture).transform(any(LazyTransform.class));
+        }).when(zeroLeaseFuture).lazyTransform((LazyTransform<Object, Object>)any(LazyTransform.class));
 
         final AtomicReference<LazyTransform<Object, Object>> transform2 = new AtomicReference<>();
 
@@ -102,19 +102,19 @@ public class ConcurrentManagedTest {
                 transform2.set(invocation.getArgumentAt(0, LazyTransform.class));
                 return stopFuture;
             }
-        }).when(stopReferenceFuture).transform(any(LazyTransform.class));
+        }).when(stopReferenceFuture).lazyTransform((LazyTransform<Object, Object>)any(LazyTransform.class));
 
         ConcurrentManaged.newManaged(async, setup);
 
         verify(async, times(3)).future();
-        verify(zeroLeaseFuture).transform(any(LazyTransform.class));
+        verify(zeroLeaseFuture).lazyTransform((LazyTransform<Object, Object>)any(LazyTransform.class));
         verify(setup, never()).destruct(reference);
-        verify(stopReferenceFuture, never()).transform(any(LazyTransform.class));
+        verify(stopReferenceFuture, never()).lazyTransform((LazyTransform<Object, Object>)any(LazyTransform.class));
 
         transform1.get().transform(null);
 
         verify(setup, never()).destruct(reference);
-        verify(stopReferenceFuture).transform(any(LazyTransform.class));
+        verify(stopReferenceFuture).lazyTransform((LazyTransform<Object, Object>)any(LazyTransform.class));
 
         transform2.get().transform(reference);
 
@@ -274,7 +274,7 @@ public class ConcurrentManagedTest {
 
                 return transformed;
             }
-        }).when(constructor).transform(any(Transform.class));
+        }).when(constructor).transform((Transform<Object, Object>)any(Transform.class));
     }
 
     @Test

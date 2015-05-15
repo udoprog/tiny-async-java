@@ -206,6 +206,12 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param transform The function to use when transforming the value.
      * @return A future of type <C> which resolves with the transformed value.
      */
+    public <R> AsyncFuture<R> lazyTransform(LazyTransform<? super T, R> transform);
+
+    /**
+     * @deprecated Use {@link #lazyTransform(LazyTransform)}.
+     */
+    @Deprecated
     public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform);
 
     /**
@@ -213,6 +219,12 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param transform The transformation to use.
      */
+    public AsyncFuture<T> catchFailed(Transform<Throwable, ? extends T> transform);
+
+    /**
+     * @deprecated Use {@link #catchFailed(Transform)}.
+     */
+    @Deprecated
     public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform);
 
     /**
@@ -220,13 +232,25 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform);
+    public AsyncFuture<T> lazyCatchFailed(LazyTransform<Throwable, T> transform);
+
+    /**
+     * @deprecated Use {@link #lazyCatchFailed(LazyTransform)}.
+     */
+    @Deprecated
+    public AsyncFuture<T> error(LazyTransform<Throwable,  T> transform);
 
     /**
      * Transform something cancelled into something useful.
      *
      * @param transform The transformation to use.
      */
+    public AsyncFuture<T> catchCancelled(Transform<Void, ? extends T> transform);
+
+    /**
+     * @deprecated Use {@link #catchCancelled(Transform)}.
+     */
+    @Deprecated
     public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform);
 
     /**
@@ -234,5 +258,11 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param transform The transformation to use.
      */
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform);
+    public AsyncFuture<T> lazyCatchCancelled(LazyTransform<Void, T> transform);
+
+    /**
+     * @deprecated Use {@link #lazyCatchCancelled(LazyTransform)}.
+     */
+    @Deprecated
+    public AsyncFuture<T> cancelled(LazyTransform<Void,  T> transform);
 }

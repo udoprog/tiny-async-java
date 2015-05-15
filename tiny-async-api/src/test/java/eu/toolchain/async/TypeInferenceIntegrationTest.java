@@ -111,8 +111,8 @@ public class TypeInferenceIntegrationTest {
 
         final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
 
-        { a.error(A); }
-        { a.error(B); }
+        { a.catchFailed(A); }
+        { a.catchFailed(B); }
     }
 
     @Test
@@ -122,7 +122,7 @@ public class TypeInferenceIntegrationTest {
 
         final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
 
-        { a.error(A); }
+        { a.lazyCatchFailed(A); }
         // TODO: make this valid?
         // { a.error(B); }
     }
@@ -134,7 +134,7 @@ public class TypeInferenceIntegrationTest {
 
         final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
 
-        { a.cancelled(A); }
+        { a.lazyCatchCancelled(A); }
         // TODO: make this valid?
         // { a.error(B); }
     }

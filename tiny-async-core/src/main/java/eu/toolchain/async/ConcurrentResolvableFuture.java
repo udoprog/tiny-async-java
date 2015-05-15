@@ -34,7 +34,7 @@ import lombok.RequiredArgsConstructor;
  *            The type being deferred.
  */
 // @formatter:on
-public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
+public class ConcurrentResolvableFuture<T> extends DeprecatedCompatAsyncFuture<T> implements ResolvableFuture<T> {
     // waiting for value.
     public static final int RUNNING = 0x0;
     public static final int RESULT_UPDATING = 0x1;
@@ -361,7 +361,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @Override
-    public <C> AsyncFuture<C> transform(final LazyTransform<? super T, C> transform) {
+    public <C> AsyncFuture<C> lazyTransform(final LazyTransform<? super T, C> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -388,7 +388,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
+    public AsyncFuture<T> catchFailed(Transform<Throwable, ? extends T> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -414,7 +414,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
+    public AsyncFuture<T> lazyCatchFailed(LazyTransform<Throwable, T> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -436,7 +436,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform) {
+    public AsyncFuture<T> catchCancelled(Transform<Void, ? extends T> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))
@@ -460,7 +460,7 @@ public class ConcurrentResolvableFuture<T> implements ResolvableFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
+    public AsyncFuture<T> lazyCatchCancelled(LazyTransform<Void, T> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))

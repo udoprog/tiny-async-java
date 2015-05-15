@@ -4,11 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -74,6 +75,8 @@ public class TinyAsyncTest {
     private Callable<AsyncFuture<Object>> c2;
     @Mock
     private Collection<Callable<AsyncFuture<Object>>> callables;
+    @Mock
+    private List<AsyncFuture<Object>> futures;
 
     private TinyAsync underTest;
 
@@ -403,62 +406,64 @@ public class TinyAsyncTest {
         verify(underTest).defaultExecutor();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCollectDefaultCollectionEmpty() {
-        final List<AsyncFuture<Object>> futures = ImmutableList.of();
-
+        doReturn(true).when(futures).isEmpty();
         doReturn(future).when(underTest).resolved(anyCollection());
-        doReturn(future).when(underTest).collect(eq(futures), any(Collector.class));
+        doReturn(collector).when(underTest).collection();
+        doReturn(future).when(underTest).collect(futures, collector);
 
         assertEquals(future, underTest.collect(futures));
 
-        verify(underTest).resolved(anyCollection());
-        verify(underTest, never()).collect(eq(futures), any(Collector.class));
+        final InOrder order = inOrder(futures, underTest);
+        order.verify(futures).isEmpty();
+        order.verify(underTest).resolved(anyCollection());
+        order.verify(underTest, never()).collection();
+        order.verify(underTest, never()).collect(futures, collector);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCollectDefaultCollectionNonEmpty() {
-        final List<AsyncFuture<Object>> futures = ImmutableList.of(f1);
-
+        doReturn(false).when(futures).isEmpty();
         doReturn(future).when(underTest).resolved(anyCollection());
-        doReturn(future).when(underTest).collect(eq(futures), any(Collector.class));
+        doReturn(collector).when(underTest).collection();
+        doReturn(future).when(underTest).collect(futures, collector);
 
         assertEquals(future, underTest.collect(futures));
 
-        verify(underTest, never()).resolved(anyCollection());
-        verify(underTest).collect(eq(futures), any(Collector.class));
+        final InOrder order = inOrder(futures, underTest);
+        order.verify(futures).isEmpty();
+        order.verify(underTest, never()).resolved(anyCollection());
+        order.verify(underTest).collection();
+        order.verify(underTest).collect(futures, collector);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCollectEmpty() throws Exception {
-        final Collection<AsyncFuture<Object>> futures = mock(Collection.class);
         doReturn(true).when(futures).isEmpty();
         doReturn(future).when(underTest).doCollectEmpty(collector);
         doReturn(future).when(underTest).doCollect(futures, collector);
 
         assertEquals(future, underTest.collect(futures, collector));
 
-        verify(futures).isEmpty();
-        verify(underTest).doCollectEmpty(collector);
-        verify(underTest, never()).doCollect(futures, collector);
+        final InOrder order = inOrder(futures, underTest);
+        order.verify(futures).isEmpty();
+        order.verify(underTest).doCollectEmpty(collector);
+        order.verify(underTest, never()).doCollect(futures, collector);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCollect() throws Exception {
-        final Collection<AsyncFuture<Object>> futures = mock(Collection.class);
         doReturn(false).when(futures).isEmpty();
         doReturn(future).when(underTest).doCollectEmpty(collector);
         doReturn(future).when(underTest).doCollect(futures, collector);
 
         assertEquals(future, underTest.collect(futures, collector));
 
-        verify(futures).isEmpty();
-        verify(underTest, never()).doCollectEmpty(collector);
-        verify(underTest).doCollect(futures, collector);
+        final InOrder order = inOrder(futures, underTest);
+        order.verify(futures).isEmpty();
+        order.verify(underTest, never()).doCollectEmpty(collector);
+        order.verify(underTest).doCollect(futures, collector);
     }
 
     @SuppressWarnings("unchecked")

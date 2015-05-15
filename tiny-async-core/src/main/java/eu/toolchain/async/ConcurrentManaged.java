@@ -54,10 +54,10 @@ public class ConcurrentManaged<T> implements Managed<T> {
         final ResolvableFuture<Void> zeroLeaseFuture = async.future();
         final ResolvableFuture<T> stopReferenceFuture = async.future();
 
-        final AsyncFuture<Void> stopFuture = zeroLeaseFuture.transform(new LazyTransform<Void, Void>() {
+        final AsyncFuture<Void> stopFuture = zeroLeaseFuture.lazyTransform(new LazyTransform<Void, Void>() {
             @Override
             public AsyncFuture<Void> transform(Void v) throws Exception {
-                return stopReferenceFuture.transform(new LazyTransform<T, Void>() {
+                return stopReferenceFuture.lazyTransform(new LazyTransform<T, Void>() {
                     @Override
                     public AsyncFuture<Void> transform(T reference) throws Exception {
                         return setup.destruct(reference);

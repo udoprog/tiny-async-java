@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
  * @param <T>
  */
 @RequiredArgsConstructor
-public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
+public class ResolvedAsyncFuture<T> extends DeprecatedCompatAsyncFuture<T> implements AsyncFuture<T> {
     private final AsyncFramework async;
     private final AsyncCaller caller;
     private final T result;
@@ -132,7 +132,7 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
-    public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform) {
+    public <R> AsyncFuture<R> lazyTransform(LazyTransform<? super T, R> transform) {
         try {
             return transform.transform(result);
         } catch (Exception e) {
@@ -141,22 +141,22 @@ public class ResolvedAsyncFuture<T> implements AsyncFuture<T> {
     }
 
     @Override
-    public AsyncFuture<T> error(Transform<Throwable, ? extends T> transform) {
+    public AsyncFuture<T> catchFailed(Transform<Throwable, ? extends T> transform) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform) {
+    public AsyncFuture<T> lazyCatchFailed(LazyTransform<Throwable, T> transform) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> cancelled(Transform<Void, ? extends T> transform) {
+    public AsyncFuture<T> catchCancelled(Transform<Void, ? extends T> transform) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
+    public AsyncFuture<T> lazyCatchCancelled(LazyTransform<Void, T> transform) {
         return this;
     }
 }
