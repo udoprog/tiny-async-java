@@ -5,12 +5,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -22,23 +22,25 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.verification.VerificationMode;
 
 @RunWith(MockitoJUnitRunner.class)
 public abstract class ImmediateAsyncFutureTestBase {
-    private final Throwable e = new Exception();
-    private final Throwable cause = mock(Throwable.class);
-    private final Object result = mock(Object.class);
-
+    @Mock
+    private Throwable cause;
+    @Mock
+    private From result;
+    @Mock
+    private To to;
     @Mock
     private AsyncFramework async;
     @Mock
     private AsyncCaller caller;
     @Mock
-    private AsyncFuture<Object> other;
+    private FutureDone<From> done;
     @Mock
-    private FutureDone<Object> done;
+    private FutureResolved<From> resolved;
     @Mock
     private FutureFinished finished;
     @Mock
@@ -46,331 +48,271 @@ public abstract class ImmediateAsyncFutureTestBase {
     @Mock
     private FutureCancelled cancelled;
     @Mock
-    private FutureResolved<Object> resolved;
+    private AsyncFuture<?> other;
 
-    private AbstractImmediateAsyncFuture<Object> future;
+    private AbstractImmediateAsyncFuture<From> underTest;
 
-    private int cancelledTimes = 0;
-    private int resolvedTimes = 0;
-    private int failedTimes = 0;
+    private ExpectedState expected;
 
-    protected boolean setupResolved() {
-        return false;
-    }
+    protected abstract AbstractImmediateAsyncFuture<From> setupFuture(AsyncFramework async, AsyncCaller caller,
+            From result, Throwable cause);
 
-    protected boolean setupCancelled() {
-        return false;
-    }
-
-    protected boolean setupFailed() {
-        return false;
-    }
-
-    protected abstract AbstractImmediateAsyncFuture<Object> setupFuture(AsyncFramework async, AsyncCaller caller, Object result,
-            Throwable cause);
+    protected abstract ExpectedState setupState();
 
     @Rule
     public ExpectedException except = ExpectedException.none();
 
     @Before
     public void setup() {
-        future = spy(setupFuture(async, caller, result, cause));
-        resolvedTimes = setupResolved() ? 1 : 0;
-        cancelledTimes = setupCancelled() ? 1 : 0;
-        failedTimes = setupFailed() ? 1 : 0;
+        underTest = spy(setupFuture(async, caller, result, cause));
+        expected = setupState();
     }
 
     @Test
     public void testFail() {
-        assertFalse(future.fail(cause));
+        assertFalse(underTest.fail(cause));
     }
 
     @Test
     public void testCancel() {
-        assertFalse(future.cancel());
+        assertFalse(underTest.cancel());
     }
 
     @Test
     public void testCancelWithParameter() {
-        assertFalse(future.cancel(true));
-        assertFalse(future.cancel(false));
+        assertFalse(underTest.cancel(true));
+        assertFalse(underTest.cancel(false));
     }
 
     @Test
     public void testOnFutureDone() throws Exception {
-        future.on(done);
-        verify(caller, times(cancelledTimes)).cancel(done);
-        verify(caller, times(resolvedTimes)).resolve(done, result);
-        verify(caller, times(failedTimes)).fail(done, cause);
+        underTest.on(done);
+        verify(caller, cancelled()).cancel(done);
+        verify(caller, resolved()).resolve(done, result);
+        verify(caller, failed()).fail(done, cause);
     }
 
     @Test
     public void testOnAnyFuturedone() throws Exception {
-        future.onAny(done);
-        verify(caller, times(cancelledTimes)).cancel(done);
-        verify(caller, times(resolvedTimes)).resolve(done, result);
-        verify(caller, times(failedTimes)).fail(done, cause);
+        underTest.onAny(done);
+        verify(caller, cancelled()).cancel(done);
+        verify(caller, resolved()).resolve(done, result);
+        verify(caller, failed()).fail(done, cause);
     }
 
     @Test
     public void testBind() throws Exception {
-        future.bind(other);
-        verify(other, times(cancelledTimes)).cancel();
+        underTest.bind(other);
+        verify(other, cancelled()).cancel();
     }
 
     @Test
     public void testOnFutureFinished() throws Exception {
-        future.on(finished);
-        verify(caller, times(1)).finish(finished);
+        underTest.on(finished);
+        verify(caller).finish(finished);
     }
 
     @Test
     public void testOnFutureFailed() throws Exception {
-        future.on(failed);
-        verify(caller, times(failedTimes)).fail(failed, cause);
+        underTest.on(failed);
+        verify(caller, failed()).fail(failed, cause);
     }
 
     @Test
     public void testOnFutureCancelled() throws Exception {
-        future.on(cancelled);
-        verify(caller, times(cancelledTimes)).cancel(cancelled);
+        underTest.on(cancelled);
+        verify(caller, cancelled()).cancel(cancelled);
     }
 
     @Test
     public void testOnFutureResolved() throws Exception {
-        future.on(resolved);
-        verify(caller, times(resolvedTimes)).resolve(resolved, result);
+        underTest.on(resolved);
+        verify(caller, resolved()).resolve(resolved, result);
     }
 
     @Test
     public void testIsDone() throws Exception {
-        assertTrue(future.isDone());
+        assertTrue(underTest.isDone());
     }
 
     @Test
     public void testIsResolved() throws Exception {
-        assertEquals(resolvedTimes == 1, future.isResolved());
+        assertEquals(isResolved(), underTest.isResolved());
     }
 
     @Test
     public void testIsFailed() throws Exception {
-        assertEquals(failedTimes == 1, future.isFailed());
+        assertEquals(isFailed(), underTest.isFailed());
     }
 
     @Test
     public void testIsCancelled() throws Exception {
-        assertEquals(cancelledTimes == 1, future.isCancelled());
+        assertEquals(isCancelled(), underTest.isCancelled());
     }
 
     @Test
     public void testCause() throws Exception {
-        if (cancelledTimes == 1 || resolvedTimes == 1)
+        if (!isFailed())
             except.expect(IllegalStateException.class);
 
-        assertNotNull(future.cause());
+        assertNotNull(underTest.cause());
     }
 
     @Test
     public void testGet() throws Exception {
-        if (cancelledTimes == 1)
+        if (isCancelled())
             except.expect(CancellationException.class);
 
-        if (failedTimes == 1)
+        if (isFailed())
             except.expect(ExecutionException.class);
 
-        future.get();
+        underTest.get();
     }
 
     @Test
     public void testGetWithTimeout() throws Exception {
-        if (cancelledTimes == 1)
+        if (isCancelled())
             except.expect(CancellationException.class);
 
-        if (failedTimes == 1)
+        if (isFailed())
             except.expect(ExecutionException.class);
 
-        future.get(1, TimeUnit.SECONDS);
+        underTest.get(1, TimeUnit.SECONDS);
     }
 
     @Test
     public void testGetNow() throws Exception {
-        if (cancelledTimes == 1)
+        if (isCancelled())
             except.expect(CancellationException.class);
 
-        if (failedTimes == 1)
+        if (isFailed())
             except.expect(ExecutionException.class);
 
-        future.getNow();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testLazyTransform() throws Exception {
-        final LazyTransform<Object, Object> transform = Mockito.mock(LazyTransform.class);
-        final AsyncFuture<Object> f = Mockito.mock(AsyncFuture.class);
-
-        when(transform.transform(result)).thenReturn(f);
-
-        final AsyncFuture<Object> returned = future.transform(transform);
-
-        verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(failedTimes)).failed(any(TransformException.class));
-        verify(transform, times(resolvedTimes)).transform(result);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testLazyTransformThrows() throws Exception {
-        final LazyTransform<Object, Object> transform = Mockito.mock(LazyTransform.class);
-        final AsyncFuture<Object> f = Mockito.mock(AsyncFuture.class);
-
-        when(transform.transform(result)).thenThrow(e);
-
-        future.transform(transform);
-
-        verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(Math.max(resolvedTimes, failedTimes))).failed(any(TransformException.class));
+        underTest.getNow();
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testTransform() throws Exception {
-        final Transform<Object, Object> transform = Mockito.mock(Transform.class);
-        final Object transfomed = new Object();
+        final Transform<From, To> transform = mock(Transform.class);
+        final AsyncFuture<To> target = mock(AsyncFuture.class);
 
-        when(transform.transform(result)).thenReturn(transfomed);
+        doReturn(target).when(underTest).transformResolved(transform, result);
+        doReturn(target).when(async).cancelled();
+        doReturn(target).when(async).failed(any(TransformException.class));
 
-        future.transform(transform);
+        assertEquals(target, underTest.transform(transform));
 
-        verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(failedTimes)).failed(any(TransformException.class));
-        verify(transform, times(resolvedTimes)).transform(result);
-        verify(async, times(resolvedTimes)).resolved(transfomed);
+        verify(underTest, resolved()).transformResolved(transform, result);
+        verify(async, cancelled()).cancelled();
+        verify(async, failed()).failed(any(TransformException.class));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testTransformThrows() throws Exception {
-        final Transform<Object, Object> transform = Mockito.mock(Transform.class);
+    public void testLazyTransform() throws Exception {
+        final LazyTransform<From, To> transform = mock(LazyTransform.class);
+        final AsyncFuture<To> target = mock(AsyncFuture.class);
 
-        when(transform.transform(result)).thenThrow(e);
+        doReturn(target).when(underTest).lazyTransformResolved(transform, result);
+        doReturn(target).when(async).cancelled();
+        doReturn(target).when(async).failed(any(TransformException.class));
 
-        future.transform(transform);
+        assertEquals(target, underTest.lazyTransform(transform));
 
-        verify(async, times(cancelledTimes)).cancelled();
-        verify(async, times(Math.max(resolvedTimes, failedTimes))).failed(any(TransformException.class));
+        verify(underTest, resolved()).lazyTransformResolved(transform, result);
+        verify(async, cancelled()).cancelled();
+        verify(async, failed()).failed(any(TransformException.class));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testErrorTransform() throws Exception {
-        final Transform<Throwable, Object> transform = Mockito.mock(Transform.class);
-        final Object transfomed = new Object();
+    public void testTransformFailed() throws Exception {
+        final Transform<Throwable, From> transform = mock(Transform.class);
 
-        when(transform.transform(cause)).thenReturn(transfomed);
+        doReturn(underTest).when(underTest).transformFailed(transform, cause);
 
-        future.catchFailed(transform);
+        assertEquals(underTest, underTest.catchFailed(transform));
 
-        verify(transform, times(failedTimes)).transform(cause);
-        verify(async, never()).failed(any(TransformException.class));
+        verify(underTest, failed()).transformFailed(transform, cause);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testErrorLazyTransformThrows() throws Exception {
-        final LazyTransform<Throwable, Object> transform = Mockito.mock(LazyTransform.class);
+    public void testLazyTransformFailed() throws Exception {
+        final LazyTransform<Throwable, From> transform = mock(LazyTransform.class);
 
-        when(transform.transform(cause)).thenThrow(e);
+        doReturn(underTest).when(underTest).lazyTransformFailed(transform, cause);
 
-        future.lazyCatchFailed(transform);
+        assertEquals(underTest, underTest.lazyCatchFailed(transform));
 
-        verify(transform, times(failedTimes)).transform(cause);
-        verify(async, times(failedTimes)).failed(any(TransformException.class));
+        verify(underTest, failed()).lazyTransformFailed(transform, cause);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testErrorLazyTransform() throws Exception {
-        final LazyTransform<Throwable, Object> transform = Mockito.mock(LazyTransform.class);
-        final AsyncFuture<Object> f = mock(AsyncFuture.class);
+    public void testTransformCancelled() throws Exception {
+        final Transform<Void, From> transform = mock(Transform.class);
 
-        when(transform.transform(cause)).thenReturn(f);
+        doReturn(underTest).when(underTest).transformCancelled(transform);
 
-        final AsyncFuture<Object> transformed = future.lazyCatchFailed(transform);
+        assertEquals(underTest, underTest.catchCancelled(transform));
 
-        verify(transform, times(failedTimes)).transform(cause);
-        verify(async, never()).failed(any(TransformException.class));
-
-        if (failedTimes == 1)
-            assertEquals(f, transformed);
+        verify(underTest, cancelled()).transformCancelled(transform);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testErrorTransformThrows() throws Exception {
-        final Transform<Throwable, Object> transform = Mockito.mock(Transform.class);
+    public void testLazyTransformCancelled() throws Exception {
+        final LazyTransform<Void, From> transform = mock(LazyTransform.class);
 
-        when(transform.transform(cause)).thenThrow(e);
+        doReturn(underTest).when(underTest).lazyTransformCancelled(transform);
 
-        future.catchFailed(transform);
+        assertEquals(underTest, underTest.lazyCatchCancelled(transform));
 
-        verify(transform, times(failedTimes)).transform(cause);
-        verify(async, times(failedTimes)).failed(any(TransformException.class));
+        verify(underTest, cancelled()).lazyTransformCancelled(transform);
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testCancelledTransform() throws Exception {
-        final Transform<Void, Object> transform = Mockito.mock(Transform.class);
-        final Object transfomed = new Object();
-
-        when(transform.transform(null)).thenReturn(transfomed);
-
-        future.catchCancelled(transform);
-
-        verify(transform, times(cancelledTimes)).transform(null);
-        verify(async, never()).failed(any(TransformException.class));
+    private boolean isResolved() {
+        return expected == ExpectedState.RESOLVED;
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testCancelledTransformThrows() throws Exception {
-        final Transform<Void, Object> transform = Mockito.mock(Transform.class);
-
-        when(transform.transform(null)).thenThrow(e);
-
-        future.catchCancelled(transform);
-
-        verify(transform, times(cancelledTimes)).transform(null);
-        verify(async, times(cancelledTimes)).failed(any(TransformException.class));
+    private boolean isCancelled() {
+        return expected == ExpectedState.CANCELLED;
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testCancelledLazyTransform() throws Exception {
-        final LazyTransform<Void, Object> transform = Mockito.mock(LazyTransform.class);
-        final AsyncFuture<Object> f = mock(AsyncFuture.class);
-
-        when(transform.transform(null)).thenReturn(f);
-
-        final AsyncFuture<Object> transformed = future.lazyCatchCancelled(transform);
-
-        verify(transform, times(cancelledTimes)).transform(null);
-        verify(async, never()).failed(any(TransformException.class));
-
-        if (cancelledTimes == 1)
-            assertEquals(f, transformed);
+    private boolean isFailed() {
+        return expected == ExpectedState.FAILED;
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testCancelledLazyTransformThrows() throws Exception {
-        final LazyTransform<Void, Object> transform = Mockito.mock(LazyTransform.class);
+    private VerificationMode resolved() {
+        if (expected == ExpectedState.RESOLVED)
+            return times(1);
 
-        when(transform.transform(null)).thenThrow(e);
+        return never();
+    }
 
-        future.lazyCatchCancelled(transform);
+    private VerificationMode cancelled() {
+        if (expected == ExpectedState.CANCELLED)
+            return times(1);
 
-        verify(async, times(cancelledTimes)).failed(any(TransformException.class));
+        return never();
+    }
+
+    private VerificationMode failed() {
+        if (expected == ExpectedState.FAILED)
+            return times(1);
+
+        return never();
+    }
+
+    protected static interface From {
+    }
+
+    protected static interface To {
+    }
+
+    protected static enum ExpectedState {
+        RESOLVED, CANCELLED, FAILED
     }
 }
