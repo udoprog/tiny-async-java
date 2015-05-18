@@ -6,9 +6,11 @@ jdk:
   - oraclejdk8
 
 script:
-  - mvn -P test clean test
+  # enable integration tests in travis build (found in src/it/java).
+  - mvn -P integration-tests clean test
 
 after_success:
+  # report coverage to coveralls.io
   - mvn -P coverage
     clean
     cobertura:cobertura
