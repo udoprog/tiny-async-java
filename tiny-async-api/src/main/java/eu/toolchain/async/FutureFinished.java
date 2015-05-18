@@ -11,7 +11,9 @@ public interface FutureFinished {
     /**
      * Handle to be called when the future is finished.
      *
-     * @throws Exception if unable to handle the finished future, will cause the target future to be failed.
+     * @throws Exception if unable to handle the finished future, will <em>not</em> cause the target future to be
+     *             failed. Behavior is defined by the implementation of {@link AsyncCaller#finish(FutureFinished)}.
+     * @see AsyncCaller#finish(FutureFinished)
      */
     void finished() throws Exception;
 }

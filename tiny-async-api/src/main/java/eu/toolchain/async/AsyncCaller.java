@@ -19,7 +19,7 @@ package eu.toolchain.async;
  *       // log unexpected error
  *     }
  *   }
- *
+ * 
  *   // .. other methods
  * }
  * }
@@ -36,6 +36,7 @@ public interface AsyncCaller {
      *
      * @param reference The reference that was leaked.
      * @param stack The stacktrace for where it was leaked, can be {@code null} if information is unavailable.
+     * @param <T> the type of the reference being leaked.
      */
     public <T> void referenceLeaked(T reference, StackTraceElement[] stack);
 
@@ -50,7 +51,9 @@ public interface AsyncCaller {
      * Run resolved handle on {@code FutureDone}.
      *
      * @param handle The handle to run.
-     * @see FutureDone#resolved(T)
+     * @param result The result that resolved the future.
+     * @param <T> type of the handle.
+     * @see FutureDone#resolved(Object)
      */
     public <T> void resolve(FutureDone<T> handle, T result);
 
@@ -58,15 +61,18 @@ public interface AsyncCaller {
      * Run failed handle on {@code FutureDone}.
      *
      * @param handle The handle to run.
+     * @param cause The cause of the failure.
      * @see FutureDone#failed(Throwable)
+     * @param <T> the type of the handle.
      */
-    public <T> void fail(FutureDone<T> handle, Throwable error);
+    public <T> void fail(FutureDone<T> handle, Throwable cause);
 
     /**
      * Run cancelled handle on {@code FutureDone}.
      *
      * @param handle The handle to run on.
-     * @see FutureDone#cancelled(Throwable)
+     * @see FutureDone#cancelled()
+     * @param <T> type of the handle.
      */
     public <T> void cancel(FutureDone<T> handle);
 
@@ -81,7 +87,7 @@ public interface AsyncCaller {
     /**
      * Run cancelled handle on {@code FutureCancelled}.
      *
-     * @param finishable The handle to run on.
+     * @param cancelled The handle to run on.
      * @see FutureFinished#finished()
      */
     public void cancel(FutureCancelled cancelled);
@@ -90,8 +96,9 @@ public interface AsyncCaller {
      * Run resolved handle on {@code FutureResolved<T>}.
      *
      * @param resolved The handle to run.
-     * @param <T> the type of the resolved value.
-     * @see FutureResolved#resolved(T)
+     * @param result The result to resolve the future.
+     * @param <T> type of the resolved value.
+     * @see FutureResolved#resolved(Object)
      */
     public <T> void resolve(FutureResolved<T> resolved, T result);
 
@@ -100,7 +107,7 @@ public interface AsyncCaller {
      *
      * @param failed The handle to run.
      * @param cause The error thrown.
-     * @see FutureResolved#fail(Throwable)
+     * @see FutureFailed#failed(Throwable)
      */
     public void fail(FutureFailed failed, Throwable cause);
 
@@ -109,24 +116,30 @@ public interface AsyncCaller {
      *
      * @param collector Collector to run handle.
      * @param result Result to provide to collector.
-     * @see StreamCollector#resolved(T)
+     * @param <S> source type of the collector.
+     * @param <T> target type of the collector.
+     * @see StreamCollector#resolved(Object)
      */
-    public <T, R> void resolve(StreamCollector<T, R> collector, T result);
+    public <S, T> void resolve(StreamCollector<S, T> collector, S result);
 
     /**
      * Run failed handle on {@code StreamCollector}.
      *
      * @param collector Collector to run handle on.
      * @param cause Error to provide to collector.
+     * @param <S> source type of the collector.
+     * @param <T> target type of the collector.
      * @see StreamCollector#failed(Throwable)
      */
-    public <T, R> void fail(StreamCollector<T, R> collector, Throwable cause);
+    public <S, T> void fail(StreamCollector<S, T> collector, Throwable cause);
 
     /**
      * Run cancelled handle on {@code StreamCollector}.
      *
      * @param collector Collector to run handle on.
+     * @param <S> source type of the collector.
+     * @param <T> target type of the collector.
      * @see StreamCollector#cancelled()
      */
-    public <T, R> void cancel(StreamCollector<T, R> collector);
+    public <S, T> void cancel(StreamCollector<S, T> collector);
 }

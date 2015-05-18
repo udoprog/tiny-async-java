@@ -44,6 +44,10 @@ public interface StreamCollector<S, T> {
      * @param resolved How many of the collected futures were resolved.
      * @param failed How many of the collected futures were failed.
      * @param cancelled How many of the collected futures were cancelled.
+     * @throws Exception if unable to process the results of the colllection, this will cause the target future to be
+     *             failed. {@link #end(int, int, int)} will not be called will not be called, and all other futures
+     *             associated with the collector will be cancelled.
+     * @return The collected value.
      */
     T end(int resolved, int failed, int cancelled) throws Exception;
 }

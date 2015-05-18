@@ -5,15 +5,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.Collector;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyAsync;
 import eu.toolchain.async.TinyThrowableUtils;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Helper class for {@link TinyAsync#collect(Collection, Collector)}
+ * 
+ * @param <S> the source type being collected.
+ * @param <T> the target type, the collected sources are being transformed into.
  */
 public class CollectHelper<S, T> implements FutureDone<S> {
     private final Collector<S, T> collector;

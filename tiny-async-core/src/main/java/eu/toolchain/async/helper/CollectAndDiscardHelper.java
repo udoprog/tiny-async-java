@@ -1,22 +1,22 @@
 package eu.toolchain.async.helper;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyThrowableUtils;
 
 /**
- * Implementation of {@link AsyncFuture#end(List, AsyncFuture.StreamCollector)}.
+ * Implementation of {@link AsyncFramework#collectAndDiscard(Collection)}.
  *
  * @author udoprog
  *
- * @param <T>
+ * @param <T> The type being collected and discarded.
  */
-public class CollectAndDiscardHelper<S> implements FutureDone<S> {
+public class CollectAndDiscardHelper<T> implements FutureDone<T> {
     private final ResolvableFuture<Void> target;
     private final AtomicInteger countdown;
     private final AtomicInteger cancelled = new AtomicInteger();
@@ -34,7 +34,7 @@ public class CollectAndDiscardHelper<S> implements FutureDone<S> {
     }
 
     @Override
-    public void resolved(S result) throws Exception {
+    public void resolved(T result) throws Exception {
         check();
     }
 

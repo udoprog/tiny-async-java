@@ -1,14 +1,15 @@
 package eu.toolchain.async;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Implementation of {@link AsyncFuture#end(List, AsyncFuture.StreamCollector)}.
+ * Implementation of {@link AsyncFramework#collect(Collection, StreamCollector)}.
  *
  * @author udoprog
  *
- * @param <T>
+ * @param <S> the source type being collected.
+ * @param <T> The type the source type is being collected and transformed into.
  */
 public class CollectStreamHelper<S, T> implements FutureDone<S> {
     private final AsyncCaller caller;

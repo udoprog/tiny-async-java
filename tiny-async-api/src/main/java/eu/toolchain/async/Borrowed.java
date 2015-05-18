@@ -9,7 +9,7 @@ package eu.toolchain.async;
  * the framework.
  * </p>
  *
- * <h4>Reference Counting</h4>
+ * <h1>Reference Counting</h1>
  *
  * <p>
  * Borrowed references are <em>reference counted</em>, the user is responsible for releasing the reference when it is no
@@ -22,11 +22,11 @@ package eu.toolchain.async;
  */
 public interface Borrowed<T> extends AutoCloseable {
     /**
-     * Return {@code true} if this borrowed reference is valid.
+     * Check if the borrowed reference is valid.
      *
      * A valid borrowed reference is guaranteed to have a value.
      *
-     * @return
+     * @return {@code true} if the borrowed reference is valid.
      */
     public boolean isValid();
 
@@ -56,18 +56,18 @@ public interface Borrowed<T> extends AutoCloseable {
      * <pre>
      * {@code
      * final Managed<Object> managed = ...;
-     *
+     * 
      * final Borrowed<Object> b = managed.borrow();
-     *
+     * 
      * if (!b.isValid())
      *   return async.cancelled();
-     *
+     * 
      * final AsyncFuture<Object> future = doSomethingAsync(b.get());
      * return future.on(b.releasing());
      * }
      * </pre>
      *
-     * @return
+     * @return A finished callback that will release the borrowed reference.
      */
     public FutureFinished releasing();
 

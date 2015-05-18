@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
+import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.AbstractImmediateAsyncFuture;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.AsyncFramework;
@@ -19,7 +20,6 @@ import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.Transform;
-import lombok.RequiredArgsConstructor;
 
 // @formatter:off
 /**
@@ -609,11 +609,16 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          * Get the current state.
          *
          * This must be an atomic operation.
+         *
+         * @return The current state of the synchronizer.
          */
         public int state();
 
         /**
-         * Poll for the current state, this is guaranteed to never return {@code RESULT_UPDATING}.
+         * Poll for the current state, this is guaranteed to never return
+         * {@link ConcurrentResolvableFuture#RESULT_UPDATING}.
+         *
+         * @return The current state of the synchronizer. Never {@link ConcurrentResolvableFuture#RESULT_UPDATING}.
          */
         public int poll();
 
@@ -621,6 +626,8 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          * Acquire the shared lock on this synchronizer.
          *
          * Will block until the shared lock has been acquired.
+         * 
+         * @throws InterruptedException if process is interrupted before the state change can be acquired.
          */
         public void acquire() throws InterruptedException;
 
@@ -629,6 +636,8 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          *
          * Will block for {@code nanos} nanoseconds until the shared lock has been acquired.
          *
+         * @param nanos Number of nanoseconds to wait for the state change to be acquired.
+         * @throws InterruptedException if process is interrupted before the state change can be acquired.
          * @return {@code true} if the lock was acquired, {@code false} otherwise.
          */
         public boolean acquire(long nanos) throws InterruptedException;
@@ -647,6 +656,8 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
         /**
          * Same as {@code #complete(int, Object)} but with a null result.
          *
+         * @param state The end state to move the synchronizer into.
+         * @return {@code true} if the given transition is valid and happened, {@code false} otherwise}.
          * @see #complete(int, Object)
          */
         public boolean complete(int state);

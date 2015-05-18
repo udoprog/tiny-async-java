@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Borrowed;
@@ -22,7 +23,6 @@ import eu.toolchain.async.ManagedSetup;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyStackUtils;
 import eu.toolchain.async.Transform;
-import lombok.RequiredArgsConstructor;
 
 public class ConcurrentManaged<T> implements Managed<T> {
     private static final boolean TRACING;
@@ -123,14 +123,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
         return f.on(b.releasing());
     }
 
-    /**
-     * Get the instance that has only been initialized once.
-     *
-     * Checks that the reference is 'ready' by calling {@code #isReady()} before trying to fetch reference.
-     *
-     * @return
-     * @throws IllegalStateException If the reference is not ready when calling {@code #get()}.
-     */
     @SuppressWarnings("unchecked")
     @Override
     public Borrowed<T> borrow() {
@@ -153,11 +145,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
         return b;
     }
 
-    /**
-     * Check if the instance has been initialized or not.
-     *
-     * @return
-     */
     @Override
     public boolean isReady() {
         return startFuture.isDone();

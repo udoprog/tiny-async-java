@@ -6,14 +6,14 @@ import java.util.concurrent.ExecutionException;
 /**
  * An interface that defines a contract with a computation that could be asynchronous.
  *
- * <h4>Thread Safety</h4>
+ * <h1>Thread Safety</h1>
  *
  * <p>
  * All public methods exposed in {@code AsyncFuture} are fully <em>thread-safe</em>, guaranteeing that interactions with
  * the future atomic.
  * </p>
  *
- * <h4>States</h4>
+ * <h1>States</h1>
  *
  * <p>
  * A future has four states.
@@ -69,6 +69,8 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * Failure state is a fundamental component of the computation, and should only be made available to
      * {@link ResolvableFuture}.
      *
+     * @param cause What caused the future to be failed.
+     * @return {@code true} if the future was failed because of this call.
      * @deprecated Use {@code ResolvableFuture#fail(Throwable)} instead, this method will be removed in {@literal 2.0}.
      **/
     @Deprecated
@@ -88,6 +90,8 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @throws IllegalStateException if the result is not available.
      * @throws ExecutionException if the computation threw an exception.
+     * @throws CancellationException if the computation was cancelled.
+     * @return The result of the computation.
      */
     public T getNow() throws ExecutionException, CancellationException;
 
@@ -163,19 +167,20 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     *
+     * 
      *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
      *     Double transform(Integer result) {
      *       return result.doubleValue();
      *     }
      *   };
-     *
+     * 
      *   # use second
      * }
      * </pre>
      *
-     * @param transform
-     * @return
+     * @param <R> The type of the newly transformed future.
+     * @param transform The transformation to use.
+     * @return A new future transformed to the given type.
      */
     public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform);
 
@@ -192,13 +197,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     *
+     * 
      *   Future<Double> second = first.transform(new Transformer<Integer, Double>() {
      *     void transform(Integer result, Future<Double> future) {
      *       future.finish(result.doubleValue());
      *     }
      *   };
-     *
+     * 
      *   # use second
      * }
      * </pre>
@@ -209,6 +214,8 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     public <R> AsyncFuture<R> lazyTransform(LazyTransform<? super T, R> transform);
 
     /**
+     * @param transform The function to use when transforming the value.
+     * @return A future of type <C> which resolves with the transformed value.
      * @deprecated Use {@link #lazyTransform(LazyTransform)}.
      */
     @Deprecated
@@ -218,10 +225,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * Transform an error into something useful.
      *
      * @param transform The transformation to use.
+     * @return A new future that will transform any errors thrown prior in the invocation chain.
      */
     public AsyncFuture<T> catchFailed(Transform<Throwable, ? extends T> transform);
 
     /**
+     * @param transform The transformation to use.
+     * @return A new future that will transform any errors thrown prior in the invocation chain.
      * @deprecated Use {@link #catchFailed(Transform)}.
      */
     @Deprecated
@@ -231,23 +241,29 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * Transform an error into something useful.
      *
      * @param transform The transformation to use.
+     * @return A new future that will lazily transform any errors thrown prior in the invocation chain.
      */
     public AsyncFuture<T> lazyCatchFailed(LazyTransform<Throwable, T> transform);
 
     /**
+     * @param transform The transformation to use.
+     * @return A new future that will lazily transform any errors thrown prior in the invocation chain.
      * @deprecated Use {@link #lazyCatchFailed(LazyTransform)}.
      */
     @Deprecated
-    public AsyncFuture<T> error(LazyTransform<Throwable,  T> transform);
+    public AsyncFuture<T> error(LazyTransform<Throwable, T> transform);
 
     /**
      * Transform something cancelled into something useful.
      *
      * @param transform The transformation to use.
+     * @return A new future that will transform any cancellations happening prior in the invocation chain.
      */
     public AsyncFuture<T> catchCancelled(Transform<Void, ? extends T> transform);
 
     /**
+     * @param transform The transformation to use.
+     * @return A new future that will transform any cancellations happening prior in the invocation chain.
      * @deprecated Use {@link #catchCancelled(Transform)}.
      */
     @Deprecated
@@ -257,12 +273,15 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * Transform something cancelled into something useful using a lazy operation.
      *
      * @param transform The transformation to use.
+     * @return A new future that will lazily transform any cancellations happening prior in the invocation chain.
      */
     public AsyncFuture<T> lazyCatchCancelled(LazyTransform<Void, T> transform);
 
     /**
+     * @param transform The transformation to use.
+     * @return A new future that will lazily transform any cancellations happening prior in the invocation chain.
      * @deprecated Use {@link #lazyCatchCancelled(LazyTransform)}.
      */
     @Deprecated
-    public AsyncFuture<T> cancelled(LazyTransform<Void,  T> transform);
+    public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform);
 }

@@ -1,13 +1,5 @@
 package eu.toolchain.async;
 
-import eu.toolchain.async.AsyncCaller;
-import eu.toolchain.async.FutureCancelled;
-import eu.toolchain.async.FutureDone;
-import eu.toolchain.async.FutureFailed;
-import eu.toolchain.async.FutureFinished;
-import eu.toolchain.async.FutureResolved;
-import eu.toolchain.async.StreamCollector;
-
 /**
  * An abstract implementation of a caller that invokes the handles directly in the calling thread.
  */
@@ -76,7 +68,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T, R> void resolve(StreamCollector<T, R> collector, T result) {
+    public <S, T> void resolve(StreamCollector<S, T> collector, S result) {
         try {
             collector.resolved(result);
         } catch (final Exception e) {
@@ -85,7 +77,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T, R> void fail(StreamCollector<T, R> collector, Throwable error) {
+    public <S, T> void fail(StreamCollector<S, T> collector, Throwable error) {
         try {
             collector.failed(error);
         } catch (final Exception e) {
@@ -94,7 +86,7 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
     }
 
     @Override
-    public <T, R> void cancel(StreamCollector<T, R> collector) {
+    public <S, T> void cancel(StreamCollector<S, T> collector) {
         try {
             collector.cancelled();
         } catch (final Exception e) {

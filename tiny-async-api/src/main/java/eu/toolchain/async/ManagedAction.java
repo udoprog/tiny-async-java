@@ -10,6 +10,8 @@ package eu.toolchain.async;
  * </p>
  *
  * @author udoprog
+ * @param <T> the type of the reference being borrowed.
+ * @param <R> the type of the returned future.
  */
 public interface ManagedAction<T, R> {
     /**

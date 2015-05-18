@@ -11,6 +11,8 @@ import java.util.Collection;
  * </p>
  *
  * @author udoprog
+ * @param <S> source type to collect.
+ * @param <T> target type to return when collection is done.
  */
 public interface Collector<S, T> {
     /**

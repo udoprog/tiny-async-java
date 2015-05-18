@@ -9,14 +9,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Coordinator thread for handling delayed callables executing with a given parallelism.
+ * 
+ * @param <S> The source type being collected.
+ * @param <T> The target type the source type is being collected into.
  */
-public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable {
+public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable {
     private final AtomicInteger failed = new AtomicInteger();
     private final AtomicInteger cancelled = new AtomicInteger();
 
     private final AsyncCaller caller;
-    private final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables;
-    private final StreamCollector<? super C, ? extends T> collector;
+    private final Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables;
+    private final StreamCollector<? super S, ? extends T> collector;
     private final Semaphore mutex;
     private final ResolvableFuture<? super T> future;
     private final int totalPermitsToAcquire;
@@ -24,8 +27,8 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
     final AtomicBoolean cancel = new AtomicBoolean();
 
     public DelayedCollectCoordinator(final AsyncCaller caller,
-            final Collection<? extends Callable<? extends AsyncFuture<? extends C>>> callables,
-            final StreamCollector<C, T> collector, final Semaphore mutex, final ResolvableFuture<? super T> future,
+            final Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables,
+            final StreamCollector<S, T> collector, final Semaphore mutex, final ResolvableFuture<? super T> future,
             int parallelism) {
         this.caller = caller;
         this.callables = callables;
@@ -44,7 +47,7 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
     }
 
     @Override
-    public void resolved(C result) {
+    public void resolved(S result) {
         caller.resolve(collector, result);
         mutex.release();
     }
@@ -69,7 +72,7 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
         });
 
         final int total = callables.size();
-        final Iterator<? extends Callable<? extends AsyncFuture<? extends C>>> iterator = callables.iterator();
+        final Iterator<? extends Callable<? extends AsyncFuture<? extends S>>> iterator = callables.iterator();
 
         int acquired = 0;
 
@@ -83,9 +86,9 @@ public class DelayedCollectCoordinator<C, T> implements FutureDone<C>, Runnable 
 
             ++acquired;
 
-            final Callable<? extends AsyncFuture<? extends C>> callable = iterator.next();
+            final Callable<? extends AsyncFuture<? extends S>> callable = iterator.next();
 
-            final AsyncFuture<? extends C> f;
+            final AsyncFuture<? extends S> f;
 
             try {
                 f = callable.call();

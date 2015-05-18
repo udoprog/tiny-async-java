@@ -262,9 +262,7 @@ public class DelayedCollectCoordinatorTest {
         verify(caller, times(1)).fail(eq(collector), any(Throwable.class));
     }
 
-    /**
-     * If the first fails, should cancel the second.
-     */
+    /* If the first fails, should cancel the second. */
     @Test
     public void testFailFirst() throws Exception {
         final List<Callable<AsyncFuture<Object>>> callables = ImmutableList.of(callable, callable2);
