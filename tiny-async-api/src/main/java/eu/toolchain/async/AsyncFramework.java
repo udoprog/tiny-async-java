@@ -245,4 +245,6 @@ public interface AsyncFramework {
      * @return The managed reference.
      */
     public <C> Managed<C> managed(ManagedSetup<C> setup);
+
+    public <T> AsyncStream<T> stream(AsyncProducer<T> producer);
 }

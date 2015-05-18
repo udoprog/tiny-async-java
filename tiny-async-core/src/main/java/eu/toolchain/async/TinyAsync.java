@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import eu.toolchain.async.concurrent.ConcurrentAsyncStream;
 import eu.toolchain.async.concurrent.ConcurrentManaged;
 import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
 import eu.toolchain.async.helper.CancelledLazyTransformHelper;
@@ -415,5 +416,10 @@ public class TinyAsync implements AsyncFramework {
                     f.cancel();
             }
         });
+    }
+
+    @Override
+    public <T> AsyncStream<T> stream(AsyncProducer<T> producer) {
+        return new ConcurrentAsyncStream<T>(producer);
     }
 }
