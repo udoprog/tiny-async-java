@@ -33,21 +33,26 @@ section below.
 
 # Setup
 
-Add tiny-async-core as a dependency to your project, and tiny-async-api as
-a dependency to your public API.
+TinyAsync is available [through maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22eu.toolchain.async%2).
 
-```
-<dependency>
-  <groupId>eu.toolchain.async</groupId>
-  <artifactId>tiny-async</artifactId>
-  <version>1.4.1</version>
-</dependency>
-```
+If you have an API project, you can add a dependency to **tiny-async-api**, which only contains the interfaces used by TinyAsync and with very little indirection is all you need to interact with the library.
+
+If you have an application or framework that intends to provide an implementation of TinyAsync, you should depend on **tiny-async-core**. This contains the implementation of TinyAsync.
+
+See [Api Separation](#api-separation) for why the api is distributed in a separate package.
 
 After that, the first step is to instantiate the framework.
 
 See [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java)
 for an example of how to do this.
+
+# Api Separation
+
+The separation between the API and core is done to reduce issues with drifts in dependencies.
+
+A specific version of the API is always intended to be signature compatible with future versions, this means that if you build a project against version `1.1.0` of the API, it will be working with all `1.x.x` versions of Core.
+
+Deprecated components will be removed in the next major version, and the package will be renamed to avoid future classpath conflicts.
 
 # Usage
 
