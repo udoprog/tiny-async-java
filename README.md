@@ -173,7 +173,7 @@ See examples:
 Managed references are values which are reference counted by the framework.
 These are intended to be used for expensive setup, and teardown operations,
 where abruptly tearing the reference down while there are sessions using it can
-cause underirable behaviour.
+cause undesirable behaviour.
 
 * ```Managed<T> AsyncFramework#managed(ManagedSetup<T>)```
 * ```AsyncFuture<Void> Managed#start()```
