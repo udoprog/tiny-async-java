@@ -262,6 +262,44 @@ public class TinyAsyncTest {
     }
 
     @Test
+    public void testLazyCall1() throws Exception {
+        @SuppressWarnings("unchecked")
+        final Callable<AsyncFuture<Object>> callable = mock(Callable.class);
+
+        doReturn(executor).when(underTest).defaultExecutor();
+        doReturn(future).when(underTest).lazyCall(callable, executor);
+
+        assertEquals(future, underTest.lazyCall(callable));
+
+        verify(underTest).defaultExecutor();
+        verify(underTest).lazyCall(callable, executor);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testLazyCall2() throws Exception {
+        final Callable<AsyncFuture<Object>> callable = mock(Callable.class);
+        final LazyTransform<AsyncFuture<Object>, Object> transform = mock(LazyTransform.class);
+        final AsyncFuture<AsyncFuture<Object>> future = mock(AsyncFuture.class);
+        final AsyncFuture<Object> target = mock(AsyncFuture.class);
+
+        doReturn(transform).when(underTest).lazyCallTransform();
+        doReturn(target).when(future).lazyTransform(transform);
+        doReturn(future).when(underTest).call(callable, executor);
+
+        assertEquals(target, underTest.lazyCall(callable, executor));
+
+        verify(underTest).lazyCallTransform();
+        verify(future).lazyTransform(transform);
+        verify(underTest).call(callable, executor);
+    }
+
+    @Test
+    public void testLazyCallTransform() {
+        assertEquals(underTest.lazyCallTransform, underTest.lazyCallTransform());
+    }
+
+    @Test
     public void testCall2() throws Exception {
         @SuppressWarnings("unchecked")
         final Callable<Object> callable = mock(Callable.class);

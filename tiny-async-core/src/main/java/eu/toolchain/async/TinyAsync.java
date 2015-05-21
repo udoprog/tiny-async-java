@@ -148,8 +148,30 @@ public class TinyAsync implements AsyncFramework {
     }
 
     @Override
+    public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable) {
+        return lazyCall(callable, defaultExecutor());
+    }
+
+    @Override
     public <C> AsyncFuture<C> call(final Callable<? extends C> callable, final ExecutorService executor) {
         return call(callable, executor, this.<C> future());
+    }
+
+    @Override
+    public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable, ExecutorService executor) {
+        return call(callable, executor).lazyTransform(this.<T>lazyCallTransform());
+    }
+
+    protected final LazyTransform<? extends AsyncFuture<?>, ?> lazyCallTransform = new LazyTransform<AsyncFuture<Object>, Object>() {
+        @Override
+        public AsyncFuture<Object> transform(AsyncFuture<Object> result) throws Exception {
+            return result;
+        }
+    };
+
+    @SuppressWarnings("unchecked")
+    protected <T> LazyTransform<AsyncFuture<T>, T> lazyCallTransform() {
+        return (LazyTransform<AsyncFuture<T>, T>)lazyCallTransform;
     }
 
     @Override

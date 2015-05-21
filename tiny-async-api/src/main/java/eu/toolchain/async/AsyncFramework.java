@@ -39,7 +39,7 @@ public interface AsyncFramework {
      *
      * These futures are guaranteed to be thread-safe, all of their public methods can be called from any thread, at any
      * time.
-     * 
+     *
      * @return A new <em>resolvable</em> future.
      * @param <T> type of the future.
      */
@@ -47,7 +47,7 @@ public interface AsyncFramework {
 
     /**
      * Returns an already resolved void future.
-     * 
+     *
      * The future is immediately resolved with a {@code null} value.
      *
      * @see #resolved(Object)
@@ -247,8 +247,20 @@ public interface AsyncFramework {
     public <T> AsyncFuture<T> call(Callable<? extends T> callable);
 
     /**
+     * Call the given callable on the default executor and track the lazy result using a future,
+     * this expects the callable to return an {@code AsyncFuture}.
+     *
+     * @param callable Callable to call.
+     * @param <T> type of the future.
+     * @throws IllegalStateException if no default executor service is configured.
+     * @return A future tracking the result of the lazy callable.
+     * @see #lazyCall(Callable, ExecutorService)
+     */
+    public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable);
+
+    /**
      * Call the given callable on the provided executor and track the result using a future.
-     * 
+     *
      * @param callable Callable to invoke.
      * @param executor Executor service to invoke on.
      * @param <T> type of the future.
@@ -256,6 +268,18 @@ public interface AsyncFramework {
      * @see #call(Callable, ExecutorService, ResolvableFuture)
      */
     public <T> AsyncFuture<T> call(Callable<? extends T> callable, ExecutorService executor);
+
+    /**
+     * Call the given callable on the provided executor and track the lazy result using a future,
+     * this expects the callable to return an {@code AsyncFuture}.
+     *
+     * @param callable Callable to invoke.
+     * @param executor Executor service to invoke on.
+     * @param <T> type of the future.
+     * @return A future tracking the result of the callable.
+     * @see #call(Callable, ExecutorService, ResolvableFuture)
+     */
+    public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable, ExecutorService executor);
 
     /**
      * Call the given callable and resolve the given future with its result.
