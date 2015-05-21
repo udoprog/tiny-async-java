@@ -65,7 +65,8 @@ The following methods are provided on ```AsyncFramework``` to build new futures.
 * ```ResolvableFuture<T> AsyncFramework#future()```
 * ```AsyncFuture<T> AsyncFramework#call(Callable<T>)```
 * ```AsyncFuture<T> AsyncFramework#call(Callable<T>, ExecutorService)```
-* ```AsyncFuture<T> AsyncFramework#call(Callable<T>, ExecutorService, ResolvableFuture<T>)```
+* ```AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>)```
+* ```AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>, ExecutorService)```
 * ```AsyncFuture<T> AsyncFramework#resolved(T)```
 * ```AsyncFuture<T> AsyncFramework#failed(Throwable)```
 * ```AsyncFuture<T> AsyncFramework#cancelled()```
@@ -131,8 +132,10 @@ They also allows to take a falied future, and convert it into a value B.
 
 * ```AsyncFuture<C> AsyncFuture#transform(Transform<T, C>)```
 * ```AsyncFuture<C> AsyncFuture#transform(LazyTransform<T, C>)```
-* ```AsyncFuture<C> AsyncFuture#error(Transform<Throwable, C>)```
-* ```AsyncFuture<C> AsyncFuture#error(LazyTransform<Throwable, C>)```
+* ```AsyncFuture<C> AsyncFuture#catchFailure(Transform<Throwable, C>)```
+* ```AsyncFuture<C> AsyncFuture#catchFailure(LazyTransform<Throwable, C>)```
+* ```AsyncFuture<C> AsyncFuture#catchCancelled(Transform<Throwable, C>)```
+* ```AsyncFuture<C> AsyncFuture#catchCancelled(LazyTransform<Throwable, C>)```
 
 See examples:
 
@@ -147,6 +150,7 @@ future that is resolved by them instead.
 * ```AsyncFuture<Void> AsyncFramework#collectAndDiscard(Collection<AsyncFuture<C>>)```
 * ```AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, Collector<C, T>)```
 * ```AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, StreamCollector<C, T>)```
+* ```AsyncFuture<T> AsyncFramework#eventuallyCollect(Collection<Callable<AsyncFuture<C>>>, StreamCollector<C, T>, int)```
 
 The methods taking the ```Collector``` gathers the result of all computations,
 and provides them to the ```Collector#collect(Collection<C>)``` method.
@@ -162,6 +166,19 @@ by the JVM.
 Similarly to ```Collector```, ```StreamCollector``` has the
 ```StreamCollector#end(int, int, int)``` method that will be called when all
 the computations have been finished.
+
+The _eventually_ collector is a lazy type of collector that ensures on a high
+level that no more than the given number of tasks are added to the
+ExecutorService at once.
+
+This provides a type of fair scheduling. Every process interacting with the
+same set of future-based API's and their underlying threads will only request
+the futures that they need in order to fullfill their parallelism setting.
+
+It also allows for very cheap cancellations. Since only the set of futures
+required to perform the computation is needed, any unbuilt futures are simply
+lists of non-called Callable instances, there is nothing to cancel, since no
+computation has been initialized.
 
 See examples:
 
