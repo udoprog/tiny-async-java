@@ -57,20 +57,19 @@ section below.
 Google Guava provides a set of static methods associated with operating on
 futures\*, and these are unnecessarily diffucult to mock.
 
-\*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html),
-
 Also, TinyAsync believes that some aspects of the framework should allow for
-configurable defaults\*. The most notable example would be `what the default
-ExecutorService` is, but also allow the user to [handle undefined
+configurable defaults\*\*. The most notable example would be _what the default
+ExecutorService_ is, but also allow the user to [handle undefined
 behaviour](tiny-async-api/src/main/java/eu/toolchain/async/AsyncCaller.java)
 edge cases where the framework otherwise has to compromise.
-
-\*: See [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java)
 
 The downside is that you have to provide your components access to the [async
 framework](tiny-async-api/src/main/java/eu/toolchain/async/AsyncFramework.java)
 implementation, but you are already using
 [dependency injection](https://github.com/google/guice), right?
+
+\*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html),
+\*\*: See [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java)
 
 # Setup
 

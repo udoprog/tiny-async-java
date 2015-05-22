@@ -1,4 +1,4 @@
-package eu.toolchain.perftests;
+package eu.toolchain.examples;
 
 import java.util.ArrayList;
 import java.util.Collection;

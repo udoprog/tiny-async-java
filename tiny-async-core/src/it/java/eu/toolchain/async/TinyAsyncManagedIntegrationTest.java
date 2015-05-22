@@ -8,7 +8,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TinyManagedTest {
+public class TinyAsyncManagedIntegrationTest {
     final Object REF = new Object();
 
     private static final long TIMEOUT = 200;
