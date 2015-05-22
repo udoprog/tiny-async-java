@@ -34,26 +34,43 @@ significantly different.
 
 # Why TinyAsync?
 
-In short; everything is tucked behind an API, and some functionality has been moved into the future itself to allow for cleaner code.
+Everything is tucked behind [a set of API interfaces](
+tiny-async-api/src/main/java/eu/toolchain/async/),
+and some functionality has been moved into the future itself to allow for
+a clean, chained programming style (especially with java 8).
 
-Google Guava provides the [Futures helper class](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html) that allows the user of the library to do interesting things with their futures.
+Since all interaction with the framework can happen behind plain old java
+interfaces, the using component rarely needs to maintain a direct dependency to
+tiny-async-core. See [Api Separation](#api-separation) for more details on how
+this will be maintained long term.
 
-The issue I have with this pattern is that it is a leaky abstraction.
-
-The use of for example ```Futures#transform(ListenableFuture<I> input, AsyncFunction<? super I,? extends O> function)``` directly in your code means that the specific code will always use a direct executor.
-Since most of the future API is provided statically, there are no way to configure the helpers default behaviour, users are left to wrap Guava specifically for their application if they want to accomplish this.
-
-TinyAsync attempts to address by allowing these aspects of the framework to be configured, see [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java).
-
-The benefits are;
-
-* Your application only have to interact with TinyAsync through the  [AsyncFramework](tiny-async-api/src/main/java/eu/toolchain/async/AsyncFramework.java) interface, which is part of the API package. This allows for decoupling between implementation and API.
-* TinyAsync can be configured with sensible defaults for _your_ application, and these can be enjoyed by all components without having to rewrite their code.
-* Coupled with a dependency injection framework, your component does not have to pull in the actual implementation of their futures, everything is behind a clean API.
+This has the benefit of making TinyAsync superb for
+[testing](#testing-with-tinyasync), your components doesn't even have to know
+about concurrency, all you need to do is mock the expected framework behaviour.
 
 For an overview of the library, check out the
 [API](tiny-async-api/src/main/java/eu/toolchain/async) and the [Usage](#usage)
 section below.
+
+## Guava
+
+Google Guava provides a set of static methods associated with operating on
+futures\*, and these are unnecessarily diffucult to mock.
+
+\*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html),
+
+Also, TinyAsync believes that some aspects of the framework should allow for
+configurable defaults\*. The most notable example would be `what the default
+ExecutorService` is, but also allow the user to [handle undefined
+behaviour](tiny-async-api/src/main/java/eu/toolchain/async/AsyncCaller.java)
+edge cases where the framework otherwise has to compromise.
+
+\*: See [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java)
+
+The downside is that you have to provide your components access to the [async
+framework](tiny-async-api/src/main/java/eu/toolchain/async/AsyncFramework.java)
+implementation, but you are already using
+[dependency injection](https://github.com/google/guice), right?
 
 # Setup
 
@@ -72,11 +89,22 @@ for an example of how to do this.
 
 # Api Separation
 
-The separation between the API and core is done to reduce issues with drifts in dependencies.
+The separation between the API and core is done to reduce issues with drifts in 
+dependencies.
 
-A specific version of the API is always intended to be signature compatible with future versions, this means that if you build a project against version `1.1.0` of the API, it will be working with all `1.x.x` versions of Core.
+A specific version of the API is always intended to be signature compatible
+with future versions, this means that if you build a project against version
+`1.1.0` of the API, it will be working with all `1.x.x` versions of Core.
 
-Deprecated components will be removed in the next major version, and the package will be renamed to avoid future classpath conflicts.
+Deprecated components will be removed in the next major version, and the
+package will be renamed to avoid future classpath conflicts.
+
+# Testing with TinyAsync
+
+TinyAsync heavily favor isolated unit tests that mock as much as possible,
+see some of the [core test
+suite](tiny-async-core/src/test/java/eu/toolchain/async/) if you want some
+inspiration.
 
 # Usage
 
