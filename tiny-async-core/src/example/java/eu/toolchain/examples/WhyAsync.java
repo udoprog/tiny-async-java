@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
@@ -33,6 +34,10 @@ public class WhyAsync {
             System.out.println("Your computer only has one physical processor");
             return;
         }
+
+        System.out.println("Press [enter] to start...");
+
+        System.in.read();
 
         System.out.println("Async making better use of the given threads.");
 
@@ -60,13 +65,16 @@ public class WhyAsync {
      * database), where there are no atomic numbers available.
      */
     private static class TrickyThreadScheduling {
+        private static final int WORK_ITERATIONS = 100000;
         private static final int NUMBER_OF_REQUESTS = AVAILABLE_PROCESSORS - 1;
         private static final int NUMBER_OF_ASYNC_THREADS = AVAILABLE_PROCESSORS;
         private static final int NUMBER_OF_SYNC_THREADS = AVAILABLE_PROCESSORS;
         private static final int INNER_REQUEST_COUNT = 100;
 
-        private static final ExecutorService asyncThreads = Executors.newFixedThreadPool(NUMBER_OF_ASYNC_THREADS);
-        private static final ExecutorService syncThreads = Executors.newFixedThreadPool(NUMBER_OF_SYNC_THREADS);
+        private static final ExecutorService asyncThreads = Executors.newFixedThreadPool(NUMBER_OF_ASYNC_THREADS,
+                new ThreadFactoryBuilder().setNameFormat("async-%d").build());
+        private static final ExecutorService syncThreads = Executors.newFixedThreadPool(NUMBER_OF_SYNC_THREADS,
+                new ThreadFactoryBuilder().setNameFormat("sync-%d").build());
 
         private static final AsyncFramework async = TinyAsync.builder().executor(asyncThreads).build();
 
@@ -182,7 +190,7 @@ public class WhyAsync {
         public double someWork() {
             double sum = 0.0d;
 
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < WORK_ITERATIONS; i++) {
                 sum += Math.sqrt(Math.pow(i, 2));
             }
 

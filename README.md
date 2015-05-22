@@ -8,7 +8,31 @@ A tiny asynchronous library for Java.
 
 Writing multithreaded code is hard, tiny async tries to make it easier by providing simple abstractions for executing and manipulating computations through a clean API abstraction.
 
-# Why TinyAsync
+# Why Asynchronous?
+
+See [the WhyAsync example](tiny-async-core/src/example/java/eu/toolchain/examples/WhyAsync.java)
+for some interactive examples of how asynchronous programming can be a helpful pattern.
+
+_Note:_ If you spot anything you disagree with, please open up an Issue.
+
+## Tricky Thread Scheduling
+
+This example is intended to showcase how two fairly innocuous mistakes; **a)**
+a too small thread pool, and **b)** blocking some of your live threads, can be
+detrimental to performance. Under the correct circumstances (e.g. under load)
+they could cause deadlocks.
+
+The example is intended to showcase this isolated scenario, for which similar
+ones could pop up in a non-trivial application that tries to deal with
+concurrency.
+
+The following image showcases how async futures utilizes all available threads,
+even though the programming pattern between the two solutions are not
+significantly different.
+
+![Tricky Thread Scheduling](images/whyasync-tricky-thread-scheduling.png)
+
+# Why TinyAsync?
 
 In short; everything is tucked behind an API, and some functionality has been moved into the future itself to allow for cleaner code.
 
