@@ -10,7 +10,7 @@ script:
   - mvn -P integration-tests clean test
 
 after_success:
-  # report coverage to coveralls.io
+  # report coverage to coveralls.io, does not include integration tests.
   - mvn -P coverage
     clean
     cobertura:cobertura
