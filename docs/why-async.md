@@ -1,9 +1,9 @@
 # Why Asynchronous?
 
-See [the WhyAsync example](../tiny-async-core/src/example/java/eu/toolchain/examples/WhyAsync.java)
-for some interactive examples of how asynchronous programming can be a helpful pattern.
+This section tries to answer the question; _why consider asynchronous
+programming_?
 
-_Note:_ If you spot anything you disagree with, please open up an Issue.
+_Note:_ If you spot anything you disagree with, please open an Issue and discuss.
 
 ## APIs and Contracts Matter
 
@@ -121,7 +121,7 @@ computing cores).
 
 ## Tricky Thread Scheduling
 
-Reference: [WhyAsync.java Example](tiny-async-examples/src/main/java/eu/toolchain/examples/WhyAsync.java)
+Reference: [WhyAsync.java, TrickyThreadScheduling Example](../tiny-async-examples/src/main/java/eu/toolchain/examples/WhyAsync.java)
 
 This example is intended to showcase how two fairly innocuous mistakes; **a)**
 a too small thread pool, and **b)** blocking some of your live threads, can be
