@@ -35,14 +35,16 @@ public class WhyAsync {
             return;
         }
 
-        System.out.println("Press [enter] to start...");
-
-        System.in.read();
-
-        System.out.println("Async making better use of the given threads.");
-
         trickyThreadScheduling.run();
-        System.exit(0);
+    }
+
+    public static double someWork(int iterations) {
+        double sum = 0.0d;
+
+        for (int i = 0; i < iterations; i++)
+            sum += Math.sqrt(Math.pow(i, 2));
+
+        return sum;
     }
 
     /**
@@ -79,6 +81,8 @@ public class WhyAsync {
         private static final AsyncFramework async = TinyAsync.builder().executor(asyncThreads).build();
 
         private void run() throws Exception {
+            System.out.println("Async making better use of the given threads.");
+
             final long syncTime;
             final double sync;
             final long asyncTime;
@@ -136,7 +140,7 @@ public class WhyAsync {
                         inner.add(async.call(new Callable<Double>() {
                             @Override
                             public Double call() throws Exception {
-                                return someWork();
+                                return someWork(WORK_ITERATIONS);
                             }
                         }));
                     }
@@ -171,7 +175,7 @@ public class WhyAsync {
                         inner.add(syncThreads.submit(new Callable<Double>() {
                             @Override
                             public Double call() throws Exception {
-                                return someWork();
+                                return someWork(WORK_ITERATIONS);
                             }
                         }));
                     }
@@ -185,16 +189,6 @@ public class WhyAsync {
                     return sum;
                 }
             });
-        }
-
-        public double someWork() {
-            double sum = 0.0d;
-
-            for (int i = 0; i < WORK_ITERATIONS; i++) {
-                sum += Math.sqrt(Math.pow(i, 2));
-            }
-
-            return sum;
         }
     }
 }

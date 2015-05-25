@@ -23,6 +23,7 @@
     <module>tiny-async-api</module>
     <module>tiny-async-core</module>
     <module>tiny-async-perftest</module>
+    <module>tiny-async-examples</module>
   </modules>
 
   <licenses>
@@ -248,17 +249,6 @@
         <version>3.0.1</version>
         <configuration>
           <failOnError>true</failOnError>
-        </configuration>
-      </plugin>
-      <!-- exclude examples in all projects -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.5</version>
-        <configuration>
-          <excludes>
-            <exclude>eu/toolchain/examples/*</exclude>
-          </excludes>
         </configuration>
       </plugin>
     </plugins>

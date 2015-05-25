@@ -8,29 +8,7 @@ A tiny asynchronous library for Java.
 
 Writing multithreaded code is hard, tiny async tries to make it easier by providing simple abstractions for executing and manipulating computations through a clean API abstraction.
 
-# Why Asynchronous?
-
-See [the WhyAsync example](tiny-async-core/src/example/java/eu/toolchain/examples/WhyAsync.java)
-for some interactive examples of how asynchronous programming can be a helpful pattern.
-
-_Note:_ If you spot anything you disagree with, please open up an Issue.
-
-## Tricky Thread Scheduling
-
-This example is intended to showcase how two fairly innocuous mistakes; **a)**
-a too small thread pool, and **b)** blocking some of your live threads, can be
-detrimental to performance. Under the correct circumstances (e.g. under load)
-they could cause deadlocks.
-
-The example is intended to showcase this isolated scenario, for which similar
-ones could pop up in a non-trivial application that tries to deal with
-concurrency.
-
-The following image showcases how async futures utilizes all available threads,
-even though the programming pattern between the two solutions are not
-significantly different.
-
-![Tricky Thread Scheduling](images/whyasync-tricky-thread-scheduling.png)
+* [Why Asynchronous?](docs/why-async.md)
 
 # Why TinyAsync?
 
@@ -69,7 +47,7 @@ implementation, but you are already using
 [dependency injection](https://github.com/google/guice), right?
 
 \*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html),
-\*\*: See [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java)
+\*\*: See [AsyncSetup.java](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncSetup.java)
 
 # Setup
 
@@ -83,7 +61,7 @@ See [Api Separation](#api-separation) for why the api is distributed in a separa
 
 After that, the first step is to instantiate the framework.
 
-See [AsyncSetup.java](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSetup.java)
+See [AsyncSetup.java](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncSetup.java)
 for an example of how to do this.
 
 # Api Separation
@@ -132,9 +110,9 @@ An example is if a method throws a checked exception, and you want this to be re
 
 See examples:
 
-* [blocking example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
-* [static results example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncStaticResultsExample.java)
-* [manually resolving a future](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncManualResolvingExample.java)
+* [blocking example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
+* [static results example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncStaticResultsExample.java)
+* [manually resolving a future](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncManualResolvingExample.java)
 
 ## Subscribing to changes
 
@@ -154,7 +132,7 @@ handle).
 
 See examples:
 
-* [subscribe example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncSubscribeExample.java)
+* [subscribe example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncSubscribeExample.java)
 
 ## Blocking until a result is available
 
@@ -171,7 +149,7 @@ convenient in this contrived context.
 
 See examples:
 
-* [blocking example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
+* [blocking example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
 
 ## Transforming results
 
@@ -190,7 +168,7 @@ They also allows to take a falied future, and convert it into a value B.
 
 See examples:
 
-* [transform example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncTransformExample.java)
+* [transform example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncTransformExample.java)
 
 ## Collecting Many Results
 
@@ -233,8 +211,8 @@ computation has been initialized.
 
 See examples:
 
-* [collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
-* [stream collector example](tiny-async-core/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
+* [collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
+* [stream collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
 
 ## Managed References
 
