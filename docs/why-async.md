@@ -68,9 +68,8 @@ All of a sudden your applications becomes slower, you're starting to encounter
 the symptoms of thread starvation - some of your threads rarely seem to run,
 or the inherent cost of context switching - your overall throughput suffers.
 
-Your exact scenario might differ, your OS will most likely do its best to try
-and slice up the available time to maximize throughput. However, there is an
-alternative programming pattern that helps out. 
+The exact scenario will differ, your OS will most likely do its best to try
+and slice up the available time to maximize throughput.
 
 ### An Asynchronous API
 
@@ -115,9 +114,9 @@ potentially be parallelized, that is up to the `MusicServiceAPI` to decide.
 Again, we react when all the results become available by concatenating them.
 
 In the above paragraphs, _Reacting_ typically means handing a task to an already
-active thread on a pool. If the pattern is followed, they rarely block, this
-means that the pool can be sized intelligently (e.g. match the number of actual
-computing cores).
+active thread on a pool. If the async pattern is employed they rarely block, and
+that makes the job of sizing the pool easier. For one you can for most cases
+match the number of available cpus.
 
 ## Tricky Thread Scheduling
 
