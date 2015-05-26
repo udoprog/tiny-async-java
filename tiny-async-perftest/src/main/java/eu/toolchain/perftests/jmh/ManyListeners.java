@@ -1,10 +1,13 @@
-package eu.toolchain.perftests;
+package eu.toolchain.perftests.jmh;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.openjdk.jmh.annotations.Benchmark;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -17,21 +20,19 @@ import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.TinyAsync;
 
-public class ManyListeners implements TestCase {
+public class ManyListeners {
     private static final int SIZE = 10;
     private static final int CALLBACK_COUNT = 1000;
     private static final int EXPECTED_SUM = ((SIZE * (SIZE - 1)) / 2) * CALLBACK_COUNT;
 
     private static int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
 
-    @Override
+    @Benchmark
     public void tiny() throws Exception {
-        ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(THREAD_COUNT));
-
-        final AsyncFramework async = TinyAsync.builder().executor(service).build();
+        final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        final AsyncFramework async = TinyAsync.builder().executor(executor).build();
 
         final AtomicInteger sum = new AtomicInteger();
-
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * SIZE);
 
@@ -59,21 +60,21 @@ public class ManyListeners implements TestCase {
         }
 
         latch.countDown();
-        tasks.await(10, TimeUnit.SECONDS);
+        tasks.await(1, TimeUnit.SECONDS);
 
         if (sum.get() != EXPECTED_SUM)
             throw new IllegalStateException(String.format(
                     "did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
 
-        service.shutdown();
+        executor.shutdown();
     }
 
-    @Override
+    @Benchmark
     public void guava() throws Exception {
-        ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(THREAD_COUNT));
+        final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        final ListeningExecutorService listeningExecutor = MoreExecutors.listeningDecorator(executor);
 
         final AtomicInteger sum = new AtomicInteger();
-
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * SIZE);
 
@@ -92,7 +93,7 @@ public class ManyListeners implements TestCase {
         for (int i = 0; i < SIZE; i++) {
             final int current = i;
 
-            final ListenableFuture<Integer> future = service.submit(new Callable<Integer>() {
+            final ListenableFuture<Integer> future = listeningExecutor.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
                     latch.await();
@@ -106,12 +107,12 @@ public class ManyListeners implements TestCase {
         }
 
         latch.countDown();
-        tasks.await(10, TimeUnit.SECONDS);
+        tasks.await(1, TimeUnit.SECONDS);
 
         if (sum.get() != EXPECTED_SUM)
             throw new IllegalStateException(String.format(
                     "did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
 
-        service.shutdown();
+        listeningExecutor.shutdown();
     }
 }

@@ -239,3 +239,9 @@ references are released.
 The ```Managed#doto(ManagedAction<T>)``` method provides a convenience method
 that will retain the managed reference, until the future returned is finished.
 This is typically a strong indication that the reference is no longer required.
+
+## Other Async Libraries
+
+* [Google Guava (`com.google.common.util.concurrent.ListenableFuture`)](https://github.com/google/guava)
+* [RxJava](https://github.com/ReactiveX/RxJava)
+* [JDeferred](http://jdeferred.org/)

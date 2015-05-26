@@ -1,7 +1,9 @@
-package eu.toolchain.perftests;
+package eu.toolchain.perftests.jmh;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.openjdk.jmh.annotations.Benchmark;
 
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
@@ -9,23 +11,23 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.TinyAsync;
+import eu.toolchain.async.Transform;
 
-public class Immediate implements TestCase {
-    private static final int MANY_TRANSFORM_ITERATIONS = 10000;
+public class Immediate {
+    private static final int ITERATIONS = 10000;
 
     private static AsyncFramework async = TinyAsync.builder().build();
 
-    @Override
+    @Benchmark
     public void tiny() throws Exception {
         final List<AsyncFuture<Boolean>> futures = new ArrayList<>();
 
-        for (int i = 0; i < MANY_TRANSFORM_ITERATIONS; i++) {
-            futures.add(async.resolved(true).transform(new LazyTransform<Boolean, Boolean>() {
+        for (int i = 0; i < ITERATIONS; i++) {
+            futures.add(async.resolved(true).transform(new Transform<Boolean, Boolean>() {
                 @Override
-                public AsyncFuture<Boolean> transform(Boolean result) throws Exception {
-                    return async.resolved(!result);
+                public Boolean transform(Boolean result) throws Exception {
+                    return !result;
                 }
             }));
         }
@@ -33,11 +35,11 @@ public class Immediate implements TestCase {
         async.collect(futures).get();
     }
 
-    @Override
+    @Benchmark
     public void guava() throws Exception {
         final List<ListenableFuture<Boolean>> futures = new ArrayList<>();
 
-        for (int i = 0; i < MANY_TRANSFORM_ITERATIONS; i++) {
+        for (int i = 0; i < ITERATIONS; i++) {
             futures.add(Futures.transform(Futures.immediateFuture(true), new Function<Boolean, Boolean>() {
                 @Override
                 public Boolean apply(Boolean input) {

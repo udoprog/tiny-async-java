@@ -1,10 +1,12 @@
-package eu.toolchain.perftests;
+package eu.toolchain.perftests.jmh;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.openjdk.jmh.annotations.Benchmark;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -15,12 +17,12 @@ import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.TinyAsync;
 
-public class ManyThreads implements TestCase {
+public class ManyThreads {
     private static final int SIZE = 1000;
 
     private static int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
 
-    @Override
+    @Benchmark
     public void tiny() throws Exception {
         final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
         final AsyncFramework async = TinyAsync.builder().executor(executor).build();
@@ -35,7 +37,7 @@ public class ManyThreads implements TestCase {
                 public Integer call() throws Exception {
                     return current;
                 }
-            }, executor));
+            }));
         }
 
         int sum = 0;
@@ -49,16 +51,17 @@ public class ManyThreads implements TestCase {
         executor.shutdown();
     }
 
-    @Override
+    @Benchmark
     public void guava() throws Exception {
-        ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(THREAD_COUNT));
+        final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        final ListeningExecutorService listeningExecutor = MoreExecutors.listeningDecorator(executor);
 
         final List<ListenableFuture<Integer>> futures = new ArrayList<>();
 
         for (int i = 0; i < SIZE; i++) {
             final int current = i;
 
-            futures.add(service.submit(new Callable<Integer>() {
+            futures.add(listeningExecutor.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
                     return current;
@@ -74,6 +77,6 @@ public class ManyThreads implements TestCase {
         if (sum != 499500)
             throw new IllegalStateException("did not properly collect all values");
 
-        service.shutdown();
+        listeningExecutor.shutdown();
     }
 }
