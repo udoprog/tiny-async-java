@@ -10,7 +10,7 @@ import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.TinyAsync;
 
-public class TransformMany implements TestCase {
+public class CollectMany implements TestCase {
     private static final int IMMEDIATE_SIZE = 10000;
 
     private static AsyncFramework async = TinyAsync.builder().build();

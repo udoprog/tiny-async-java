@@ -21,9 +21,9 @@ public class PerformanceTests {
 
         run("immediate", new Immediate());
 
-        run("immediate, into many transforms", new TransformMany());
+        run("collect many immediate", new CollectMany());
 
-        run("immediate, into few transforms", new TransformFew());
+        run("collect few immediate", new CollectFew());
 
         run("many threads contending", new ManyThreads());
     }

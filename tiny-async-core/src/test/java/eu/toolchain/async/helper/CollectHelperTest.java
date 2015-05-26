@@ -1,102 +1,150 @@
 package eu.toolchain.async.helper;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyCollection;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+
+import java.util.Iterator;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.common.collect.ImmutableList;
+
+import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Collector;
 import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.helper.CollectHelper;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CollectHelperTest {
-    private Collector<Object, Object> collector;
-    private ResolvableFuture<Object> target;
+    @Mock
+    private Collector<From, To> collector;
+    @Mock
+    private List<AsyncFuture<From>> sources;
+    @Mock
+    private ResolvableFuture<To> target;
+    @Mock
+    private From result;
+    @Mock
+    private Throwable e;
+    @Mock
+    private AsyncFuture<From> f1;
+    @Mock
+    private AsyncFuture<From> f2;
 
-    private final Object transformed = new Object();
-    private final Object result = new Object();
-    private final Exception e = new Exception();
+    private CollectHelper<From, To> helper;
 
-    @SuppressWarnings("unchecked")
     @Before
     public void setup() {
-        collector = mock(Collector.class);
-        target = mock(ResolvableFuture.class);
+        this.helper = spy(new CollectHelper<>(1, collector, sources, target));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testZeroSize() {
-        new CollectHelper<Object, Object>(0, collector, target);
+        new CollectHelper<From, To>(0, collector, sources, target);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testOneFailed() throws Exception {
-        final CollectHelper<Object, Object> helper = new CollectHelper<Object, Object>(2, collector, target);
-
-        when(collector.collect(anyCollection())).thenReturn(transformed);
-
+    public void testResolved() throws Exception {
+        doNothing().when(helper).add(any(Byte.class), anyObject());
         helper.resolved(result);
-        verify(target, never()).resolve(transformed);
+        verify(helper).add(CollectHelper.RESOLVED, result);
+    }
+
+    @Test
+    public void testFailed() throws Exception {
+        doNothing().when(helper).add(any(Byte.class), anyObject());
+        doNothing().when(helper).checkFailed();
 
         helper.failed(e);
-        verify(target).fail(any(Exception.class));
+
+        verify(helper).add(CollectHelper.FAILED, e);
+        verify(helper).checkFailed();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testOneCancelled() throws Exception {
-        final CollectHelper<Object, Object> helper = new CollectHelper<Object, Object>(2, collector, target);
-
-        when(collector.collect(anyCollection())).thenReturn(transformed);
-
-        helper.resolved(result);
-        verify(target, never()).resolve(transformed);
+    public void testCancelled() throws Exception {
+        doNothing().when(helper).add(any(Byte.class), anyObject());
+        doNothing().when(helper).checkFailed();
 
         helper.cancelled();
-        verify(target).cancel();
-    }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testAllResolved() throws Exception {
-        final CollectHelper<Object, Object> helper = new CollectHelper<Object, Object>(2, collector, target);
-
-        when(collector.collect(anyCollection())).thenReturn(transformed);
-
-        helper.resolved(result);
-        verify(target, never()).resolve(transformed);
-
-        helper.resolved(result);
-        verify(target).resolve(transformed);
+        verify(helper).add(CollectHelper.CANCELLED, null);
+        verify(helper).checkFailed();
     }
 
     @Test
-    public void testCollectThrows() throws Exception {
-        final CollectHelper<Object, Object> helper = new CollectHelper<Object, Object>(1, collector, target);
+    public void testCheckFailed() {
+        final Iterator<AsyncFuture<?>> futures = ImmutableList.<AsyncFuture<?>> of(f1, f2).iterator();
 
-        when(collector.collect(anyCollection())).thenThrow(e);
+        doReturn(futures).when(sources).iterator();
 
-        helper.resolved(result);
-        verify(target).fail(any(Exception.class));
+        assertFalse(helper.failed.get());
+        assertNotNull(helper.sources);
+
+        helper.checkFailed();
+
+        assertTrue(helper.failed.get());
+        assertNull(helper.sources);
+
+        verify(f1, times(1)).cancel();
+        verify(f2, times(1)).cancel();
+
+        // should only fail once
+        helper.checkFailed();
+
+        assertTrue(helper.failed.get());
+        assertNull(helper.sources);
+
+        verify(f1, times(1)).cancel();
+        verify(f2, times(1)).cancel();
     }
 
-    public void testTooManyResolves() throws Exception {
-        final CollectHelper<Object, Object> helper = new CollectHelper<Object, Object>(2, collector, target);
+    @Test(expected = IllegalStateException.class)
+    public void testAddWhenFinished() {
+        helper.finished.set(true);
+        helper.add(CollectHelper.RESOLVED, null);
+    }
 
-        when(collector.collect(anyCollection())).thenReturn(transformed);
+    @Test
+    public void testAdd() {
+        final CollectHelper<From, To>.Results r = mock(CollectHelper.Results.class);
 
-        helper.resolved(result);
-        verify(target, never()).resolve(transformed);
+        doReturn(r).when(helper).collect();
+        doNothing().when(helper).writeAt(any(Integer.class), any(Byte.class), any());
+        doNothing().when(helper).done(r);
 
-        helper.resolved(result);
-        verify(target).resolve(transformed);
+        assertFalse(helper.finished.get());
+        helper.add(CollectHelper.RESOLVED, null);
+        assertTrue(helper.finished.get());
 
-        helper.resolved(result);
+        verify(helper).collect();
+        verify(helper).writeAt(0, CollectHelper.RESOLVED, null);
+        verify(helper).done(r);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddAlreadyFinished() {
+        testAdd();
+        helper.add(CollectHelper.RESOLVED, null);
+    }
+
+    private static interface From {
+    }
+
+    private static interface To {
     }
 }

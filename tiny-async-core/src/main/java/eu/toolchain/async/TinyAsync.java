@@ -159,7 +159,7 @@ public class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable, ExecutorService executor) {
-        return call(callable, executor).lazyTransform(this.<T>lazyCallTransform());
+        return call(callable, executor).lazyTransform(this.<T> lazyCallTransform());
     }
 
     protected final LazyTransform<? extends AsyncFuture<?>, ?> lazyCallTransform = new LazyTransform<AsyncFuture<Object>, Object>() {
@@ -171,7 +171,7 @@ public class TinyAsync implements AsyncFramework {
 
     @SuppressWarnings("unchecked")
     protected <T> LazyTransform<AsyncFuture<T>, T> lazyCallTransform() {
-        return (LazyTransform<AsyncFuture<T>, T>)lazyCallTransform;
+        return (LazyTransform<AsyncFuture<T>, T>) lazyCallTransform;
     }
 
     @Override
@@ -264,7 +264,8 @@ public class TinyAsync implements AsyncFramework {
             final Collector<? super C, ? extends T> collector) {
         final ResolvableFuture<T> target = future();
 
-        final CollectHelper<? super C, ? extends T> done = new CollectHelper<>(futures.size(), collector, target);
+        final CollectHelper<? super C, ? extends T> done = new CollectHelper<>(futures.size(), collector, futures,
+                target);
 
         for (final AsyncFuture<? extends C> q : futures)
             q.on(done);

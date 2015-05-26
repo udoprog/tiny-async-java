@@ -3,9 +3,11 @@ package eu.toolchain.async.helper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.RequiredArgsConstructor;
+import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Collector;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
@@ -14,77 +16,128 @@ import eu.toolchain.async.TinyThrowableUtils;
 
 /**
  * Helper class for {@link TinyAsync#collect(Collection, Collector)}
+ *
+ * The helper implements {@code FutureDone}, and is intended to be used by binding it as a listener to the futures being
+ * collected.
+ *
+ * This is a lock-free implementation capable of writing the results out of order.
  * 
  * @param <S> the source type being collected.
  * @param <T> the target type, the collected sources are being transformed into.
  */
 public class CollectHelper<S, T> implements FutureDone<S> {
-    private final Collector<S, T> collector;
-    private final ResolvableFuture<? super T> target;
+    public static final byte RESOLVED = 0x1;
+    public static final byte FAILED = 0x2;
+    public static final byte CANCELLED = 0x3;
 
-    private final int size;
-    private final Entry[] results;
-    private final AtomicInteger countdown;
+    final Collector<S, T> collector;
+    Collection<? extends AsyncFuture<?>> sources;
+    final ResolvableFuture<? super T> target;
+
+    final int size;
+
+    /* The collected results, non-final to allow for setting to null. Allows for random writes since its a pre-emptively
+     * sized array. */
+    Object[] values;
+    byte[] states;
 
     /* maintain position separate since the is a potential race condition between getting the current position and
      * setting the entry. This is avoided by only relying on countdown to trigger when we are done. */
-    private final AtomicInteger position = new AtomicInteger();
+    final AtomicInteger write = new AtomicInteger();
 
-    public CollectHelper(int size, Collector<S, T> collector, ResolvableFuture<? super T> target) {
+    /* maintain a separate countdown since the write position might be out of order, this causes all threads to
+     * synchronize after the write */
+    final AtomicInteger countdown;
+
+    /* Indicate that collector is finished to avoid the case where the write position wraps around. */
+    final AtomicBoolean finished = new AtomicBoolean();
+
+    /* On a single failure, cause all other sources to be cancelled */
+    final AtomicBoolean failed = new AtomicBoolean();
+
+    public CollectHelper(int size, Collector<S, T> collector, Collection<? extends AsyncFuture<?>> sources,
+            ResolvableFuture<? super T> target) {
         if (size <= 0)
             throw new IllegalArgumentException("size");
 
         this.size = size;
         this.collector = collector;
+        this.sources = sources;
         this.target = target;
-        this.results = entryArray(size);
+        this.values = new Object[size];
+        this.states = new byte[size];
         this.countdown = new AtomicInteger(size);
-    }
-
-    private Entry[] entryArray(int size) {
-        final Entry[] entries = new Entry[size];
-
-        for (int i = 0; i < size; i++)
-            entries[i] = new Entry();
-
-        return entries;
-    }
-
-    @Override
-    public void failed(Throwable e) throws Exception {
-        add(position.getAndIncrement(), Entry.ERROR, e);
     }
 
     @Override
     public void resolved(S result) throws Exception {
-        add(position.getAndIncrement(), Entry.RESULT, result);
+        add(RESOLVED, result);
+    }
+
+    @Override
+    public void failed(Throwable e) throws Exception {
+        add(FAILED, e);
+        checkFailed();
     }
 
     @Override
     public void cancelled() throws Exception {
-        add(position.getAndIncrement(), Entry.CANCEL, null);
+        add(CANCELLED, null);
+        checkFailed();
+    }
+
+    void checkFailed() {
+        if (!failed.compareAndSet(false, true))
+            return;
+
+        for (final AsyncFuture<?> source : sources)
+            source.cancel();
+
+        // help garbage collection.
+        sources = null;
     }
 
     /**
      * Checks in a call back. It also wraps up the group if all the callbacks have checked in.
      */
-    private void add(final int p, final byte type, final Object value) {
-        // could technically wrap around, but that would be a minor issue.
+    void add(final byte type, final Object value) {
+        if (finished.get())
+            throw new IllegalStateException("already finished");
+
+        final int w = write.getAndIncrement();
+
+        if (w < size)
+            writeAt(w, type, value);
+
+        // countdown could wrap around, however we check the state of finished in here.
+        // MUST be called after write to make sure that results and states are synchronized.
         final int c = countdown.decrementAndGet();
 
-        if (p < size) {
-            final Entry e = results[p];
-            e.type = type;
-            e.value = value;
-        }
+        if (c < 0)
+            throw new IllegalStateException("already finished (countdown)");
 
-        if (c == 0) {
-            final Results<S> r = readResults();
-            done(r.results, r.errors, r.cancelled);
-        }
+        // if this thread is not the last thread to check-in, do nothing..
+        if (c != 0)
+            return;
+
+        // make sure this can only happen once.
+        // This protects against countdown, and write wrapping around which should very rarely happen.
+        if (!finished.compareAndSet(false, true))
+            throw new IllegalStateException("already finished");
+
+        done(collect());
     }
 
-    private void done(Collection<S> results, Collection<Throwable> errors, int cancelled) {
+    void writeAt(final int w, final byte state, final Object value) {
+        states[w] = state;
+        values[w] = value;
+    }
+
+    void done(Results r) {
+        final Collection<S> results = r.results;
+        final Collection<Throwable> errors = r.errors;
+        final int cancelled = r.cancelled;
+
         if (!errors.isEmpty()) {
             target.fail(TinyThrowableUtils.buildCollectedException(errors));
             return;
@@ -108,42 +161,39 @@ public class CollectHelper<S, T> implements FutureDone<S> {
     }
 
     @SuppressWarnings("unchecked")
-    private Results<S> readResults() {
+    Results collect() {
         final List<S> results = new ArrayList<>();
         final List<Throwable> errors = new ArrayList<>();
         int cancelled = 0;
 
-        for (final Entry e : this.results) {
-            switch (e.type) {
-            case Entry.ERROR:
-                errors.add((Throwable) e.value);
+        for (int i = 0; i < size; i++) {
+            final byte type = states[i];
+
+            switch (type) {
+            case RESOLVED:
+                results.add((S) values[i]);
                 break;
-            case Entry.RESULT:
-                results.add((S) e.value);
+            case FAILED:
+                errors.add((Throwable) values[i]);
                 break;
-            case Entry.CANCEL:
+            case CANCELLED:
                 cancelled++;
                 break;
             default:
-                throw new IllegalArgumentException("Invalid entry type: " + e.type);
+                throw new IllegalArgumentException("Invalid entry type: " + type);
             }
         }
 
-        return new Results<S>(results, errors, cancelled);
-    }
+        // help garbage collector
+        this.states = null;
+        this.values = null;
 
-    private static final class Entry {
-        private static final byte RESULT = 0x01;
-        private static final byte ERROR = 0x02;
-        private static final byte CANCEL = 0x03;
-
-        private byte type;
-        private Object value;
+        return new Results(results, errors, cancelled);
     }
 
     @RequiredArgsConstructor
-    private static class Results<T> {
-        private final List<T> results;
+    class Results {
+        private final List<S> results;
         private final List<Throwable> errors;
         private final int cancelled;
     }
