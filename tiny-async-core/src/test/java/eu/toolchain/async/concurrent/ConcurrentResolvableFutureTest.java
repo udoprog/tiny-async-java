@@ -3,16 +3,21 @@ package eu.toolchain.async.concurrent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.AsyncFramework;
@@ -22,426 +27,360 @@ import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.FutureFailed;
 import eu.toolchain.async.FutureFinished;
 import eu.toolchain.async.FutureResolved;
-import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ConcurrentResolvableFutureTest {
-    private static final Object result = new Object();
-    private static final Throwable cause = new Exception();
+    private static final Exception cause = new Exception();
+    private static final long duration = 42;
+    private static final TimeUnit unit = TimeUnit.NANOSECONDS;
 
-    private AsyncFuture<Object> other;
-    private FutureDone<Object> done;
+    @Mock
+    private From result;
+
+    @Mock
+    private ConcurrentResolvableFuture.Sync sync;
+
+    @Mock
+    private AsyncFramework async;
+
+    @Mock
+    private AsyncCaller caller;
+
+    @Mock
+    private Runnable runnable;
+
+    @Mock
+    private FutureDone<From> done;
+
+    @Mock
+    private AsyncFuture<?> other;
+
+    @Mock
     private FutureCancelled cancelled;
-    private FutureFinished finished;
-    private FutureResolved<Object> resolved;
+
+    @Mock
+    private FutureResolved<From> resolved;
+
+    @Mock
     private FutureFailed failed;
 
-    private AsyncFramework async;
-    private AsyncCaller caller;
-    private ConcurrentResolvableFuture.S sync;
-    private ConcurrentResolvableFuture<Object> future;
+    @Mock
+    private FutureFinished finished;
 
-    @SuppressWarnings("unchecked")
+    private ConcurrentResolvableFuture<From> future;
+
     @Before
     public void setup() {
-        other = mock(AsyncFuture.class);
-        done = mock(FutureDone.class);
-        cancelled = mock(FutureCancelled.class);
-        finished = mock(FutureFinished.class);
-        resolved = mock(FutureResolved.class);
-        failed = mock(FutureFailed.class);
-        async = mock(AsyncFramework.class);
-        caller = mock(AsyncCaller.class);
-        sync = mock(ConcurrentResolvableFuture.S.class);
-        future = new ConcurrentResolvableFuture<>(async, caller, sync);
-    }
-
-    private void verifyEndState(int resolved, int failed, int cancelled) {
-        verify(caller, times(resolved)).resolve(done, result);
-        verify(caller, times(failed)).fail(done, cause);
-        verify(caller, times(cancelled)).cancel(done);
+        future = spy(new ConcurrentResolvableFuture<From>(async, caller, sync));
     }
 
     @Test
-    public void testIsResolved() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.complete(ConcurrentResolvableFuture.RESOLVED, result)).thenReturn(true);
-
-        assertFalse(future.isResolved());
-        assertFalse(future.isFailed());
-        assertFalse(future.isCancelled());
-        assertFalse(future.isDone());
+    public void testResolve1() {
+        doReturn(true).when(sync).setResult(ConcurrentResolvableFuture.RESOLVED, result);
+        doNothing().when(future).run();
 
         assertTrue(future.resolve(result));
 
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-
-        assertTrue(future.isResolved());
-        assertFalse(future.isFailed());
-        assertFalse(future.isCancelled());
-        assertTrue(future.isDone());
+        verify(sync).setResult(ConcurrentResolvableFuture.RESOLVED, result);
+        verify(future).run();
     }
 
     @Test
-    public void testIsFailed() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.complete(ConcurrentResolvableFuture.FAILED, cause)).thenReturn(true);
+    public void testResolve2() {
+        doReturn(false).when(sync).setResult(ConcurrentResolvableFuture.RESOLVED, result);
+        doNothing().when(future).run();
 
-        assertFalse(future.isResolved());
-        assertFalse(future.isFailed());
-        assertFalse(future.isCancelled());
-        assertFalse(future.isDone());
-
-        assertTrue(future.fail(cause));
-
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.FAILED);
-
-        assertFalse(future.isResolved());
-        assertTrue(future.isFailed());
-        assertFalse(future.isCancelled());
-        assertTrue(future.isDone());
-    }
-
-    @Test
-    public void testIsCancelled() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.complete(ConcurrentResolvableFuture.CANCELLED)).thenReturn(true);
-
-        assertFalse(future.isResolved());
-        assertFalse(future.isFailed());
-        assertFalse(future.isCancelled());
-        assertFalse(future.isDone());
-
-        assertTrue(future.cancel());
-
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-
-        assertFalse(future.isResolved());
-        assertFalse(future.isFailed());
-        assertTrue(future.isCancelled());
-        assertTrue(future.isDone());
-    }
-
-    @Test
-    public void testResolveAlreadyDone() {
-        when(sync.complete(ConcurrentResolvableFuture.RESOLVED, result)).thenReturn(false);
         assertFalse(future.resolve(result));
-        verifyEndState(0, 0, 0);
+
+        verify(sync).setResult(ConcurrentResolvableFuture.RESOLVED, result);
+        verify(future, never()).run();
     }
 
     @Test
-    public void testResolveFireCallbacks() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        future.on(done);
-        when(sync.complete(ConcurrentResolvableFuture.RESOLVED, result)).thenReturn(true);
-        assertTrue(future.resolve(result));
-        verify(caller).resolve(done, result);
-        verifyEndState(1, 0, 0);
-    }
+    public void testFail1() {
+        doReturn(true).when(sync).setResult(ConcurrentResolvableFuture.FAILED, cause);
+        doNothing().when(future).run();
 
-    @Test
-    public void testFailAlreadyDone() {
-        when(sync.complete(ConcurrentResolvableFuture.FAILED, result)).thenReturn(false);
-        assertFalse(future.fail(cause));
-        verifyEndState(0, 0, 0);
-    }
-
-    @Test
-    public void testFailFireCallbacks() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        future.on(done);
-        when(sync.complete(ConcurrentResolvableFuture.FAILED, cause)).thenReturn(true);
         assertTrue(future.fail(cause));
-        verifyEndState(0, 1, 0);
+
+        verify(sync).setResult(ConcurrentResolvableFuture.FAILED, cause);
+        verify(future).run();
     }
 
     @Test
-    public void testCancelAlreadyDone() {
-        when(sync.complete(ConcurrentResolvableFuture.CANCELLED)).thenReturn(false);
-        assertFalse(future.cancel());
-        verifyEndState(0, 0, 0);
+    public void testFail2() {
+        doReturn(false).when(sync).setResult(ConcurrentResolvableFuture.FAILED, cause);
+        doNothing().when(future).run();
+
+        assertFalse(future.fail(cause));
+
+        verify(sync).setResult(ConcurrentResolvableFuture.FAILED, cause);
+        verify(future, never()).run();
     }
 
     @Test
-    public void testCancelFireCallbacks() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        future.on(done);
-        when(sync.complete(ConcurrentResolvableFuture.CANCELLED)).thenReturn(true);
+    public void testCancel1() {
+        doReturn(true).when(sync).setResult(ConcurrentResolvableFuture.CANCELLED);
+        doNothing().when(future).run();
+
+        assertTrue(future.cancel(true));
+
+        verify(sync).setResult(ConcurrentResolvableFuture.CANCELLED);
+        verify(future).run();
+    }
+
+    @Test
+    public void testCancel2() {
+        doReturn(false).when(sync).setResult(ConcurrentResolvableFuture.CANCELLED);
+        doNothing().when(future).run();
+
+        assertFalse(future.cancel(true));
+
+        verify(sync).setResult(ConcurrentResolvableFuture.CANCELLED);
+        verify(future, never()).run();
+    }
+
+    @Test
+    public void testDefaultCancel() {
+        doReturn(true).when(future).cancel(false);
+
         assertTrue(future.cancel());
-        verifyEndState(0, 0, 1);
-    }
 
-    private void verifyBind(int cancel, int state, int poll) {
-        verify(other, times(cancel)).cancel();
-        verify(sync, times(state)).state();
-        verify(sync, times(poll)).poll();
+        verify(future).cancel(false);
     }
 
     @Test
-    public void testBind() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RUNNING);
+    public void testBind() {
+        doReturn(runnable).when(future).otherRunnable(other);
+        doReturn(true).when(future).add(runnable);
+
         assertEquals(future, future.bind(other));
-        assertTrue(future.callbacks.get(0) instanceof ConcurrentResolvableFuture.AsyncFutureCB);
-        verifyBind(0, 1, 0);
+
+        verify(future).otherRunnable(other);
+        verify(future).add(runnable);
+        verify(runnable, never()).run();
     }
 
     @Test
-    public void testBindLateEndState() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-        future.callbacks = null;
+    public void testBindDirect() {
+        doReturn(runnable).when(future).otherRunnable(other);
+        doReturn(false).when(future).add(runnable);
+
         assertEquals(future, future.bind(other));
-        verifyBind(1, 1, 1);
+
+        verify(future).otherRunnable(other);
+        verify(future).add(runnable);
+        verify(runnable).run();
     }
 
     @Test
-    public void testBindCancelled() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-        assertEquals(future, future.bind(other));
-        verifyBind(1, 1, 0);
-    }
+    public void testOnDone() {
+        doReturn(runnable).when(future).doneRunnable(done);
+        doReturn(true).when(future).add(runnable);
 
-    @Test
-    public void testBindResolvedAfterAddFail() {
-        /* non-cancel callback */
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        future.callbacks = null;
-        assertEquals(future, future.bind(other));
-        verifyBind(0, 1, 1);
-    }
-
-    @Test
-    public void testBindResolved() {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        assertEquals(future, future.bind(other));
-        verifyBind(0, 1, 0);
-    }
-
-    private void verifyOnFutureDone(int state, int poll, int resolve, int fail, int cancel) {
-        verify(sync, times(state)).state();
-        verify(sync, times(poll)).poll();
-        verify(caller, times(resolve)).resolve(done, result);
-        verify(caller, times(fail)).fail(done, cause);
-        verify(caller, times(cancel)).cancel(done);
-    }
-
-    @Test
-    public void testOnFutureDoneAddCallback() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
         assertEquals(future, future.on(done));
-        assertTrue(future.callbacks.get(0) instanceof ConcurrentResolvableFuture.DoneCB);
-        verifyOnFutureDone(1, 0, 0, 0, 0);
+
+        verify(future).doneRunnable(done);
+        verify(future).add(runnable);
+        verify(runnable, never()).run();
     }
 
     @Test
-    public void testOnFutureDoneResolvedAfterAddFail() {
-        /* non-cancel callback */
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        when(sync.result(ConcurrentResolvableFuture.RESOLVED)).thenReturn(result);
-        future.callbacks = null;
+    public void testOnDoneDirect() {
+        doReturn(runnable).when(future).doneRunnable(done);
+        doReturn(false).when(future).add(runnable);
+
         assertEquals(future, future.on(done));
-        verifyOnFutureDone(1, 1, 1, 0, 0);
+
+        verify(future).doneRunnable(done);
+        verify(future).add(runnable);
+        verify(runnable).run();
     }
 
     @Test
-    public void testOnFutureDoneResolved() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        when(sync.result(ConcurrentResolvableFuture.RESOLVED)).thenReturn(result);
-        assertEquals(future, future.on(done));
-        verifyOnFutureDone(1, 0, 1, 0, 0);
+    public void testOtherRunnable1() {
+        doReturn(ConcurrentResolvableFuture.CANCELLED).when(sync).poll();
+
+        future.otherRunnable(other).run();
+
+        verify(sync).poll();
+        verify(other).cancel();
     }
 
     @Test
-    public void testOnFutureDoneFailed() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.FAILED);
-        when(sync.result(ConcurrentResolvableFuture.FAILED)).thenReturn(cause);
-        assertEquals(future, future.on(done));
-        verifyOnFutureDone(1, 0, 0, 1, 0);
+    public void testOtherRunnable2() {
+        doReturn(~ConcurrentResolvableFuture.CANCELLED).when(sync).poll();
+
+        future.otherRunnable(other).run();
+
+        verify(sync).poll();
+        verify(other, never()).cancel();
     }
 
     @Test
-    public void testOnFutureDoneCancelled() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-        assertEquals(future, future.on(done));
-        verifyOnFutureDone(1, 0, 0, 0, 1);
+    public void testDoneRunnable1() {
+        doReturn(ConcurrentResolvableFuture.FAILED).when(sync).poll();
+        sync.result = cause;
+
+        future.doneRunnable(done).run();
+
+        verify(sync).poll();
+        verify(caller, never()).resolve(done, result);
+        verify(caller, never()).cancel(done);
+        verify(caller).fail(done, cause);
     }
 
     @Test
-    public void testOnFutureDoneIllegalState() throws Exception {
-        when(sync.state()).thenReturn(Integer.MAX_VALUE);
-        assertEquals(future, future.on(done));
-        verifyOnFutureDone(1, 0, 0, 0, 0);
-    }
+    public void testDoneRunnable2() {
+        doReturn(ConcurrentResolvableFuture.CANCELLED).when(sync).poll();
 
-    private void verifyOnFutureCancelled(int state, int poll, int cancel) {
-        verify(sync, times(state)).state();
-        verify(sync, times(poll)).poll();
-        verify(caller, times(cancel)).cancel(cancelled);
-    }
+        future.doneRunnable(done).run();
 
-    @Test
-    public void testOnFutureCancelledAddCallback() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
-        assertEquals(future, future.on(cancelled));
-        assertTrue(future.callbacks.get(0) instanceof ConcurrentResolvableFuture.CancelledCB);
-        verifyOnFutureCancelled(1, 0, 0);
+        verify(sync).poll();
+        verify(caller, never()).resolve(done, result);
+        verify(caller).cancel(done);
+        verify(caller, never()).fail(done, cause);
     }
 
     @Test
-    public void testOnFutureCancelledCancelledAfterAddFail() {
-        /* non-cancel callback */
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-        future.callbacks = null;
-        assertEquals(future, future.on(cancelled));
-        verifyOnFutureCancelled(1, 1, 1);
+    public void testDoneRunnable3() {
+        doReturn(ConcurrentResolvableFuture.RESOLVED).when(sync).poll();
+        sync.result = result;
+
+        future.doneRunnable(done).run();
+
+        verify(sync).poll();
+        verify(caller).resolve(done, result);
+        verify(caller, never()).cancel(done);
+        verify(caller, never()).fail(done, cause);
     }
 
     @Test
-    public void testOnFutureCancelledCancelled() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-        assertEquals(future, future.on(cancelled));
-        verifyOnFutureCancelled(1, 0, 1);
+    public void testCancelledRunnable1() {
+        doReturn(ConcurrentResolvableFuture.CANCELLED).when(sync).poll();
+
+        future.cancelledRunnable(cancelled).run();
+
+        verify(sync).poll();
+        verify(caller).cancel(cancelled);
     }
 
     @Test
-    public void testOnFutureCancelledOther() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        assertEquals(future, future.on(cancelled));
-        verifyOnFutureCancelled(1, 0, 0);
-    }
+    public void testCancelledRunnable2() {
+        doReturn(~ConcurrentResolvableFuture.CANCELLED).when(sync).poll();
 
-    private void verifyOnFutureFinished(int state, int poll, int finished) {
-        verify(sync, times(state)).state();
-        verify(sync, times(poll)).poll();
-        verify(caller, times(finished)).finish(this.finished);
+        future.cancelledRunnable(cancelled).run();
+
+        verify(sync).poll();
+        verify(caller, never()).cancel(cancelled);
     }
 
     @Test
-    public void testOnFutureFinishedAddCallback() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
-        assertEquals(future, future.on(finished));
-        assertTrue(future.callbacks.get(0) instanceof ConcurrentResolvableFuture.FinishedCB);
-        verifyOnFutureFinished(1, 0, 0);
+    public void testFinishedRunnable() {
+        doReturn(0).when(sync).poll();
+
+        future.finishedRunnable(finished).run();
+
+        verify(sync, never()).poll();
+        verify(caller).finish(finished);
     }
 
     @Test
-    public void testOnFutureFinishedFinishedAfterAddFail() {
-        /* non-cancel callback */
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        future.callbacks = null;
-        assertEquals(future, future.on(finished));
-        verifyOnFutureFinished(1, 0, 1);
+    public void testResolvedRunnable1() {
+        doReturn(ConcurrentResolvableFuture.RESOLVED).when(sync).poll();
+        sync.result = result;
+
+        future.resolvedRunnable(resolved).run();
+
+        verify(sync).poll();
+        verify(caller).resolve(resolved, result);
     }
 
     @Test
-    public void testOnFutureFinishedFinished() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        assertEquals(future, future.on(finished));
-        verifyOnFutureFinished(1, 0, 1);
-    }
+    public void testResolvedRunnable2() {
+        doReturn(~ConcurrentResolvableFuture.RESOLVED).when(sync).poll();
+        sync.result = result;
 
-    private void verifyOnFutureResolved(int state, int poll, int resolved) {
-        verify(sync, times(state)).state();
-        verify(sync, times(poll)).poll();
-        verify(caller, times(resolved)).resolve(this.resolved, result);
+        future.resolvedRunnable(resolved).run();
+
+        verify(sync).poll();
+        verify(caller, never()).resolve(resolved, result);
     }
 
     @Test
-    public void testOnFutureResolvedAddCallback() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
-        assertEquals(future, future.on(resolved));
-        assertTrue(future.callbacks.get(0) instanceof ConcurrentResolvableFuture.ResolvedCB);
-        verifyOnFutureResolved(1, 0, 0);
+    public void testFailedRunnable1() {
+        doReturn(ConcurrentResolvableFuture.FAILED).when(sync).poll();
+        sync.result = cause;
+
+        future.failedRunnable(failed).run();
+
+        verify(sync).poll();
+        verify(caller).fail(failed, cause);
     }
 
     @Test
-    public void testFutureResolvedAfterAddFail() {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        doReturn(result).when(sync).result(ConcurrentResolvableFuture.RESOLVED);
-        future.callbacks = null;
-        assertEquals(future, future.on(resolved));
-        verifyOnFutureResolved(1, 1, 1);
+    public void testFailedRunnable2() {
+        doReturn(~ConcurrentResolvableFuture.FAILED).when(sync).poll();
+        sync.result = result;
+
+        future.failedRunnable(failed).run();
+
+        verify(sync).poll();
+        verify(caller, never()).fail(failed, cause);
     }
 
     @Test
-    public void testOnFutureResolvedResolved() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        doReturn(result).when(sync).result(ConcurrentResolvableFuture.RESOLVED);
-        assertEquals(future, future.on(resolved));
-        verifyOnFutureResolved(1, 0, 1);
+    public void testIsDone() {
+        doReturn(true).when(sync).isDone();
+        assertTrue(future.isDone());
+        verify(sync).isDone();
     }
 
     @Test
-    public void testOnFutureResolvedOther() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.CANCELLED);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
-        assertEquals(future, future.on(resolved));
-        verifyOnFutureResolved(1, 0, 0);
-    }
-
-    private void verifyOnFutureFailed(int state, int poll, int failed) {
-        verify(sync, times(state)).state();
-        verify(sync, times(poll)).poll();
-        verify(caller, times(failed)).fail(this.failed, cause);
+    public void testIsResolved() {
+        doReturn(true).when(sync).isResolved();
+        assertTrue(future.isResolved());
+        verify(sync).isResolved();
     }
 
     @Test
-    public void testOnFutureFailedAddCallback() throws Exception {
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
-        assertEquals(future, future.on(failed));
-        assertTrue(future.callbacks.get(0) instanceof ConcurrentResolvableFuture.FailedCB);
-        verifyOnFutureFailed(1, 0, 0);
+    public void testIsFailed() {
+        doReturn(true).when(sync).isFailed();
+        assertTrue(future.isFailed());
+        verify(sync).isFailed();
     }
 
     @Test
-    public void testOnFutureCFailedFailedAfterAddFail() {
-        /* non-cancel callback */
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RUNNING);
-        when(sync.poll()).thenReturn(ConcurrentResolvableFuture.FAILED);
-        doReturn(cause).when(sync).result(ConcurrentResolvableFuture.FAILED);
-        future.callbacks = null;
-        assertEquals(future, future.on(failed));
-        verifyOnFutureFailed(1, 1, 1);
+    public void testIsCancelled() {
+        doReturn(true).when(sync).isCancelled();
+        assertTrue(future.isCancelled());
+        verify(sync).isCancelled();
     }
 
     @Test
-    public void testOnFutureFailedFailed() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.FAILED);
-        doReturn(cause).when(sync).result(ConcurrentResolvableFuture.FAILED);
-        assertEquals(future, future.on(failed));
-        verifyOnFutureFailed(1, 0, 1);
+    public void testGet() throws ExecutionException, InterruptedException {
+        doReturn(result).when(sync).get();
+        assertEquals(result, future.get());
+        verify(sync).get();
     }
 
     @Test
-    public void testOnFutureFailedOther() throws Exception {
-        // resolve
-        when(sync.state()).thenReturn(ConcurrentResolvableFuture.RESOLVED);
-        doThrow(new RuntimeException()).when(sync).result(anyInt());
-        assertEquals(future, future.on(failed));
-        verifyOnFutureFailed(1, 0, 0);
+    public void testGetNow() throws ExecutionException, InterruptedException {
+        doReturn(result).when(sync).getNow();
+        assertEquals(result, future.getNow());
+        verify(sync).getNow();
+    }
+
+    @Test
+    public void testGetTimed() throws ExecutionException, InterruptedException, TimeoutException {
+        doReturn(result).when(sync).get(duration);
+        assertEquals(result, future.get(duration, unit));
+        verify(sync).get(duration);
+    }
+
+    private static interface To {
+    }
+
+    private static interface From {
     }
 }

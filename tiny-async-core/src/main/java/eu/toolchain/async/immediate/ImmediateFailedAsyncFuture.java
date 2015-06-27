@@ -62,11 +62,6 @@ public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
-        return on(handle);
-    }
-
-    @Override
     public AsyncFuture<T> on(FutureFinished finishable) {
         caller.finish(finishable);
         return this;

@@ -32,4 +32,9 @@ public abstract class DeprecatedCompatAsyncFuture<T> implements AsyncFuture<T> {
     public AsyncFuture<T> cancelled(LazyTransform<Void, T> transform) {
         return lazyCatchCancelled(transform);
     }
+
+    @Override
+    public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
+        return on(handle);
+    }
 }

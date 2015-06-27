@@ -54,11 +54,6 @@ public class ImmediateCancelledAsyncFuture<T> extends AbstractImmediateAsyncFutu
     }
 
     @Override
-    public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
-        return on(handle);
-    }
-
-    @Override
     public AsyncFuture<T> bind(AsyncFuture<?> other) {
         other.cancel();
         return this;
