@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
-import lombok.AllArgsConstructor;
 import eu.toolchain.async.AbstractImmediateAsyncFuture;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.AsyncFramework;
@@ -19,6 +18,7 @@ import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.Transform;
+import lombok.AllArgsConstructor;
 
 // @formatter:off
 /**
@@ -45,7 +45,7 @@ import eu.toolchain.async.Transform;
  *            The type being deferred.
  */
 // @formatter:on
-public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<T> implements ResolvableFuture<T> {
+public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<T>implements ResolvableFuture<T> {
     // waiting for value.
     public static final int RUNNING = 0x0;
     public static final int RESULT_UPDATING = 0x1;
@@ -135,7 +135,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> on(final FutureDone<? super T> done) {
+    public AsyncFuture<T> onDone(final FutureDone<? super T> done) {
         final Runnable runnable = doneRunnable(done);
 
         if (add(runnable))
@@ -146,7 +146,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> on(final FutureCancelled cancelled) {
+    public AsyncFuture<T> onCancelled(final FutureCancelled cancelled) {
         final Runnable runnable = cancelledRunnable(cancelled);
 
         if (add(runnable))
@@ -157,7 +157,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> on(final FutureFinished finishable) {
+    public AsyncFuture<T> onFinished(final FutureFinished finishable) {
         final Runnable runnable = finishedRunnable(finishable);
 
         if (add(runnable))
@@ -168,7 +168,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> on(final FutureResolved<? super T> resolved) {
+    public AsyncFuture<T> onResolved(final FutureResolved<? super T> resolved) {
         final Runnable runnable = resolvedRunnable(resolved);
 
         if (add(runnable))
@@ -179,7 +179,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> on(final FutureFailed failed) {
+    public AsyncFuture<T> onFailed(final FutureFailed failed) {
         final Runnable runnable = failedRunnable(failed);
 
         if (add(runnable))
@@ -320,7 +320,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C> AsyncFuture<C> transform(Transform<? super T, ? extends C> transform) {
+    public <C> AsyncFuture<C> directTransform(Transform<? super T, ? extends C> transform) {
         final int state = sync.state();
 
         if (!isStateReady(state))

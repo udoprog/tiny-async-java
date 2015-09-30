@@ -9,6 +9,11 @@ package eu.toolchain.async;
  */
 public abstract class DeprecatedCompatAsyncFuture<T> implements AsyncFuture<T> {
     @Override
+    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform) {
+        return directTransform(transform);
+    }
+
+    @Override
     public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform) {
         return lazyTransform(transform);
     }
@@ -35,6 +40,31 @@ public abstract class DeprecatedCompatAsyncFuture<T> implements AsyncFuture<T> {
 
     @Override
     public AsyncFuture<T> onAny(FutureDone<? super T> handle) {
-        return on(handle);
+        return onDone(handle);
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureCancelled cancelled) {
+        return onCancelled(cancelled);
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureDone<? super T> done) {
+        return onDone(done);
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureFailed failed) {
+        return onFailed(failed);
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureFinished finishable) {
+        return onFinished(finishable);
+    }
+
+    @Override
+    public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
+        return onResolved(resolved);
     }
 }

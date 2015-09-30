@@ -109,7 +109,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param finishable Function to be fired.
      * @return This future.
      */
-    public AsyncFuture<T> on(FutureFinished finishable);
+    public AsyncFuture<T> onFinished(FutureFinished finishable);
 
     /**
      * Register an listener to be called when this future is cancelled.
@@ -117,7 +117,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param cancelled Listener to fire.
      * @return This future.
      */
-    public AsyncFuture<T> on(FutureCancelled cancelled);
+    public AsyncFuture<T> onCancelled(FutureCancelled cancelled);
 
     /**
      * Register a listener to be called when this future is resolved.
@@ -125,7 +125,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param resolved Listener to fire.
      * @return This future.
      */
-    public AsyncFuture<T> on(FutureResolved<? super T> resolved);
+    public AsyncFuture<T> onResolved(FutureResolved<? super T> resolved);
 
     /**
      * Register a listener that is called on all three types of events for this future; resolved, failed, and cancelled.
@@ -133,7 +133,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param done Listener to fire.
      * @return This future.
      */
-    public AsyncFuture<T> on(FutureDone<? super T> done);
+    public AsyncFuture<T> onDone(FutureDone<? super T> done);
 
     /**
      * Register a listener that is called when a future is failed.
@@ -141,6 +141,36 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param failed Listener to fire.
      * @return This future.
      */
+    public AsyncFuture<T> onFailed(FutureFailed failed);
+
+    /**
+     * @deprecated Use {@link #onFinished(FutureFinished)} instead.
+     */
+    @Deprecated
+    public AsyncFuture<T> on(FutureFinished finishable);
+
+    /**
+     * @deprecated Use {@link #onCancelled(FutureCancelled)} instead.
+     */
+    @Deprecated
+    public AsyncFuture<T> on(FutureCancelled cancelled);
+
+    /**
+     * @deprecated Use {@link #onResolved(FutureResolved)} instead.
+     */
+    @Deprecated
+    public AsyncFuture<T> on(FutureResolved<? super T> resolved);
+
+    /**
+     * @deprecated Use {@link #onDone(FutureDone)} instead.
+     */
+    @Deprecated
+    public AsyncFuture<T> on(FutureDone<? super T> done);
+
+    /**
+     * @deprecated Use {@link #onFailed(FutureFailed)} instead.
+     */
+    @Deprecated
     public AsyncFuture<T> on(FutureFailed failed);
 
     /**
@@ -150,7 +180,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      *
      * @param done Listener to fire.
      * @return This future.
-     * @deprecated Use {@link #on(FutureDone)} instead after it got looser signature.
+     * @deprecated Use other, more specific on* methods with looser signature.
      */
     @Deprecated
     public AsyncFuture<T> onAny(FutureDone<? super T> done);
@@ -167,13 +197,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     * 
+     *
      *   Future<Double> second = future.transform(new Transformer<Integer, Double>() {
      *     Double transform(Integer result) {
      *       return result.doubleValue();
      *     }
      *   };
-     * 
+     *
      *   # use second
      * }
      * </pre>
@@ -182,7 +212,7 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * @param transform The transformation to use.
      * @return A new future transformed to the given type.
      */
-    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform);
+    public <R> AsyncFuture<R> directTransform(Transform<? super T, ? extends R> transform);
 
     /**
      * Transforms the value of one future into another using a deferred transformer function.
@@ -197,13 +227,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
      * <pre>
      * {@code
      *   Future<Integer> first = asyncOperation();
-     * 
+     *
      *   Future<Double> second = first.transform(new Transformer<Integer, Double>() {
      *     void transform(Integer result, Future<Double> future) {
      *       future.finish(result.doubleValue());
      *     }
      *   };
-     * 
+     *
      *   # use second
      * }
      * </pre>
@@ -214,9 +244,13 @@ public interface AsyncFuture<T> extends java.util.concurrent.Future<T> {
     public <R> AsyncFuture<R> lazyTransform(LazyTransform<? super T, R> transform);
 
     /**
-     * @param transform The function to use when transforming the value.
-     * @return A future of type <C> which resolves with the transformed value.
-     * @deprecated Use {@link #lazyTransform(LazyTransform)}.
+     * @deprecated Use {@link #directTransform(Transform)} instead.
+     */
+    @Deprecated
+    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform);
+
+    /**
+     * @deprecated Use {@link #lazyTransform(LazyTransform)} instead.
      */
     @Deprecated
     public <R> AsyncFuture<R> transform(LazyTransform<? super T, R> transform);

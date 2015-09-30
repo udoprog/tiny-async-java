@@ -21,7 +21,7 @@ import eu.toolchain.async.TransformException;
  *
  * @param <T>
  */
-public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<T> implements AsyncFuture<T> {
+public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<T>implements AsyncFuture<T> {
     private final AsyncCaller caller;
     private final Throwable cause;
 
@@ -56,29 +56,29 @@ public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     @Override
-    public AsyncFuture<T> on(FutureDone<? super T> handle) {
+    public AsyncFuture<T> onDone(FutureDone<? super T> handle) {
         caller.fail(handle, cause);
         return this;
     }
 
     @Override
-    public AsyncFuture<T> on(FutureFinished finishable) {
+    public AsyncFuture<T> onFinished(FutureFinished finishable) {
         caller.finish(finishable);
         return this;
     }
 
     @Override
-    public AsyncFuture<T> on(FutureCancelled cancelled) {
+    public AsyncFuture<T> onCancelled(FutureCancelled cancelled) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> on(FutureResolved<? super T> resolved) {
+    public AsyncFuture<T> onResolved(FutureResolved<? super T> resolved) {
         return this;
     }
 
     @Override
-    public AsyncFuture<T> on(FutureFailed failed) {
+    public AsyncFuture<T> onFailed(FutureFailed failed) {
         caller.fail(failed, cause);
         return this;
     }
@@ -130,7 +130,7 @@ public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<
     /* transform */
 
     @Override
-    public <R> AsyncFuture<R> transform(Transform<? super T, ? extends R> transform) {
+    public <R> AsyncFuture<R> directTransform(Transform<? super T, ? extends R> transform) {
         return async.failed(new TransformException(cause));
     }
 
