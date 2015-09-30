@@ -143,7 +143,7 @@ public class TinyAsyncTest {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private void verifyTransform(Class<? extends FutureDone> done) {
         verify(underTest).future();
-        verify(future).on(any(done));
+        verify(future).onDone(any(done));
         verify(resolvableFuture).bind(future);
     }
 
@@ -349,7 +349,7 @@ public class TinyAsyncTest {
                 cancelled.cancelled();
                 return null;
             }
-        }).when(resolvableFuture).on(any(FutureCancelled.class));
+        }).when(resolvableFuture).onCancelled(any(FutureCancelled.class));
 
         underTest.call(callable, executor, resolvableFuture);
         verifyCall(0, 0, 0, 1);
@@ -530,8 +530,8 @@ public class TinyAsyncTest {
 
         verify(underTest).future();
         verify(underTest).bindSignals(resolvableFuture, futures);
-        verify(f1).on(any(CollectHelper.class));
-        verify(f2).on(any(CollectHelper.class));
+        verify(f1).onDone(any(CollectHelper.class));
+        verify(f2).onDone(any(CollectHelper.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -598,8 +598,8 @@ public class TinyAsyncTest {
 
         verify(underTest).future();
         verify(underTest).bindSignals(resolvableFuture, futures);
-        verify(f1).on(any(CollectHelper.class));
-        verify(f2).on(any(CollectHelper.class));
+        verify(f1).onDone(any(CollectHelper.class));
+        verify(f2).onDone(any(CollectHelper.class));
     }
 
     @Test
@@ -662,8 +662,8 @@ public class TinyAsyncTest {
 
         verify(underTest).future();
         verify(underTest).bindSignals(resolvableFuture, futures);
-        verify(f1).on(any(CollectAndDiscardHelper.class));
-        verify(f2).on(any(CollectAndDiscardHelper.class));
+        verify(f1).onDone(any(CollectAndDiscardHelper.class));
+        verify(f2).onDone(any(CollectAndDiscardHelper.class));
     }
 
     @Test
@@ -710,11 +710,11 @@ public class TinyAsyncTest {
                 cancelled.cancelled();
                 return null;
             }
-        }).when(future).on(any(FutureCancelled.class));
+        }).when(future).onCancelled(any(FutureCancelled.class));
 
         underTest.bindSignals(future, futures);
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(f1).cancel();
         verify(f2).cancel();
     }

@@ -21,7 +21,7 @@ public class AsyncSubscribeExample {
             }
         });
 
-        f.on(new FutureDone<Integer>() {
+        f.onDone(new FutureDone<Integer>() {
             @Override
             public void resolved(Integer result) throws Exception {
                 System.out.println("result: " + result);

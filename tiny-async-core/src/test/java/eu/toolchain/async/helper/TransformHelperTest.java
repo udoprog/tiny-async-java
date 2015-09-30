@@ -18,12 +18,6 @@ import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.Transform;
 import eu.toolchain.async.TransformException;
-import eu.toolchain.async.helper.CancelledLazyTransformHelper;
-import eu.toolchain.async.helper.CancelledTransformHelper;
-import eu.toolchain.async.helper.FailedLazyTransformHelper;
-import eu.toolchain.async.helper.FailedTransformHelper;
-import eu.toolchain.async.helper.ResolvedLazyTransformHelper;
-import eu.toolchain.async.helper.ResolvedTransformHelper;
 
 public class TransformHelperTest {
     private static final Object result = new Object();
@@ -78,7 +72,7 @@ public class TransformHelperTest {
 
                 return null;
             }
-        }).when(f).on(any(FutureDone.class));
+        }).when(f).onDone(any(FutureDone.class));
 
         when(transform.transform(result)).thenReturn(transformed);
         when(errorTransform.transform(cause)).thenReturn(transformed);

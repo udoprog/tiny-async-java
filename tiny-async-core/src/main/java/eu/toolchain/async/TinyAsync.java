@@ -103,42 +103,43 @@ public class TinyAsync implements AsyncFramework {
     public <C, T> AsyncFuture<T> transform(final AsyncFuture<C> future,
             final Transform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new ResolvedTransformHelper<C, T>(transform, target));
+        future.onDone(new ResolvedTransformHelper<C, T>(transform, target));
         return target.bind(future);
     }
 
     @Override
     public <C, T> AsyncFuture<T> transform(AsyncFuture<C> future, LazyTransform<? super C, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new ResolvedLazyTransformHelper<C, T>(transform, target));
+        future.onDone(new ResolvedLazyTransformHelper<C, T>(transform, target));
         return target.bind(future);
     }
 
     @Override
     public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final Transform<Throwable, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new FailedTransformHelper<T>(transform, target));
+        future.onDone(new FailedTransformHelper<T>(transform, target));
         return target.bind(future);
     }
 
     @Override
-    public <T> AsyncFuture<T> error(final AsyncFuture<T> future, final LazyTransform<Throwable, ? extends T> transform) {
+    public <T> AsyncFuture<T> error(final AsyncFuture<T> future,
+            final LazyTransform<Throwable, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new FailedLazyTransformHelper<T>(transform, target));
+        future.onDone(new FailedLazyTransformHelper<T>(transform, target));
         return target.bind(future);
     }
 
     @Override
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final Transform<Void, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new CancelledTransformHelper<T>(transform, target));
+        future.onDone(new CancelledTransformHelper<T>(transform, target));
         return target.bind(future);
     }
 
     @Override
     public <T> AsyncFuture<T> cancelled(final AsyncFuture<T> future, final LazyTransform<Void, ? extends T> transform) {
         final ResolvableFuture<T> target = future();
-        future.on(new CancelledLazyTransformHelper<T>(transform, target));
+        future.onDone(new CancelledLazyTransformHelper<T>(transform, target));
         return target.bind(future);
     }
 
@@ -206,7 +207,7 @@ public class TinyAsync implements AsyncFramework {
             return future;
         }
 
-        future.on(new FutureCancelled() {
+        future.onCancelled(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
                 // cancel, but do not interrupt.
@@ -268,7 +269,7 @@ public class TinyAsync implements AsyncFramework {
                 target);
 
         for (final AsyncFuture<? extends C> q : futures)
-            q.on(done);
+            q.onDone(done);
 
         bindSignals(target, futures);
         return target;
@@ -303,7 +304,7 @@ public class TinyAsync implements AsyncFramework {
                 collector, target);
 
         for (final AsyncFuture<? extends C> q : futures)
-            q.on(done);
+            q.onDone(done);
 
         bindSignals(target, futures);
         return target;
@@ -403,7 +404,7 @@ public class TinyAsync implements AsyncFramework {
         final FutureDone<C> done = new CollectAndDiscardHelper<>(futures.size(), target);
 
         for (final AsyncFuture<C> q : futures)
-            q.on(done);
+            q.onDone(done);
 
         bindSignals(target, futures);
         return target;
@@ -431,7 +432,7 @@ public class TinyAsync implements AsyncFramework {
      * @param futures The futures to cancel, when {@code target} is cancelled.
      */
     protected <T> void bindSignals(final AsyncFuture<T> target, final Collection<? extends AsyncFuture<?>> futures) {
-        target.on(new FutureCancelled() {
+        target.onCancelled(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
                 for (final AsyncFuture<?> f : futures)

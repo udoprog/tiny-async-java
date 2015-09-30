@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Coordinator thread for handling delayed callables executing with a given parallelism.
- * 
+ *
  * @param <S> The source type being collected.
  * @param <T> The target type the source type is being collected into.
  */
@@ -63,7 +63,7 @@ public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable 
     // coordinate thread.
     @Override
     public void run() {
-        future.on(new FutureCancelled() {
+        future.onCancelled(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
                 cancel.set(true);
@@ -97,7 +97,7 @@ public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable 
                 break;
             }
 
-            f.on(this);
+            f.onDone(this);
         }
 
         // cleanup, cancel all future callbacks.

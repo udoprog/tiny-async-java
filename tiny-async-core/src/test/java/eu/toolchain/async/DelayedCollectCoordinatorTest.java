@@ -83,14 +83,14 @@ public class DelayedCollectCoordinatorTest {
 
         coordinator.run();
 
-        verify(f, never()).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f, never()).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(mutex, times(callables.size() + PARALLELISM)).acquire();
 
         verify(collector).end(0, 0, 0);
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future).resolve(reference);
         verify(future, never()).fail(any(Throwable.class));
         verify(future, never()).cancel();
@@ -112,12 +112,12 @@ public class DelayedCollectCoordinatorTest {
 
         coordinator.run();
 
-        verify(f, never()).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f, never()).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector, never()).end(any(Integer.class), any(Integer.class), any(Integer.class));
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future, never()).resolve(any());
         verify(future).fail(e);
         verify(future, never()).cancel();
@@ -143,19 +143,19 @@ public class DelayedCollectCoordinatorTest {
                 cancel.cancelled();
                 return null;
             }
-        }).when(future).on(any(FutureCancelled.class));
+        }).when(future).onCancelled(any(FutureCancelled.class));
 
         doThrow(e).when(mutex).acquire();
 
         coordinator.run();
 
-        verify(f, never()).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f, never()).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector, never()).end(any(Integer.class), any(Integer.class), any(Integer.class));
         verify(mutex, times(callables.size())).acquire();
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future).fail(e);
         verify(future, never()).resolve(any());
         verify(future, never()).cancel();
@@ -180,17 +180,17 @@ public class DelayedCollectCoordinatorTest {
                 cancel.cancelled();
                 return null;
             }
-        }).when(future).on(any(FutureCancelled.class));
+        }).when(future).onCancelled(any(FutureCancelled.class));
 
         coordinator.run();
 
-        verify(f, never()).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f, never()).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector).end(0, 0, 2);
         verify(mutex, times(callables.size() + PARALLELISM)).acquire();
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future, never()).fail(any(Throwable.class));
         verify(future).resolve(any());
         verify(future, never()).cancel();
@@ -213,13 +213,13 @@ public class DelayedCollectCoordinatorTest {
 
         coordinator.run();
 
-        verify(f).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector).end(1, 0, 0);
         verify(mutex, times(callables.size() + PARALLELISM)).acquire();
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future, never()).fail(any(Throwable.class));
         verify(future).resolve(reference);
         verify(future, never()).cancel();
@@ -245,14 +245,14 @@ public class DelayedCollectCoordinatorTest {
 
         coordinator.run();
 
-        verify(f).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector).end(1, 1, 0);
         verify(mutex, times(callables.size() + PARALLELISM)).acquire();
         verify(mutex).release();
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future, never()).fail(any(Throwable.class));
         verify(future).resolve(reference);
         verify(future, never()).cancel();
@@ -279,13 +279,13 @@ public class DelayedCollectCoordinatorTest {
 
         coordinator.run();
 
-        verify(f, never()).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f, never()).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector).end(0, 1, 1);
         verify(mutex, times(callables.size() + PARALLELISM)).acquire();
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future, never()).fail(any(Throwable.class));
         verify(future).resolve(reference);
         verify(future, never()).cancel();
@@ -309,13 +309,13 @@ public class DelayedCollectCoordinatorTest {
 
         coordinator.run();
 
-        verify(f).on(coordinator);
-        verify(f2, never()).on(coordinator);
+        verify(f).onDone(coordinator);
+        verify(f2, never()).onDone(coordinator);
 
         verify(collector).end(1, 0, 0);
         verify(mutex, times(callables.size() + PARALLELISM)).acquire();
 
-        verify(future).on(any(FutureCancelled.class));
+        verify(future).onCancelled(any(FutureCancelled.class));
         verify(future).fail(any(Throwable.class));
         verify(future, never()).resolve(reference);
         verify(future, never()).cancel();

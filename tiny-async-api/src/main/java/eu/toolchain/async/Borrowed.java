@@ -56,12 +56,12 @@ public interface Borrowed<T> extends AutoCloseable {
      * <pre>
      * {@code
      * final Managed<Object> managed = ...;
-     * 
+     *
      * final Borrowed<Object> b = managed.borrow();
-     * 
+     *
      * if (!b.isValid())
      *   return async.cancelled();
-     * 
+     *
      * final AsyncFuture<Object> future = doSomethingAsync(b.get());
      * return future.on(b.releasing());
      * }

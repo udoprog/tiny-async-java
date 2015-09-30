@@ -47,7 +47,8 @@ public abstract class TransformHelperTestBase<T> {
         failedTimes = setupFailed();
     }
 
-    protected abstract FutureDone<Object> setupDone(LazyTransform<T, Object> transform, ResolvableFuture<Object> target);
+    protected abstract FutureDone<Object> setupDone(LazyTransform<T, Object> transform,
+            ResolvableFuture<Object> target);
 
     protected Throwable setupError() {
         return new Exception();
@@ -80,7 +81,7 @@ public abstract class TransformHelperTestBase<T> {
         doReturn(f).when(transform).transform(from);
         done.failed(e);
         verify(target).fail(any(TransformException.class));
-        verify(f, times(failedTimes)).on(any(FutureDone.class));
+        verify(f, times(failedTimes)).onDone(any(FutureDone.class));
     }
 
     @Test
@@ -102,7 +103,7 @@ public abstract class TransformHelperTestBase<T> {
         doReturn(f).when(transform).transform(from);
         done.resolved(from);
         verify(target, times(Math.max(cancelledTimes, failedTimes))).resolve(from);
-        verify(f, times(resolvedTimes)).on(any(FutureDone.class));
+        verify(f, times(resolvedTimes)).onDone(any(FutureDone.class));
     }
 
     @Test
@@ -124,7 +125,7 @@ public abstract class TransformHelperTestBase<T> {
         doReturn(f).when(transform).transform(from);
         done.cancelled();
         verify(target, times(1)).cancel();
-        verify(f, times(cancelledTimes)).on(any(FutureDone.class));
+        verify(f, times(cancelledTimes)).onDone(any(FutureDone.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -142,6 +143,6 @@ public abstract class TransformHelperTestBase<T> {
                 verify(target).fail(onCause);
                 return null;
             }
-        }).when(f).on(any(FutureDone.class));
+        }).when(f).onDone(any(FutureDone.class));
     }
 }

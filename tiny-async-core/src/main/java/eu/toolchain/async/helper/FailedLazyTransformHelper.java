@@ -25,7 +25,7 @@ public class FailedLazyTransformHelper<T> implements FutureDone<T> {
             return;
         }
 
-        future.on(new FutureDone<T>() {
+        future.onDone(new FutureDone<T>() {
             @Override
             public void failed(Throwable e) throws Exception {
                 target.fail(e);

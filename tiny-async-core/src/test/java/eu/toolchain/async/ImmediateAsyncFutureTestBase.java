@@ -69,11 +69,6 @@ public abstract class ImmediateAsyncFutureTestBase {
     }
 
     @Test
-    public void testFail() {
-        assertFalse(underTest.fail(cause));
-    }
-
-    @Test
     public void testCancel() {
         assertFalse(underTest.cancel());
     }

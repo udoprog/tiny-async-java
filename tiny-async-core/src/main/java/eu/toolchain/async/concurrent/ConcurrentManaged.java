@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Borrowed;
@@ -23,6 +22,7 @@ import eu.toolchain.async.ManagedSetup;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyStackUtils;
 import eu.toolchain.async.Transform;
+import lombok.RequiredArgsConstructor;
 
 public class ConcurrentManaged<T> implements Managed<T> {
     private static final boolean TRACING;
@@ -120,7 +120,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
             return async.failed(e);
         }
 
-        return f.on(b.releasing());
+        return f.onFinished(b.releasing());
     }
 
     @SuppressWarnings("unchecked")
@@ -163,7 +163,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
             return async.failed(e);
         }
 
-        return constructor.transform(new Transform<T, Void>() {
+        return constructor.directTransform(new Transform<T, Void>() {
             @Override
             public Void transform(T result) throws Exception {
                 if (result == null)
@@ -172,7 +172,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
                 reference.set(result);
                 return null;
             }
-        }).on(new FutureDone<Void>() {
+        }).onDone(new FutureDone<Void>() {
             @Override
             public void failed(Throwable cause) throws Exception {
                 startFuture.fail(cause);

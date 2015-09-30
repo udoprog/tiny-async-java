@@ -56,15 +56,15 @@ public class ManyListeners {
             });
 
             for (int c = 0; c < CALLBACK_COUNT; c++)
-                future.on(callback);
+                future.onResolved(callback);
         }
 
         latch.countDown();
         tasks.await(1, TimeUnit.SECONDS);
 
         if (sum.get() != EXPECTED_SUM)
-            throw new IllegalStateException(String.format(
-                    "did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
+            throw new IllegalStateException(String
+                    .format("did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
 
         executor.shutdown();
     }
@@ -110,8 +110,8 @@ public class ManyListeners {
         tasks.await(1, TimeUnit.SECONDS);
 
         if (sum.get() != EXPECTED_SUM)
-            throw new IllegalStateException(String.format(
-                    "did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
+            throw new IllegalStateException(String
+                    .format("did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
 
         listeningExecutor.shutdown();
     }

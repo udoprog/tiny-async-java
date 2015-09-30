@@ -147,7 +147,7 @@ public class ConcurrentManagedTest {
             doReturn(f).when(action).action(reference);
         }
 
-        doReturn(future).when(f).on(finished);
+        doReturn(future).when(f).onFinished(finished);
     }
 
     private void verifyDoto(boolean valid, boolean throwing) throws Exception {
@@ -159,7 +159,7 @@ public class ConcurrentManagedTest {
         verify(borrowed, times(valid && !throwing ? 1 : 0)).releasing();
         verify(borrowed, times(throwing ? 1 : 0)).release();
         verify(action, times(valid ? 1 : 0)).action(reference);
-        verify(f, times(valid && !throwing ? 1 : 0)).on(finished);
+        verify(f, times(valid && !throwing ? 1 : 0)).onFinished(finished);
     }
 
     @Test
@@ -259,7 +259,7 @@ public class ConcurrentManagedTest {
 
                 return startFuture;
             }
-        }).when(transformed).on(any(FutureDone.class));
+        }).when(transformed).onDone(any(FutureDone.class));
 
         doAnswer(new Answer<AsyncFuture<Void>>() {
             @Override
@@ -268,7 +268,7 @@ public class ConcurrentManagedTest {
                 done.failed(e);
                 return startFuture;
             }
-        }).when(errored).on(any(FutureDone.class));
+        }).when(errored).onDone(any(FutureDone.class));
 
         doAnswer(new Answer<AsyncFuture<Void>>() {
             @Override
@@ -286,7 +286,7 @@ public class ConcurrentManagedTest {
 
                 return transformed;
             }
-        }).when(constructor).transform((Transform<Object, Object>)any(Transform.class));
+        }).when(constructor).directTransform((Transform<Object, Object>)any(Transform.class));
     }
 
     @Test
