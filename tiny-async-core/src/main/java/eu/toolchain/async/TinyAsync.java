@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 import eu.toolchain.async.concurrent.ConcurrentManaged;
+import eu.toolchain.async.concurrent.ConcurrentReloadableManaged;
 import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
 import eu.toolchain.async.helper.CancelledLazyTransformHelper;
 import eu.toolchain.async.helper.CancelledTransformHelper;
@@ -413,6 +414,11 @@ public class TinyAsync implements AsyncFramework {
     @Override
     public <C> Managed<C> managed(ManagedSetup<C> setup) {
         return ConcurrentManaged.newManaged(this, setup);
+    }
+
+    @Override
+    public <C> ReloadableManaged<C> reloadableManaged(ManagedSetup<C> setup) {
+        return ConcurrentReloadableManaged.newReloadableManaged(this, setup);
     }
 
     /**

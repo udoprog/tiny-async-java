@@ -34,9 +34,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
         CAPTURE_STACK = "on".equals(System.getProperty(Managed.CAPTURE_STACK, "off"));
     }
 
-    private static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
+    static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
 
-    private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
+    static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
     private final AsyncFramework async;
     private final ManagedSetup<T> setup;
@@ -123,7 +123,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
         return f.onFinished(b.releasing());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Borrowed<T> borrow() {
         // pre-emptively increase the number of leases in order to prevent the underlying object (if valid) to be
@@ -134,7 +133,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
         if (value == null) {
             release();
-            return (Borrowed<T>) INVALID;
+            return invalid();
         }
 
         final ValidBorrowed<T> b = new ValidBorrowed<T>(this, async, value, getStackTrace());
@@ -245,6 +244,11 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
         final StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         return Arrays.copyOfRange(stack, 0, stack.length - 2);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Borrowed<T> invalid() {
+        return (Borrowed<T>) INVALID;
     }
 
     protected static class InvalidBorrowed<T> implements Borrowed<T> {

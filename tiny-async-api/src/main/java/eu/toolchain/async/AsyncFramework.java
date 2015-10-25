@@ -302,4 +302,13 @@ public interface AsyncFramework {
      * @return The managed reference.
      */
     public <T> Managed<T> managed(ManagedSetup<T> setup);
+
+    /**
+     * Setup a reloadable, managed reference.
+     *
+     * @param setup The setup method for the managed reference.
+     * @param <T> type of the managed reference.
+     * @return The managed reference.
+     */
+    public <T> ReloadableManaged<T> reloadableManaged(ManagedSetup<T> setup);
 }
