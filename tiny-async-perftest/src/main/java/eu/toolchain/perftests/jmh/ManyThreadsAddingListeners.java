@@ -57,8 +57,9 @@ public class ManyThreadsAddingListeners {
                 executor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        for (int c = 0; c < CALLBACK_COUNT; c++)
-                            future.on(callback);
+                        for (int c = 0; c < CALLBACK_COUNT; c++) {
+                            future.onResolved(callback);
+                        }
                     }
                 });
             }
@@ -67,9 +68,10 @@ public class ManyThreadsAddingListeners {
         latch.countDown();
         tasks.await();
 
-        if (sum.get() != EXPECTED_SUM)
+        if (sum.get() != EXPECTED_SUM) {
             throw new IllegalStateException(String.format(
                     "did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
+        }
 
         executor.shutdown();
     }
@@ -110,8 +112,9 @@ public class ManyThreadsAddingListeners {
                 executor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        for (int c = 0; c < CALLBACK_COUNT; c++)
+                        for (int c = 0; c < CALLBACK_COUNT; c++) {
                             Futures.addCallback(future, callback);
+                        }
                     }
                 });
             }
@@ -120,9 +123,10 @@ public class ManyThreadsAddingListeners {
         latch.countDown();
         tasks.await();
 
-        if (sum.get() != EXPECTED_SUM)
+        if (sum.get() != EXPECTED_SUM) {
             throw new IllegalStateException(String.format(
                     "did not properly collect all values: expected %d, but was %d", EXPECTED_SUM, sum.get()));
+        }
 
         listeningExecutor.shutdown();
     }
