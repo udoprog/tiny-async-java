@@ -3,8 +3,6 @@ package eu.toolchain.async;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -14,107 +12,132 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <T> The target type the source type is being collected into.
  */
 public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable {
-    private final AtomicInteger failed = new AtomicInteger();
+    private final AtomicInteger pending = new AtomicInteger();
+
     private final AtomicInteger cancelled = new AtomicInteger();
+    private final AtomicInteger failed = new AtomicInteger();
+
+    /* lock that must be acquired before using {@link callables} */
+    private final Object lock = new Object();
 
     private final AsyncCaller caller;
-    private final Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables;
+    private final Iterator<? extends Callable<? extends AsyncFuture<? extends S>>> callables;
     private final StreamCollector<? super S, ? extends T> collector;
-    private final Semaphore mutex;
     private final ResolvableFuture<? super T> future;
-    private final int totalPermitsToAcquire;
+    private final int parallelism;
+    private final int total;
 
-    final AtomicBoolean cancel = new AtomicBoolean();
+    volatile boolean cancel = false;
+    volatile boolean done = false;
 
     public DelayedCollectCoordinator(final AsyncCaller caller,
             final Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables,
-            final StreamCollector<S, T> collector, final Semaphore mutex, final ResolvableFuture<? super T> future,
+            final StreamCollector<S, T> collector, final ResolvableFuture<? super T> future,
             int parallelism) {
         this.caller = caller;
-        this.callables = callables;
+        this.callables = callables.iterator();
         this.collector = collector;
-        this.mutex = mutex;
         this.future = future;
-        this.totalPermitsToAcquire = (callables.size() + parallelism);
+        this.parallelism = parallelism;
+        this.total = callables.size();
     }
 
     @Override
     public void failed(Throwable cause) {
         caller.fail(collector, cause);
+        pending.decrementAndGet();
         failed.incrementAndGet();
-        cancel.set(true);
-        mutex.release();
+        cancel = true;
+        checkNext();
     }
 
     @Override
     public void resolved(S result) {
         caller.resolve(collector, result);
-        mutex.release();
+        pending.decrementAndGet();
+        checkNext();
     }
 
     @Override
     public void cancelled() {
         caller.cancel(collector);
+        pending.decrementAndGet();
         cancelled.incrementAndGet();
-        cancel.set(true);
-        mutex.release();
+        cancel = true;
+        checkNext();
     }
 
     // coordinate thread.
     @Override
     public void run() {
+        synchronized (lock) {
+            if (!callables.hasNext()) {
+                checkEnd();
+                return;
+            }
+
+            for (int i = 0; i < parallelism && callables.hasNext(); i++) {
+                setupNext(callables.next());
+            }
+        }
+
         future.onCancelled(new FutureCancelled() {
             @Override
             public void cancelled() throws Exception {
-                cancel.set(true);
-                mutex.release();
+                cancel = true;
+                checkNext();
             }
         });
+    }
 
-        final int total = callables.size();
-        final Iterator<? extends Callable<? extends AsyncFuture<? extends S>>> iterator = callables.iterator();
+    private void checkNext() {
+        final Callable<? extends AsyncFuture<? extends S>> next;
 
-        int acquired = 0;
+        synchronized (lock) {
+            // cancel any available callbacks.
+            if (cancel) {
+                while (callables.hasNext()) {
+                    callables.next();
+                    caller.cancel(collector);
+                }
+            }
 
-        while (iterator.hasNext() && !cancel.get()) {
-            try {
-                mutex.acquire();
-            } catch (Exception e) {
-                future.fail(e);
+            if (!callables.hasNext()) {
+                checkEnd();
                 return;
-            }
+            } 
 
-            ++acquired;
-
-            final Callable<? extends AsyncFuture<? extends S>> callable = iterator.next();
-
-            final AsyncFuture<? extends S> f;
-
-            try {
-                f = callable.call();
-            } catch (final Exception e) {
-                failed(e);
-                break;
-            }
-
-            f.onDone(this);
+            next = callables.next();
         }
 
-        // cleanup, cancel all future callbacks.
-        while (iterator.hasNext()) {
-            iterator.next();
-            cancelled();
+        setupNext(next);
+    }
+
+    private void setupNext(final Callable<? extends AsyncFuture<? extends S>> next) {
+        final AsyncFuture<? extends S> f;
+
+        pending.incrementAndGet();
+
+        try {
+            f = next.call();
+        } catch (final Exception e) {
+            failed(e);
+            return;
         }
 
-        // wait for the rest of the pending futures...
-        while (acquired++ < totalPermitsToAcquire) {
-            try {
-                mutex.acquire();
-            } catch (Exception e) {
-                future.fail(e);
-                return;
-            }
+        f.onDone(this);
+    }
+
+    private void checkEnd() {
+        if (pending.get() > 0) {
+            return;
         }
+
+        if (done) {
+            return;
+        }
+
+        done = true;
 
         final int f = failed.get();
         final int c = cancelled.get();
