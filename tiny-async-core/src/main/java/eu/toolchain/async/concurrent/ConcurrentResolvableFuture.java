@@ -4,6 +4,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 import eu.toolchain.async.AbstractImmediateAsyncFuture;
@@ -55,14 +56,13 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public static final int FAILED = 0x11;
     public static final int CANCELLED = 0x12;
 
-    private final Object $lock = new Object();
+    /* pair to CAS into callbacks when we are done */
+    public static final RunnablePair END = new RunnablePair(null, null);
+
+    /* a linked list of callbacks to execute */
+    private AtomicReference<RunnablePair> callbacks = new AtomicReference<>();
 
     private final Sync sync;
-
-    /* if callbacks has been executed or not */
-    boolean executed = false;
-    /* a linked list of callbacks to execute */
-    RunnablePair callbacks = null;
 
     private final AsyncCaller caller;
 
@@ -91,8 +91,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     @Override
     public boolean resolve(T result) {
-        if (!sync.setResult(RESOLVED, result))
+        if (!sync.setResult(RESOLVED, result)) {
             return false;
+        }
 
         run();
         return true;
@@ -100,8 +101,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     @Override
     public boolean fail(Throwable cause) {
-        if (!sync.setResult(FAILED, cause))
+        if (!sync.setResult(FAILED, cause)) {
             return false;
+        }
 
         run();
         return true;
@@ -109,8 +111,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (!sync.setResult(CANCELLED))
+        if (!sync.setResult(CANCELLED)) {
             return false;
+        }
 
         run();
         return true;
@@ -127,8 +130,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> bind(final AsyncFuture<?> other) {
         final Runnable runnable = otherRunnable(other);
 
-        if (add(runnable))
+        if (add(runnable)) {
             return this;
+        }
 
         runnable.run();
         return this;
@@ -138,8 +142,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> onDone(final FutureDone<? super T> done) {
         final Runnable runnable = doneRunnable(done);
 
-        if (add(runnable))
+        if (add(runnable)) {
             return this;
+        }
 
         runnable.run();
         return this;
@@ -149,8 +154,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> onCancelled(final FutureCancelled cancelled) {
         final Runnable runnable = cancelledRunnable(cancelled);
 
-        if (add(runnable))
+        if (add(runnable)) {
             return this;
+        }
 
         runnable.run();
         return this;
@@ -160,8 +166,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> onFinished(final FutureFinished finishable) {
         final Runnable runnable = finishedRunnable(finishable);
 
-        if (add(runnable))
+        if (add(runnable)) {
             return this;
+        }
 
         runnable.run();
         return this;
@@ -171,8 +178,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> onResolved(final FutureResolved<? super T> resolved) {
         final Runnable runnable = resolvedRunnable(resolved);
 
-        if (add(runnable))
+        if (add(runnable)) {
             return this;
+        }
 
         runnable.run();
         return this;
@@ -182,8 +190,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> onFailed(final FutureFailed failed) {
         final Runnable runnable = failedRunnable(failed);
 
-        if (add(runnable))
+        if (add(runnable)) {
             return this;
+        }
 
         runnable.run();
         return this;
@@ -195,8 +204,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             public void run() {
                 final int state = sync.poll();
 
-                if (state == CANCELLED)
+                if (state == CANCELLED) {
                     other.cancel();
+                }
             }
         };
     }
@@ -229,8 +239,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             public void run() {
                 int state = sync.poll();
 
-                if (state == CANCELLED)
+                if (state == CANCELLED) {
                     caller.cancel(cancelled);
+                }
             }
         };
     }
@@ -251,8 +262,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             public void run() {
                 final int state = sync.poll();
 
-                if (state == RESOLVED)
+                if (state == RESOLVED) {
                     caller.resolve(resolved, (T) sync.result);
+                }
             }
         };
     }
@@ -263,8 +275,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             public void run() {
                 final int state = sync.poll();
 
-                if (state == FAILED)
+                if (state == FAILED) {
                     caller.fail(failed, (Throwable) sync.result);
+                }
             }
         };
     }
@@ -323,16 +336,19 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public <C> AsyncFuture<C> directTransform(Transform<? super T, ? extends C> transform) {
         final int state = sync.state();
 
-        if (!isStateReady(state))
+        if (!isStateReady(state)) {
             return async.transform(this, transform);
+        }
 
         // shortcut
 
-        if (state == CANCELLED)
+        if (state == CANCELLED) {
             return async.cancelled();
+        }
 
-        if (state == FAILED)
+        if (state == FAILED) {
             return async.failed((Throwable) sync.result);
+        }
 
         return transformResolved(transform, (T) sync.result);
     }
@@ -342,16 +358,19 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public <C> AsyncFuture<C> lazyTransform(final LazyTransform<? super T, C> transform) {
         final int state = sync.state();
 
-        if (!isStateReady(state))
+        if (!isStateReady(state)) {
             return async.transform(this, transform);
+        }
 
         // shortcut
 
-        if (state == CANCELLED)
+        if (state == CANCELLED) {
             return async.cancelled();
+        }
 
-        if (state == FAILED)
+        if (state == FAILED) {
             return async.failed((Throwable) sync.result);
+        }
 
         return lazyTransformResolved(transform, (T) sync.result);
     }
@@ -360,12 +379,15 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> catchFailed(Transform<Throwable, ? extends T> transform) {
         final int state = sync.state();
 
-        if (!isStateReady(state))
+        if (!isStateReady(state)) {
             return async.error(this, transform);
+        }
 
         // shortcut
-        if (state == FAILED)
+
+        if (state == FAILED) {
             return transformFailed(transform, (Throwable) sync.result);
+        }
 
         return this;
     }
@@ -374,12 +396,15 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> lazyCatchFailed(LazyTransform<Throwable, T> transform) {
         final int state = sync.state();
 
-        if (!isStateReady(state))
+        if (!isStateReady(state)) {
             return async.error(this, transform);
+        }
 
         // shortcut
-        if (state == FAILED)
+
+        if (state == FAILED) {
             return lazyTransformFailed(transform, (Throwable) sync.result);
+        }
 
         return this;
     }
@@ -388,13 +413,15 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> catchCancelled(Transform<Void, ? extends T> transform) {
         final int state = sync.state();
 
-        if (!isStateReady(state))
+        if (!isStateReady(state)) {
             return async.cancelled(this, transform);
+        }
 
         // shortcut
 
-        if (state == CANCELLED)
+        if (state == CANCELLED) {
             return transformCancelled(transform);
+        }
 
         return this;
     }
@@ -403,33 +430,17 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     public AsyncFuture<T> lazyCatchCancelled(LazyTransform<Void, T> transform) {
         final int state = sync.state();
 
-        if (!isStateReady(state))
+        if (!isStateReady(state)) {
             return async.cancelled(this, transform);
+        }
 
         // shortcut
 
-        if (state == CANCELLED)
+        if (state == CANCELLED) {
             return lazyTransformCancelled(transform);
-
-        return this;
-    }
-
-    /**
-     * Take and reset all callbacks.
-     */
-    RunnablePair takeAndClear() {
-        final RunnablePair entries;
-
-        synchronized ($lock) {
-            if (executed)
-                return null;
-
-            executed = true;
-            entries = callbacks;
-            callbacks = null;
         }
 
-        return entries;
+        return this;
     }
 
     void run() {
@@ -442,6 +453,21 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
     }
 
     /**
+     * Take and reset all callbacks.
+     */
+    RunnablePair takeAndClear() {
+        RunnablePair entries;
+
+        while ((entries = callbacks.get()) != END) {
+            if (callbacks.compareAndSet(entries, END)) {
+                return entries;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Attempt to add an event listener to the list of listeners.
      *
      * This implementation uses a spin-lock, where the loop copies the entire list of listeners.
@@ -451,17 +477,15 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
      * @return {@code true} if a task has been queued up, {@code false} otherwise.
      */
     boolean add(Runnable runnable) {
-        if (executed)
-            return false;
+        RunnablePair entries;
 
-        synchronized ($lock) {
-            if (executed)
-                return false;
-
-            callbacks = new RunnablePair(runnable, callbacks);
+        while ((entries = callbacks.get()) != END) {
+            if (callbacks.compareAndSet(entries, new RunnablePair(runnable, entries))) {
+                return true;
+            }
         }
 
-        return true;
+        return false;
     }
 
     public static boolean isStateReady(int state) {
@@ -493,8 +517,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
         }
 
         public Throwable cause() {
-            if (getState() != FAILED)
+            if (getState() != FAILED) {
                 throw new IllegalStateException("future is not in a failed state");
+            }
 
             return (Throwable) result;
         }
@@ -520,11 +545,13 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
             final int s = getState();
 
-            if (s == CANCELLED)
+            if (s == CANCELLED) {
                 throw new CancellationException();
+            }
 
-            if (s == FAILED)
+            if (s == FAILED) {
                 throw new ExecutionException((Throwable) result);
+            }
 
             return result;
         }
@@ -533,30 +560,27 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             if (!tryAcquireSharedNanos(-1, nanos))
                 throw new TimeoutException();
 
-            final int s = getState();
-
-            if (s == CANCELLED)
+            switch (getState()) {
+            case CANCELLED:
                 throw new CancellationException();
-
-            if (s == FAILED)
+            case FAILED:
                 throw new ExecutionException((Throwable) result);
-
-            return result;
+            default:
+                return result;
+            }
         }
 
         public Object getNow() throws ExecutionException {
-            final int s = getState();
-
-            if (s == CANCELLED)
+            switch (getState()) {
+            case CANCELLED:
                 throw new CancellationException();
-
-            if (s == FAILED)
+            case FAILED:
                 throw new ExecutionException((Throwable) result);
-
-            if (s == RESOLVED)
+            case RESOLVED:
                 return result;
-
-            throw new IllegalStateException("future is not completed");
+            default:
+                throw new IllegalStateException("future is not completed");
+            }
         }
 
         /**
@@ -567,8 +591,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          * @see #setResult(int, Object)
          */
         public boolean setResult(int state) {
-            if (!compareAndSetState(RUNNING, state))
+            if (!compareAndSetState(RUNNING, state)) {
                 return false;
+            }
 
             releaseShared(-1);
             return true;
@@ -584,8 +609,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          * @return {@code true} if the given transition is valid and happened, {@code false} otherwise}.
          */
         public boolean setResult(int state, Object result) {
-            if (!compareAndSetState(RUNNING, RESULT_UPDATING))
+            if (!compareAndSetState(RUNNING, RESULT_UPDATING)) {
                 return false;
+            }
 
             this.result = result;
             setState(state);
