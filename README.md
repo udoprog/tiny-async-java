@@ -46,8 +46,8 @@ framework](tiny-async-api/src/main/java/eu/toolchain/async/AsyncFramework.java)
 implementation, but you are already using
 [dependency injection](https://github.com/google/guice), right?
 
-\*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html),
-\*\*: See [AsyncSetup.java](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncSetup.java)
+\*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html)<br />
+\*\*: See [AsyncSetup](tiny-async-examples/src/main/java/eu/toolchain/examples/AsyncSetup.java)
 
 # Setup
 
