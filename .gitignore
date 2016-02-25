@@ -9,3 +9,6 @@ target
 .settings
 bin
 pom.xml.versionsBackup
+*.iml
+.idea
+.factorypath
