@@ -22,14 +22,14 @@ public interface AsyncFramework {
      *
      * @return The default caller.
      */
-    public AsyncCaller caller();
+    AsyncCaller caller();
 
     /**
      * Retrieve a caller implementation that is threaded, or fail if none is available.
      *
      * @return An async caller that is threaded.
      */
-    public AsyncCaller threadedCaller();
+    AsyncCaller threadedCaller();
 
     /**
      * Build a new resolvable future.
@@ -37,13 +37,13 @@ public interface AsyncFramework {
      * The future is returned in a running state, and can be resolved, failed, or cancelled. See documentation for
      * {@link AsyncFuture} for details on the various states.
      *
-     * These futures are guaranteed to be thread-safe, all of their public methods can be called from any thread, at any
+     * These futures are guaranteed to be thread-safe, all of their methods can be called from any thread, at any
      * time.
      *
      * @return A new <em>resolvable</em> future.
      * @param <T> type of the future.
      */
-    public <T> ResolvableFuture<T> future();
+    <T> ResolvableFuture<T> future();
 
     /**
      * Returns an already resolved void future.
@@ -53,7 +53,7 @@ public interface AsyncFramework {
      * @see #resolved(Object)
      * @return A new <em>already resolved</em> future.
      */
-    public AsyncFuture<Void> resolved();
+    AsyncFuture<Void> resolved();
 
     /**
      * Build an already resolved future.
@@ -62,7 +62,7 @@ public interface AsyncFramework {
      * @param <T> type of the future.
      * @return A new resolved future.
      */
-    public <T> AsyncFuture<T> resolved(T value);
+    <T> AsyncFuture<T> resolved(T value);
 
     /**
      * Build an already failed future.
@@ -71,7 +71,7 @@ public interface AsyncFramework {
      * @param <T> type of the future.
      * @return A new <em>failed</em> future.
      */
-    public <T> AsyncFuture<T> failed(Throwable e);
+    <T> AsyncFuture<T> failed(Throwable e);
 
     /**
      * Build an immediately cancelled future.
@@ -79,7 +79,7 @@ public interface AsyncFramework {
      * @param <T> type of the future.
      * @return A new cancelled future.
      */
-    public <T> AsyncFuture<T> cancelled();
+    <T> AsyncFuture<T> cancelled();
 
     /**
      * Transform a future of type C, to a future of type T.
@@ -92,7 +92,7 @@ public interface AsyncFramework {
      * @param <T> target type the future is being transformed into.
      * @return A new future of type T.
      */
-    public <S, T> AsyncFuture<T> transform(AsyncFuture<S> future, Transform<? super S, ? extends T> transform);
+    <S, T> AsyncFuture<T> transform(AsyncFuture<S> future, Transform<? super S, ? extends T> transform);
 
     /**
      * Transform a future of type C, to a future of type T using lazy transformation.
@@ -107,7 +107,7 @@ public interface AsyncFramework {
      * @param <T> target type the future is being transformed into.
      * @return A new future of type T.
      */
-    public <S, T> AsyncFuture<T> transform(AsyncFuture<S> future, LazyTransform<? super S, ? extends T> transform);
+    <S, T> AsyncFuture<T> transform(AsyncFuture<S> future, LazyTransform<? super S, ? extends T> transform);
 
     /**
      * Transform a failing future into a resolved future.
@@ -118,7 +118,7 @@ public interface AsyncFramework {
      * @param transform The transform implementation to use.
      * @return A new future which does not fail.
      */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, Transform<Throwable, ? extends T> transform);
+    <T> AsyncFuture<T> error(AsyncFuture<T> future, Transform<Throwable, ? extends T> transform);
 
     /**
      * Transform a failing future into a resolved future.
@@ -132,7 +132,7 @@ public interface AsyncFramework {
      * @param <T> type of the transformed future.
      * @return A new future which does not fail.
      */
-    public <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform);
+    <T> AsyncFuture<T> error(AsyncFuture<T> future, LazyTransform<Throwable, ? extends T> transform);
 
     /**
      * Transform a cancelled future into a resolved future.
@@ -143,7 +143,7 @@ public interface AsyncFramework {
      * @return A new future which does not cancel.
      * @see AsyncFuture#catchCancelled(Transform)
      */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, Transform<Void, ? extends T> transform);
+    <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, Transform<Void, ? extends T> transform);
 
     /**
      * Transform a cancelled future into a resolved future.
@@ -156,7 +156,7 @@ public interface AsyncFramework {
      * @return A new future which does not cancel.
      * @see AsyncFuture#lazyCatchCancelled(LazyTransform)
      */
-    public <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform);
+    <T> AsyncFuture<T> cancelled(AsyncFuture<T> future, LazyTransform<Void, ? extends T> transform);
 
     /**
      * Build a new future that is the result of collecting all the results in a collection.
@@ -165,7 +165,7 @@ public interface AsyncFramework {
      * @param <T> type of the collected future.
      * @return A new future that is the result of collecting all results.
      */
-    public <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<? extends T>> futures);
+    <T> AsyncFuture<Collection<T>> collect(Collection<? extends AsyncFuture<? extends T>> futures);
 
     /**
      * Build a new future that is the result of reducing the provided collection of futures using the provided
@@ -177,7 +177,7 @@ public interface AsyncFramework {
      * @param <T> target type the collected futures are being transformed into.
      * @return A new future that is the result of reducing the collection of futures.
      */
-    public <S, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends S>> futures,
+    <S, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends S>> futures,
             Collector<? super S, ? extends T> collector);
 
     /**
@@ -199,7 +199,7 @@ public interface AsyncFramework {
      * @param <T> target type the collected futures are being transformed into.
      * @return A new future that is the result of reducing the collection of futures.
      */
-    public <S, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends S>> futures,
+    <S, T> AsyncFuture<T> collect(Collection<? extends AsyncFuture<? extends S>> futures,
             StreamCollector<? super S, ? extends T> collector);
 
     /**
@@ -212,7 +212,7 @@ public interface AsyncFramework {
      * @param <T> type of the futures being collected and discarded.
      * @return A new future that is the result of collecting the provided futures, but discarding their results.
      */
-    public <T> AsyncFuture<Void> collectAndDiscard(Collection<? extends AsyncFuture<T>> futures);
+    <T> AsyncFuture<Void> collectAndDiscard(Collection<? extends AsyncFuture<T>> futures);
 
     /**
      * Collect the result from a collection of futures, that are lazily created. Futures will be created using the given
@@ -231,7 +231,7 @@ public interface AsyncFramework {
      * @param <T> target type the collected futures are being transformed into.
      * @return A future that will be resolved when all of the collected futures are resolved.
      */
-    public <S, T> AsyncFuture<T> eventuallyCollect(
+    <S, T> AsyncFuture<T> eventuallyCollect(
             Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables,
             StreamCollector<? super S, ? extends T> collector, int parallelism);
 
@@ -244,7 +244,7 @@ public interface AsyncFramework {
      * @throws IllegalStateException if no default executor service is configured.
      * @see #call(Callable, ExecutorService)
      */
-    public <T> AsyncFuture<T> call(Callable<? extends T> callable);
+    <T> AsyncFuture<T> call(Callable<? extends T> callable);
 
     /**
      * Call the given callable on the default executor and track the lazy result using a future,
@@ -256,7 +256,7 @@ public interface AsyncFramework {
      * @return A future tracking the result of the lazy callable.
      * @see #lazyCall(Callable, ExecutorService)
      */
-    public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable);
+    <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable);
 
     /**
      * Call the given callable on the provided executor and track the result using a future.
@@ -267,7 +267,7 @@ public interface AsyncFramework {
      * @return A future tracking the result of the callable.
      * @see #call(Callable, ExecutorService, ResolvableFuture)
      */
-    public <T> AsyncFuture<T> call(Callable<? extends T> callable, ExecutorService executor);
+    <T> AsyncFuture<T> call(Callable<? extends T> callable, ExecutorService executor);
 
     /**
      * Call the given callable on the provided executor and track the lazy result using a future,
@@ -279,7 +279,7 @@ public interface AsyncFramework {
      * @return A future tracking the result of the callable.
      * @see #call(Callable, ExecutorService, ResolvableFuture)
      */
-    public <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable, ExecutorService executor);
+    <T> AsyncFuture<T> lazyCall(Callable<? extends AsyncFuture<T>> callable, ExecutorService executor);
 
     /**
      * Call the given callable and resolve the given future with its result.
@@ -292,7 +292,7 @@ public interface AsyncFramework {
      * @param <T> type of the future.
      * @return The future that will be resolved.
      */
-    public <T> AsyncFuture<T> call(Callable<? extends T> callable, ExecutorService executor, ResolvableFuture<T> future);
+    <T> AsyncFuture<T> call(Callable<? extends T> callable, ExecutorService executor, ResolvableFuture<T> future);
 
     /**
      * Setup a managed reference.
@@ -301,7 +301,7 @@ public interface AsyncFramework {
      * @param <T> type of the managed reference.
      * @return The managed reference.
      */
-    public <T> Managed<T> managed(ManagedSetup<T> setup);
+    <T> Managed<T> managed(ManagedSetup<T> setup);
 
     /**
      * Setup a reloadable, managed reference.
@@ -310,5 +310,14 @@ public interface AsyncFramework {
      * @param <T> type of the managed reference.
      * @return The managed reference.
      */
-    public <T> ReloadableManaged<T> reloadableManaged(ManagedSetup<T> setup);
+    <T> ReloadableManaged<T> reloadableManaged(ManagedSetup<T> setup);
+
+    /**
+     * Retry the given operation until successful.
+     *
+     * @param callable The operation to run.
+     * @param policy The retry policy to apply.
+     * @return A future that will be resolved, when the called future is resolved.
+     */
+    <T> AsyncFuture<T> retryUntilResolved(Callable<AsyncFuture<T>> callable, RetryPolicy policy);
 }

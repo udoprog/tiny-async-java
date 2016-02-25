@@ -96,7 +96,7 @@ public class TinyAsyncTest {
 
     @Before
     public void setup() {
-        underTest = spy(new TinyAsync(executor, caller, threadedCaller));
+        underTest = spy(new TinyAsync(executor, caller, threadedCaller, null));
     }
 
     @Test
@@ -106,38 +106,38 @@ public class TinyAsyncTest {
 
     @Test
     public void testGetDefaultExecutor() {
-        assertEquals(executor, new TinyAsync(executor, caller, null).defaultExecutor());
+        assertEquals(executor, new TinyAsync(executor, caller, null, null).defaultExecutor());
     }
 
     @Test
     public void testGetCaller() {
-        assertEquals(caller, new TinyAsync(null, caller, null).caller());
+        assertEquals(caller, new TinyAsync(null, caller, null, null).caller());
     }
 
     @Test
     public void testGetThreadedCaller() {
-        assertEquals(threadedCaller, new TinyAsync(null, caller, threadedCaller).threadedCaller());
+        assertEquals(threadedCaller, new TinyAsync(null, caller, threadedCaller, null).threadedCaller());
     }
 
     @Test
     public void testNullCaller() {
         except.expect(NullPointerException.class);
         except.expectMessage("caller");
-        new TinyAsync(null, null, null);
+        new TinyAsync(null, null, null, null);
     }
 
     @Test
     public void testMissingDefaultExecutorThrows() {
         except.expect(IllegalStateException.class);
         except.expectMessage("no default executor");
-        new TinyAsync(null, caller, null).defaultExecutor();
+        new TinyAsync(null, caller, null, null).defaultExecutor();
     }
 
     @Test
     public void testMissingThreadedCallerThrows() {
         except.expect(IllegalStateException.class);
         except.expectMessage("no threaded caller");
-        new TinyAsync(null, caller, null).threadedCaller();
+        new TinyAsync(null, caller, null, null).threadedCaller();
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

@@ -2,12 +2,14 @@ package eu.toolchain.async;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class TinyAsyncBuilder {
     private AsyncCaller caller;
     private boolean threaded;
     private ExecutorService executor;
     private ExecutorService callerExecutor;
+    private ScheduledExecutorService scheduler;
 
     protected TinyAsyncBuilder() {
     }
@@ -76,13 +78,24 @@ public class TinyAsyncBuilder {
         return this;
     }
 
+    /**
+     * Specify a scheduler to use with the built TinyAsync instance.
+     *
+     * @param scheduler The scheduler to use.
+     * @return This builder.
+     */
+    public TinyAsyncBuilder scheduler(ScheduledExecutorService scheduler) {
+        this.scheduler = scheduler;
+        return this;
+    }
+
     public TinyAsync build() {
         final ExecutorService defaultExecutor = setupDefaultExecutor();
         final ExecutorService callerExecutor = setupCallerExecutor(defaultExecutor);
         final AsyncCaller caller = setupCaller();
         final AsyncCaller threadedCaller = setupThreadedCaller(caller, callerExecutor);
 
-        return new TinyAsync(defaultExecutor, caller, threadedCaller);
+        return new TinyAsync(defaultExecutor, caller, threadedCaller, scheduler);
     }
 
     private AsyncCaller setupThreadedCaller(AsyncCaller caller, ExecutorService callerExecutor) {
