@@ -2,13 +2,15 @@ package eu.toolchain.async;
 
 /**
  * User-defined functions to handle unexpected circumstances.
- *
- * The implementation of these methods will be invoked from the calling thread that interacts with the future.
- *
- * None of the below methods throw checked exceptions, and they are intended to never throw anything, with the exception
- * of {@code Error}. This means that the implementor is required to make sure this doesn't happen, the best way to
- * accomplish this is to wrap each callback in a try-catch statement like below.
- *
+ * <p>
+ * The implementation of these methods will be invoked from the calling thread that interacts with
+ * the future.
+ * <p>
+ * None of the below methods throw checked exceptions, and they are intended to never throw
+ * anything, with the exception of {@code Error}. This means that the implementor is required to
+ * make sure this doesn't happen, the best way to accomplish this is to wrap each callback in a
+ * try-catch statement like below.
+ * <p>
  * <pre>
  * {@code
  * new AsyncCaller() {
@@ -19,14 +21,14 @@ package eu.toolchain.async;
  *       // log unexpected error
  *     }
  *   }
- * 
+ *
  *   // .. other methods
  * }
  * }
  * </pre>
- *
- * The core of the framework provides some base classes for easily accomplishing this, most notable is
- * {@code DirectAsyncCaller}.
+ * <p>
+ * The core of the framework provides some base classes for easily accomplishing this, most notable
+ * is {@code DirectAsyncCaller}.
  *
  * @author udoprog
  */
@@ -35,7 +37,8 @@ public interface AsyncCaller {
      * Indicate that a Managed reference has been leaked.
      *
      * @param reference The reference that was leaked.
-     * @param stack The stacktrace for where it was leaked, can be {@code null} if information is unavailable.
+     * @param stack The stacktrace for where it was leaked, can be {@code null} if information is
+     * unavailable.
      * @param <T> the type of the reference being leaked.
      */
     public <T> void referenceLeaked(T reference, StackTraceElement[] stack);
@@ -62,8 +65,8 @@ public interface AsyncCaller {
      *
      * @param handle The handle to run.
      * @param cause The cause of the failure.
-     * @see FutureDone#failed(Throwable)
      * @param <T> the type of the handle.
+     * @see FutureDone#failed(Throwable)
      */
     public <T> void fail(FutureDone<T> handle, Throwable cause);
 
@@ -71,8 +74,8 @@ public interface AsyncCaller {
      * Run cancelled handle on {@code FutureDone}.
      *
      * @param handle The handle to run on.
-     * @see FutureDone#cancelled()
      * @param <T> type of the handle.
+     * @see FutureDone#cancelled()
      */
     public <T> void cancel(FutureDone<T> handle);
 

@@ -1,10 +1,10 @@
 package eu.toolchain.examples;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.TinyAsync;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 /**
  * An example application showcasing static futures.
@@ -25,8 +25,9 @@ public class AsyncStaticResultsExample {
     public static AsyncFuture<String> cachingOperation(TinyAsync async, boolean useCached) {
         // no need to perform expensive operation.
         // return a static value.
-        if (useCached)
+        if (useCached) {
             return async.resolved("cached");
+        }
 
         return async.call(new Callable<String>() {
             @Override

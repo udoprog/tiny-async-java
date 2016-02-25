@@ -1,5 +1,10 @@
 package eu.toolchain.async;
 
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,11 +15,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class TinyAsyncCollectIntegrationTest {
     private static final Object REF = new Object();
@@ -45,13 +45,14 @@ public class TinyAsyncCollectIntegrationTest {
     public void testEmpty() throws InterruptedException, ExecutionException {
         final List<AsyncFuture<Exception>> futures = new ArrayList<>();
 
-        final AsyncFuture<Object> result = async.collect(futures, new Collector<Exception, Object>() {
-            @Override
-            public Object collect(Collection<Exception> results) throws Exception {
-                Assert.assertEquals(0, results.size());
-                return REF;
-            }
-        });
+        final AsyncFuture<Object> result =
+            async.collect(futures, new Collector<Exception, Object>() {
+                @Override
+                public Object collect(Collection<Exception> results) throws Exception {
+                    Assert.assertEquals(0, results.size());
+                    return REF;
+                }
+            });
 
         Assert.assertEquals(REF, result.get());
     }
@@ -63,17 +64,18 @@ public class TinyAsyncCollectIntegrationTest {
         futures.add(async.resolved(A));
         futures.add(async.resolved(B));
 
-        final AsyncFuture<Object> result = async.collect(futures, new Collector<Exception, Object>() {
-            @Override
-            public Object collect(Collection<Exception> results) throws Exception {
-                final List<Exception> r = new ArrayList<>(results);
-                Assert.assertEquals(2, r.size());
-                Assert.assertTrue(r.get(0) != r.get(1));
-                Assert.assertTrue(r.get(0) == A || r.get(0) == B);
-                Assert.assertTrue(r.get(1) == A || r.get(1) == B);
-                return REF;
-            }
-        });
+        final AsyncFuture<Object> result =
+            async.collect(futures, new Collector<Exception, Object>() {
+                @Override
+                public Object collect(Collection<Exception> results) throws Exception {
+                    final List<Exception> r = new ArrayList<>(results);
+                    Assert.assertEquals(2, r.size());
+                    Assert.assertTrue(r.get(0) != r.get(1));
+                    Assert.assertTrue(r.get(0) == A || r.get(0) == B);
+                    Assert.assertTrue(r.get(1) == A || r.get(1) == B);
+                    return REF;
+                }
+            });
 
         Assert.assertEquals(REF, result.get());
     }
@@ -127,12 +129,13 @@ public class TinyAsyncCollectIntegrationTest {
                 }));
             }
 
-            final AsyncFuture<List<Integer>> future = async.collect(futures, new Collector<Integer, List<Integer>>() {
-                @Override
-                public List<Integer> collect(Collection<Integer> results) throws Exception {
-                    return new ArrayList<>(results);
-                }
-            });
+            final AsyncFuture<List<Integer>> future =
+                async.collect(futures, new Collector<Integer, List<Integer>>() {
+                    @Override
+                    public List<Integer> collect(Collection<Integer> results) throws Exception {
+                        return new ArrayList<>(results);
+                    }
+                });
 
             // for the horde!
             latch.countDown();
@@ -143,8 +146,9 @@ public class TinyAsyncCollectIntegrationTest {
             Collections.sort(sorted);
             final Iterator<Integer> iter = sorted.iterator();
 
-            for (int j = 0; j < BATCH_SIZE; j++)
+            for (int j = 0; j < BATCH_SIZE; j++) {
                 Assert.assertEquals((Integer) (i * COUNT + j), iter.next());
+            }
         }
     }
 }

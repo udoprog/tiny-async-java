@@ -1,15 +1,8 @@
 package eu.toolchain.async;
 
-import java.util.concurrent.ExecutorService;
-
 import lombok.RequiredArgsConstructor;
-import eu.toolchain.async.AsyncCaller;
-import eu.toolchain.async.FutureCancelled;
-import eu.toolchain.async.FutureDone;
-import eu.toolchain.async.FutureFailed;
-import eu.toolchain.async.FutureFinished;
-import eu.toolchain.async.FutureResolved;
-import eu.toolchain.async.StreamCollector;
+
+import java.util.concurrent.ExecutorService;
 
 @RequiredArgsConstructor
 public final class ExecutorAsyncCaller implements AsyncCaller {

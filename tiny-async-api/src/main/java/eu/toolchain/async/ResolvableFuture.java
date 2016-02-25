@@ -2,19 +2,19 @@ package eu.toolchain.async;
 
 /**
  * A future that can be resolved, or failed programmatically.
+ * <p>
+ * This is typically the 'other end' of an asynchronous computation. By separating the contract we
+ * limit the capabilities that {@code AsyncFuture} has to implement, which allows for
+ * optimizations.
  *
- * This is typically the 'other end' of an asynchronous computation. By separating the contract we limit the
- * capabilities that {@code AsyncFuture} has to implement, which allows for optimizations.
- *
- * @author udoprog
- *
- * @see AsyncFuture
  * @param <T> The type being provided by the future.
+ * @author udoprog
+ * @see AsyncFuture
  */
 public interface ResolvableFuture<T> extends AsyncFuture<T> {
     /**
      * Resolve the future.
-     *
+     * <p>
      * This method could cause the calling thread to execute result listeners.
      *
      * @param result Result to provide to the future.

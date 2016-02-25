@@ -1,5 +1,36 @@
 package eu.toolchain.async;
 
+import com.google.common.collect.ImmutableList;
+import eu.toolchain.async.concurrent.ConcurrentManaged;
+import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
+import eu.toolchain.async.helper.CancelledLazyTransformHelper;
+import eu.toolchain.async.helper.CancelledTransformHelper;
+import eu.toolchain.async.helper.CollectAndDiscardHelper;
+import eu.toolchain.async.helper.CollectHelper;
+import eu.toolchain.async.helper.FailedLazyTransformHelper;
+import eu.toolchain.async.helper.FailedTransformHelper;
+import eu.toolchain.async.helper.ResolvedLazyTransformHelper;
+import eu.toolchain.async.helper.ResolvedTransformHelper;
+import eu.toolchain.async.immediate.ImmediateCancelledAsyncFuture;
+import eu.toolchain.async.immediate.ImmediateFailedAsyncFuture;
+import eu.toolchain.async.immediate.ImmediateResolvedAsyncFuture;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -15,39 +46,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-
-import com.google.common.collect.ImmutableList;
-
-import eu.toolchain.async.concurrent.ConcurrentManaged;
-import eu.toolchain.async.concurrent.ConcurrentResolvableFuture;
-import eu.toolchain.async.helper.CancelledLazyTransformHelper;
-import eu.toolchain.async.helper.CancelledTransformHelper;
-import eu.toolchain.async.helper.CollectAndDiscardHelper;
-import eu.toolchain.async.helper.CollectHelper;
-import eu.toolchain.async.helper.FailedLazyTransformHelper;
-import eu.toolchain.async.helper.FailedTransformHelper;
-import eu.toolchain.async.helper.ResolvedLazyTransformHelper;
-import eu.toolchain.async.helper.ResolvedTransformHelper;
-import eu.toolchain.async.immediate.ImmediateCancelledAsyncFuture;
-import eu.toolchain.async.immediate.ImmediateFailedAsyncFuture;
-import eu.toolchain.async.immediate.ImmediateResolvedAsyncFuture;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TinyAsyncTest {
@@ -116,7 +114,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testGetThreadedCaller() {
-        assertEquals(threadedCaller, new TinyAsync(null, caller, threadedCaller, null).threadedCaller());
+        assertEquals(threadedCaller,
+            new TinyAsync(null, caller, threadedCaller, null).threadedCaller());
     }
 
     @Test
@@ -140,7 +139,7 @@ public class TinyAsyncTest {
         new TinyAsync(null, caller, null, null).threadedCaller();
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void verifyTransform(Class<? extends FutureDone> done) {
         verify(underTest).future();
         verify(future).onDone(any(done));
@@ -149,8 +148,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testTransform() {
-        @SuppressWarnings("unchecked")
-        final Transform<Object, Object> transform = mock(Transform.class);
+        @SuppressWarnings("unchecked") final Transform<Object, Object> transform =
+            mock(Transform.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(resolvableFuture).when(resolvableFuture).bind(future);
@@ -161,8 +160,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testLazyTransform() {
-        @SuppressWarnings("unchecked")
-        final LazyTransform<Object, Object> transform = mock(LazyTransform.class);
+        @SuppressWarnings("unchecked") final LazyTransform<Object, Object> transform =
+            mock(LazyTransform.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(resolvableFuture).when(resolvableFuture).bind(future);
@@ -173,8 +172,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testErrorTransform() {
-        @SuppressWarnings("unchecked")
-        final Transform<Throwable, Object> transform = mock(Transform.class);
+        @SuppressWarnings("unchecked") final Transform<Throwable, Object> transform =
+            mock(Transform.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(resolvableFuture).when(resolvableFuture).bind(future);
@@ -185,8 +184,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testLazyErrorTransform() {
-        @SuppressWarnings("unchecked")
-        final LazyTransform<Throwable, Object> transform = mock(LazyTransform.class);
+        @SuppressWarnings("unchecked") final LazyTransform<Throwable, Object> transform =
+            mock(LazyTransform.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(resolvableFuture).when(resolvableFuture).bind(future);
@@ -197,8 +196,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testCancelledTransform() {
-        @SuppressWarnings("unchecked")
-        final Transform<Void, Object> transform = mock(Transform.class);
+        @SuppressWarnings("unchecked") final Transform<Void, Object> transform =
+            mock(Transform.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(resolvableFuture).when(resolvableFuture).bind(future);
@@ -209,8 +208,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testLazyCancelledTransform() {
-        @SuppressWarnings("unchecked")
-        final LazyTransform<Void, Object> transform = mock(LazyTransform.class);
+        @SuppressWarnings("unchecked") final LazyTransform<Void, Object> transform =
+            mock(LazyTransform.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(resolvableFuture).when(resolvableFuture).bind(future);
@@ -247,8 +246,7 @@ public class TinyAsyncTest {
 
     @Test
     public void testCall1() throws Exception {
-        @SuppressWarnings("unchecked")
-        final Callable<Object> callable = mock(Callable.class);
+        @SuppressWarnings("unchecked") final Callable<Object> callable = mock(Callable.class);
 
         doReturn(executor).when(underTest).defaultExecutor();
         doReturn(resolvableFuture).when(underTest).future();
@@ -263,8 +261,8 @@ public class TinyAsyncTest {
 
     @Test
     public void testLazyCall1() throws Exception {
-        @SuppressWarnings("unchecked")
-        final Callable<AsyncFuture<Object>> callable = mock(Callable.class);
+        @SuppressWarnings("unchecked") final Callable<AsyncFuture<Object>> callable =
+            mock(Callable.class);
 
         doReturn(executor).when(underTest).defaultExecutor();
         doReturn(future).when(underTest).lazyCall(callable, executor);
@@ -301,8 +299,7 @@ public class TinyAsyncTest {
 
     @Test
     public void testCall2() throws Exception {
-        @SuppressWarnings("unchecked")
-        final Callable<Object> callable = mock(Callable.class);
+        @SuppressWarnings("unchecked") final Callable<Object> callable = mock(Callable.class);
 
         doReturn(resolvableFuture).when(underTest).future();
         doReturn(future).when(underTest).call(callable, executor, resolvableFuture);
@@ -374,16 +371,20 @@ public class TinyAsyncTest {
         doReturn(size).when(callables).size();
         doReturn(future).when(underTest).doEventuallyCollectImmediate(callables, streamCollector);
         doReturn(future).when(underTest).doEventuallyCollectEmpty(streamCollector);
-        doReturn(future).when(underTest).doEventuallyCollect(callables, streamCollector, parallelism);
+        doReturn(future)
+            .when(underTest)
+            .doEventuallyCollect(callables, streamCollector, parallelism);
     }
 
     private void verifyEventuallyCollect(int size, int parallelism) {
         verify(callables, times(1)).isEmpty();
         verify(callables, times(size > 0 ? 1 : 0)).size();
         verify(underTest, times(size == 0 ? 1 : 0)).doEventuallyCollectEmpty(streamCollector);
-        verify(underTest, times(size > 0 && size < parallelism ? 1 : 0)).doEventuallyCollectImmediate(callables,
-                streamCollector);
-        verify(underTest, times(size >= parallelism ? 1 : 0)).doEventuallyCollect(callables, streamCollector, 10);
+        verify(underTest,
+            times(size > 0 && size < parallelism ? 1 : 0)).doEventuallyCollectImmediate(callables,
+            streamCollector);
+        verify(underTest, times(size >= parallelism ? 1 : 0)).doEventuallyCollect(callables,
+            streamCollector, 10);
     }
 
     @Test
@@ -452,7 +453,8 @@ public class TinyAsyncTest {
         doReturn(executor).when(underTest).defaultExecutor();
         doReturn(resolvableFuture).when(underTest).future();
 
-        assertEquals(resolvableFuture, underTest.doEventuallyCollect(callables, streamCollector, 10));
+        assertEquals(resolvableFuture,
+            underTest.doEventuallyCollect(callables, streamCollector, 10));
 
         verify(executor).execute(any(DelayedCollectCoordinator.class));
         verify(underTest).defaultExecutor();
@@ -706,7 +708,8 @@ public class TinyAsyncTest {
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
-                final FutureCancelled cancelled = invocation.getArgumentAt(0, FutureCancelled.class);
+                final FutureCancelled cancelled =
+                    invocation.getArgumentAt(0, FutureCancelled.class);
                 cancelled.cancelled();
                 return null;
             }

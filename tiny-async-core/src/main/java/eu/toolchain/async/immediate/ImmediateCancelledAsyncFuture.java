@@ -1,8 +1,5 @@
 package eu.toolchain.async.immediate;
 
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.TimeUnit;
-
 import eu.toolchain.async.AbstractImmediateAsyncFuture;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.AsyncFramework;
@@ -15,12 +12,16 @@ import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.Transform;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeUnit;
+
 /**
  * A callback which has already been resolved as 'resolved'.
  *
  * @param <T>
  */
-public class ImmediateCancelledAsyncFuture<T> extends AbstractImmediateAsyncFuture<T>implements AsyncFuture<T> {
+public class ImmediateCancelledAsyncFuture<T> extends AbstractImmediateAsyncFuture<T>
+    implements AsyncFuture<T> {
     private final AsyncCaller caller;
 
     public ImmediateCancelledAsyncFuture(AsyncFramework async, AsyncCaller caller) {

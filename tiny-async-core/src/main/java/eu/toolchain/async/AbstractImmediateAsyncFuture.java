@@ -7,7 +7,9 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
         this.async = async;
     }
 
-    protected <C> AsyncFuture<C> transformResolved(final Transform<? super T, ? extends C> transform, final T result) {
+    protected <C> AsyncFuture<C> transformResolved(
+        final Transform<? super T, ? extends C> transform, final T result
+    ) {
         final C transformed;
 
         try {
@@ -19,7 +21,9 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
         return async.resolved(transformed);
     }
 
-    protected <C> AsyncFuture<C> lazyTransformResolved(final LazyTransform<? super T, C> transform, final T result) {
+    protected <C> AsyncFuture<C> lazyTransformResolved(
+        final LazyTransform<? super T, C> transform, final T result
+    ) {
         try {
             return transform.transform(result);
         } catch (Exception e) {
@@ -27,7 +31,9 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
         }
     }
 
-    protected AsyncFuture<T> transformFailed(final Transform<Throwable, ? extends T> transform, final Throwable cause) {
+    protected AsyncFuture<T> transformFailed(
+        final Transform<Throwable, ? extends T> transform, final Throwable cause
+    ) {
         final T result;
 
         try {
@@ -41,7 +47,9 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
         return async.resolved(result);
     }
 
-    protected AsyncFuture<T> lazyTransformFailed(final LazyTransform<Throwable, T> transform, final Throwable cause) {
+    protected AsyncFuture<T> lazyTransformFailed(
+        final LazyTransform<Throwable, T> transform, final Throwable cause
+    ) {
         try {
             return transform.transform(cause);
         } catch (Exception e) {

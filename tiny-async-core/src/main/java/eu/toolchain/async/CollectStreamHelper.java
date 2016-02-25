@@ -6,10 +6,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Implementation of {@link AsyncFramework#collect(Collection, StreamCollector)}.
  *
- * @author udoprog
- *
  * @param <S> the source type being collected.
  * @param <T> The type the source type is being collected and transformed into.
+ * @author udoprog
  */
 public class CollectStreamHelper<S, T> implements FutureDone<S> {
     private final AsyncCaller caller;
@@ -21,10 +20,13 @@ public class CollectStreamHelper<S, T> implements FutureDone<S> {
     private final AtomicInteger failed = new AtomicInteger();
     private final AtomicInteger cancelled = new AtomicInteger();
 
-    public CollectStreamHelper(final AsyncCaller caller, final int size, final StreamCollector<S, T> collector,
-            final ResolvableFuture<? super T> target) {
-        if (size <= 0)
+    public CollectStreamHelper(
+        final AsyncCaller caller, final int size, final StreamCollector<S, T> collector,
+        final ResolvableFuture<? super T> target
+    ) {
+        if (size <= 0) {
             throw new IllegalArgumentException("size");
+        }
 
         this.caller = caller;
         this.collector = collector;
@@ -54,8 +56,9 @@ public class CollectStreamHelper<S, T> implements FutureDone<S> {
     }
 
     private void check() throws Exception {
-        if (countdown.decrementAndGet() == 0)
+        if (countdown.decrementAndGet() == 0) {
             done();
+        }
     }
 
     private void done() {

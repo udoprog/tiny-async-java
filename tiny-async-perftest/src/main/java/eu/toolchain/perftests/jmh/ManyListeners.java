@@ -5,7 +5,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.FutureResolved;
+import eu.toolchain.async.TinyAsync;
 import org.openjdk.jmh.annotations.Benchmark;
 
 import java.util.concurrent.Callable;
@@ -17,11 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-
-import eu.toolchain.async.AsyncFramework;
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.FutureResolved;
-import eu.toolchain.async.TinyAsync;
 
 public class ManyListeners {
     private static final int SIZE = 10;
@@ -58,8 +56,9 @@ public class ManyListeners {
                 }
             });
 
-            for (int c = 0; c < CALLBACK_COUNT; c++)
+            for (int c = 0; c < CALLBACK_COUNT; c++) {
                 future.onResolved(callback);
+            }
         }
 
         latch.countDown();
@@ -67,8 +66,8 @@ public class ManyListeners {
 
         if (sum.get() != EXPECTED_SUM) {
             throw new IllegalStateException(
-                    String.format("did not properly collect all values: expected %d, but was %d",
-                            EXPECTED_SUM, sum.get()));
+                String.format("did not properly collect all values: expected %d, but was %d",
+                    EXPECTED_SUM, sum.get()));
         }
 
         executor.shutdown();
@@ -90,18 +89,18 @@ public class ManyListeners {
             final int current = i;
 
             final CompletableFuture<Integer> future =
-                    CompletableFuture.supplyAsync(new Supplier<Integer>() {
-                        @Override
-                        public Integer get() {
-                            try {
-                                latch.await();
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-
-                            return current;
+                CompletableFuture.supplyAsync(new Supplier<Integer>() {
+                    @Override
+                    public Integer get() {
+                        try {
+                            latch.await();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
                         }
-                    }, executor);
+
+                        return current;
+                    }
+                }, executor);
 
             for (int c = 0; c < CALLBACK_COUNT; c++) {
                 future.whenComplete(callback);
@@ -113,8 +112,8 @@ public class ManyListeners {
 
         if (sum.get() != EXPECTED_SUM) {
             throw new IllegalStateException(
-                    String.format("did not properly collect all values: expected %d, but was %d",
-                            EXPECTED_SUM, sum.get()));
+                String.format("did not properly collect all values: expected %d, but was %d",
+                    EXPECTED_SUM, sum.get()));
         }
 
         executor.shutdown();
@@ -124,7 +123,7 @@ public class ManyListeners {
     public void completable() throws Exception {
         final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
         final ListeningExecutorService listeningExecutor =
-                MoreExecutors.listeningDecorator(executor);
+            MoreExecutors.listeningDecorator(executor);
 
         final AtomicInteger sum = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -146,13 +145,13 @@ public class ManyListeners {
             final int current = i;
 
             final ListenableFuture<Integer> future =
-                    listeningExecutor.submit(new Callable<Integer>() {
-                        @Override
-                        public Integer call() throws Exception {
-                            latch.await();
-                            return current;
-                        }
-                    });
+                listeningExecutor.submit(new Callable<Integer>() {
+                    @Override
+                    public Integer call() throws Exception {
+                        latch.await();
+                        return current;
+                    }
+                });
 
             for (int c = 0; c < CALLBACK_COUNT; c++) {
                 Futures.addCallback(future, callback);
@@ -164,8 +163,8 @@ public class ManyListeners {
 
         if (sum.get() != EXPECTED_SUM) {
             throw new IllegalStateException(
-                    String.format("did not properly collect all values: expected %d, but was %d",
-                            EXPECTED_SUM, sum.get()));
+                String.format("did not properly collect all values: expected %d, but was %d",
+                    EXPECTED_SUM, sum.get()));
         }
 
         listeningExecutor.shutdown();

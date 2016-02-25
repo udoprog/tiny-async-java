@@ -1,8 +1,8 @@
 package eu.toolchain.async;
 
-import java.io.PrintStream;
-
 import lombok.RequiredArgsConstructor;
+
+import java.io.PrintStream;
 
 /**
  * The simplest possible implementation of a concurrent caller.
@@ -17,7 +17,8 @@ public class PrintStreamDefaultAsyncCaller extends DirectAsyncCaller {
     protected void internalError(String what, Throwable e) {
         stream.println(CTX + ": " + what);
 
-        if (e != null)
+        if (e != null) {
             e.printStackTrace(stream);
+        }
     }
 }

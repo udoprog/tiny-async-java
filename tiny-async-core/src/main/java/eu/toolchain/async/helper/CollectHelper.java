@@ -1,27 +1,27 @@
 package eu.toolchain.async.helper;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import lombok.RequiredArgsConstructor;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Collector;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyAsync;
 import eu.toolchain.async.TinyThrowableUtils;
+import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Helper class for {@link TinyAsync#collect(Collection, Collector)}
- *
- * The helper implements {@code FutureDone}, and is intended to be used by binding it as a listener to the futures being
- * collected.
- *
+ * <p>
+ * The helper implements {@code FutureDone}, and is intended to be used by binding it as a listener
+ * to the futures being collected.
+ * <p>
  * This is a lock-free implementation capable of writing the results out of order.
- * 
+ *
  * @param <S> the source type being collected.
  * @param <T> the target type, the collected sources are being transformed into.
  */
@@ -36,29 +36,36 @@ public class CollectHelper<S, T> implements FutureDone<S> {
 
     final int size;
 
-    /* The collected results, non-final to allow for setting to null. Allows for random writes since its a pre-emptively
-     * sized array. */
-    Object[] values;
+    /* The collected results, non-final to allow for setting to null. Allows for random writes
+    since its a pre-emptively
+     * sized array. */ Object[] values;
     byte[] states;
 
-    /* maintain position separate since the is a potential race condition between getting the current position and
-     * setting the entry. This is avoided by only relying on countdown to trigger when we are done. */
+    /* maintain position separate since the is a potential race condition between getting the
+    current position and
+     * setting the entry. This is avoided by only relying on countdown to trigger when we are
+     * done. */
     final AtomicInteger write = new AtomicInteger();
 
-    /* maintain a separate countdown since the write position might be out of order, this causes all threads to
+    /* maintain a separate countdown since the write position might be out of order, this causes
+    all threads to
      * synchronize after the write */
     final AtomicInteger countdown;
 
-    /* Indicate that collector is finished to avoid the case where the write position wraps around. */
+    /* Indicate that collector is finished to avoid the case where the write position wraps
+    around. */
     final AtomicBoolean finished = new AtomicBoolean();
 
     /* On a single failure, cause all other sources to be cancelled */
     final AtomicBoolean failed = new AtomicBoolean();
 
-    public CollectHelper(int size, Collector<S, T> collector, Collection<? extends AsyncFuture<?>> sources,
-            ResolvableFuture<? super T> target) {
-        if (size <= 0)
+    public CollectHelper(
+        int size, Collector<S, T> collector, Collection<? extends AsyncFuture<?>> sources,
+        ResolvableFuture<? super T> target
+    ) {
+        if (size <= 0) {
             throw new IllegalArgumentException("size");
+        }
 
         this.size = size;
         this.collector = collector;
@@ -87,11 +94,13 @@ public class CollectHelper<S, T> implements FutureDone<S> {
     }
 
     void checkFailed() {
-        if (!failed.compareAndSet(false, true))
+        if (!failed.compareAndSet(false, true)) {
             return;
+        }
 
-        for (final AsyncFuture<?> source : sources)
+        for (final AsyncFuture<?> source : sources) {
             source.cancel();
+        }
 
         // help garbage collection.
         sources = null;
@@ -101,29 +110,35 @@ public class CollectHelper<S, T> implements FutureDone<S> {
      * Checks in a call back. It also wraps up the group if all the callbacks have checked in.
      */
     void add(final byte type, final Object value) {
-        if (finished.get())
+        if (finished.get()) {
             throw new IllegalStateException("already finished");
+        }
 
         final int w = write.getAndIncrement();
 
-        if (w < size)
+        if (w < size) {
             writeAt(w, type, value);
+        }
 
         // countdown could wrap around, however we check the state of finished in here.
         // MUST be called after write to make sure that results and states are synchronized.
         final int c = countdown.decrementAndGet();
 
-        if (c < 0)
+        if (c < 0) {
             throw new IllegalStateException("already finished (countdown)");
+        }
 
         // if this thread is not the last thread to check-in, do nothing..
-        if (c != 0)
+        if (c != 0) {
             return;
+        }
 
         // make sure this can only happen once.
-        // This protects against countdown, and write wrapping around which should very rarely happen.
-        if (!finished.compareAndSet(false, true))
+        // This protects against countdown, and write wrapping around which should very rarely
+        // happen.
+        if (!finished.compareAndSet(false, true)) {
             throw new IllegalStateException("already finished");
+        }
 
         done(collect());
     }
@@ -170,17 +185,17 @@ public class CollectHelper<S, T> implements FutureDone<S> {
             final byte type = states[i];
 
             switch (type) {
-            case RESOLVED:
-                results.add((S) values[i]);
-                break;
-            case FAILED:
-                errors.add((Throwable) values[i]);
-                break;
-            case CANCELLED:
-                cancelled++;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid entry type: " + type);
+                case RESOLVED:
+                    results.add((S) values[i]);
+                    break;
+                case FAILED:
+                    errors.add((Throwable) values[i]);
+                    break;
+                case CANCELLED:
+                    cancelled++;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid entry type: " + type);
             }
         }
 

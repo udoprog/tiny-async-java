@@ -1,10 +1,10 @@
 package eu.toolchain.examples;
 
-import java.util.concurrent.ExecutionException;
-
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyAsync;
+
+import java.util.concurrent.ExecutionException;
 
 /**
  * An example application showcasing manually resolving a {@code ResolvableFuture}.

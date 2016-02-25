@@ -1,5 +1,18 @@
 package eu.toolchain.async.helper;
 
+import com.google.common.collect.ImmutableList;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.Collector;
+import eu.toolchain.async.ResolvableFuture;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.Iterator;
+import java.util.List;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -12,21 +25,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import java.util.Iterator;
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import com.google.common.collect.ImmutableList;
-
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.Collector;
-import eu.toolchain.async.ResolvableFuture;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CollectHelperTest {
@@ -88,7 +86,8 @@ public class CollectHelperTest {
 
     @Test
     public void testCheckFailed() {
-        final Iterator<AsyncFuture<?>> futures = ImmutableList.<AsyncFuture<?>> of(f1, f2).iterator();
+        final Iterator<AsyncFuture<?>> futures =
+            ImmutableList.<AsyncFuture<?>>of(f1, f2).iterator();
 
         doReturn(futures).when(sources).iterator();
 

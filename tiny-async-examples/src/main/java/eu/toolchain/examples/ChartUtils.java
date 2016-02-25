@@ -1,10 +1,6 @@
 package eu.toolchain.examples;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Stroke;
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -19,37 +15,35 @@ import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RectangleInsets;
 import org.jfree.ui.RefineryUtilities;
 
-import com.google.common.collect.ImmutableList;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Stroke;
+import java.util.List;
 
 public class ChartUtils {
     private static final Stroke LINE = new BasicStroke(2.0f);
 
-    private static final Stroke DASHED = new BasicStroke(
-        2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
-        1.0f, new float[] {6.0f, 6.0f}, 0.0f
-    );
+    private static final Stroke DASHED =
+        new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f,
+            new float[]{6.0f, 6.0f}, 0.0f);
 
-    private static final List<Color> COLORS = ImmutableList.of(Color.RED, Color.PINK, Color.ORANGE, Color.YELLOW,
-            Color.GREEN, Color.MAGENTA, Color.CYAN, Color.BLUE, Color.WHITE, Color.BLACK);
+    private static final List<Color> COLORS =
+        ImmutableList.of(Color.RED, Color.PINK, Color.ORANGE, Color.YELLOW, Color.GREEN,
+            Color.MAGENTA, Color.CYAN, Color.BLUE, Color.WHITE, Color.BLACK);
 
     /**
      * Creates a chart.
      *
-     * @param dataset  a dataset.
-     *
+     * @param dataset a dataset.
      * @return A chart.
      */
-    private static JFreeChart createChart(String title, String xAxis, String yAxis1, XYDataset dataset1, String yAxis2, XYDataset dataset2) {
-        JFreeChart chart = ChartFactory.createXYLineChart(
-            title,
-            xAxis,
-            yAxis1,
-            dataset1,
-            PlotOrientation.VERTICAL,
-            true,
-            true,
-            false
-        );
+    private static JFreeChart createChart(
+        String title, String xAxis, String yAxis1, XYDataset dataset1, String yAxis2,
+        XYDataset dataset2
+    ) {
+        JFreeChart chart =
+            ChartFactory.createXYLineChart(title, xAxis, yAxis1, dataset1, PlotOrientation.VERTICAL,
+                true, true, false);
 
         final XYPlot plot = (XYPlot) chart.getPlot();
 
@@ -73,8 +67,9 @@ public class ChartUtils {
             renderer.setBaseShapesFilled(false);
             renderer.setDrawSeriesLineAsPath(true);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; i++) {
                 renderer.setSeriesPaint(i, COLORS.get(i % COLORS.size()));
+            }
         }
 
         chart.setBackgroundPaint(Color.white);
@@ -96,14 +91,14 @@ public class ChartUtils {
             renderer.setDrawSeriesLineAsPath(true);
             renderer.setBaseStroke(DASHED);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; i++) {
                 renderer.setSeriesPaint(i, COLORS.get(i % COLORS.size()));
+            }
 
             plot.setRenderer(1, renderer);
         }
 
         return chart;
-
     }
 
     /**
@@ -121,9 +116,12 @@ public class ChartUtils {
     /**
      * Starting point for the demonstration application.
      *
-     * @param args  ignored.
+     * @param args ignored.
      */
-    public static void showChart(String name, String xAxis, String yAxis1, XYDataset dataset1, String yAxis2, XYDataset dataset2) {
+    public static void showChart(
+        String name, String xAxis, String yAxis1, XYDataset dataset1, String yAxis2,
+        XYDataset dataset2
+    ) {
         final JFreeChart chart = createChart(name, xAxis, yAxis1, dataset1, yAxis2, dataset2);
         final ChartPanel chartPanel = createPanel(chart);
 

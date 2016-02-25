@@ -3,13 +3,14 @@ package eu.toolchain.async.helper;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.helper.FailedLazyTransformHelper;
 
 public class FailedLazyTransformHelperTest extends TransformHelperTestBase<Throwable> {
     private final Exception e = new Exception();
 
     @Override
-    protected FutureDone<Object> setupDone(LazyTransform<Throwable, Object> transform, ResolvableFuture<Object> target) {
+    protected FutureDone<Object> setupDone(
+        LazyTransform<Throwable, Object> transform, ResolvableFuture<Object> target
+    ) {
         return new FailedLazyTransformHelper<Object>(transform, target);
     }
 

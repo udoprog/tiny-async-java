@@ -1,21 +1,21 @@
 package eu.toolchain.async;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+
 /**
  * Tests that all the expected type-inference combinations work.
- *
+ * <p>
  * This test is only valid at compile-time.
  *
  * @author udoprog
  */
-@SuppressWarnings({ "unchecked", "unused" })
+@SuppressWarnings({"unchecked", "unused"})
 public class TypeInferenceIntegrationTest {
     private AsyncFramework async;
 
@@ -111,8 +111,12 @@ public class TypeInferenceIntegrationTest {
 
         final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
 
-        { a.catchFailed(A); }
-        { a.catchFailed(B); }
+        {
+            a.catchFailed(A);
+        }
+        {
+            a.catchFailed(B);
+        }
     }
 
     @Test
@@ -122,7 +126,9 @@ public class TypeInferenceIntegrationTest {
 
         final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
 
-        { a.lazyCatchFailed(A); }
+        {
+            a.lazyCatchFailed(A);
+        }
         // TODO: make this valid?
         // { a.error(B); }
     }
@@ -134,7 +140,9 @@ public class TypeInferenceIntegrationTest {
 
         final AsyncFuture<A> a = Mockito.mock(AsyncFuture.class);
 
-        { a.lazyCatchCancelled(A); }
+        {
+            a.lazyCatchCancelled(A);
+        }
         // TODO: make this valid?
         // { a.error(B); }
     }

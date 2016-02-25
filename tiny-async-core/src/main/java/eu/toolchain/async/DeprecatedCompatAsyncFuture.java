@@ -3,9 +3,8 @@ package eu.toolchain.async;
 /**
  * Acts as a compatibility layer for deprecated features on {@link AsyncFuture}.
  *
- * @author udoprog
- *
  * @param <T>
+ * @author udoprog
  */
 public abstract class DeprecatedCompatAsyncFuture<T> implements AsyncFuture<T> {
     @Override

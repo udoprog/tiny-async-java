@@ -1,7 +1,5 @@
 package eu.toolchain.async.concurrent;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Borrowed;
@@ -12,15 +10,20 @@ import eu.toolchain.async.ManagedSetup;
 import eu.toolchain.async.ReloadableManaged;
 import eu.toolchain.async.concurrent.ConcurrentManaged.ManagedState;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
     private final AsyncFramework async;
     private final ManagedSetup<T> setup;
 
     private final AtomicReference<Managed<T>> current;
 
-    protected final AtomicReference<ManagedState> state = new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
+    protected final AtomicReference<ManagedState> state =
+        new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
 
-    public static <C> ReloadableManaged<C> newReloadableManaged(final AsyncFramework async, final ManagedSetup<C> setup) {
+    public static <C> ReloadableManaged<C> newReloadableManaged(
+        final AsyncFramework async, final ManagedSetup<C> setup
+    ) {
         return new ConcurrentReloadableManaged<C>(async, setup);
     }
 

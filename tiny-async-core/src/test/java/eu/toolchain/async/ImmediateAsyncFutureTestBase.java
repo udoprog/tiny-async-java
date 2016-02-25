@@ -1,5 +1,18 @@
 package eu.toolchain.async;
 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.verification.VerificationMode;
+
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -11,19 +24,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.verification.VerificationMode;
 
 @RunWith(MockitoJUnitRunner.class)
 public abstract class ImmediateAsyncFutureTestBase {
@@ -54,8 +54,9 @@ public abstract class ImmediateAsyncFutureTestBase {
 
     private ExpectedState expected;
 
-    protected abstract AbstractImmediateAsyncFuture<From> setupFuture(AsyncFramework async, AsyncCaller caller,
-            From result, Throwable cause);
+    protected abstract AbstractImmediateAsyncFuture<From> setupFuture(
+        AsyncFramework async, AsyncCaller caller, From result, Throwable cause
+    );
 
     protected abstract ExpectedState setupState();
 
@@ -147,41 +148,48 @@ public abstract class ImmediateAsyncFutureTestBase {
 
     @Test
     public void testCause() throws Exception {
-        if (!isFailed())
+        if (!isFailed()) {
             except.expect(IllegalStateException.class);
+        }
 
         assertNotNull(underTest.cause());
     }
 
     @Test
     public void testGet() throws Exception {
-        if (isCancelled())
+        if (isCancelled()) {
             except.expect(CancellationException.class);
+        }
 
-        if (isFailed())
+        if (isFailed()) {
             except.expect(ExecutionException.class);
+        }
 
         underTest.get();
     }
 
     @Test
     public void testGetWithTimeout() throws Exception {
-        if (isCancelled())
+        if (isCancelled()) {
             except.expect(CancellationException.class);
+        }
 
-        if (isFailed())
+        if (isFailed()) {
             except.expect(ExecutionException.class);
+        }
 
         underTest.get(1, TimeUnit.SECONDS);
     }
 
     @Test
     public void testGetNow() throws Exception {
-        if (isCancelled())
+        if (isCancelled()) {
             except.expect(CancellationException.class);
+        }
 
-        if (isFailed())
+        if (isFailed()) {
             except.expect(ExecutionException.class);
+        }
 
         underTest.getNow();
     }
@@ -281,22 +289,25 @@ public abstract class ImmediateAsyncFutureTestBase {
     }
 
     private VerificationMode resolved() {
-        if (expected == ExpectedState.RESOLVED)
+        if (expected == ExpectedState.RESOLVED) {
             return times(1);
+        }
 
         return never();
     }
 
     private VerificationMode cancelled() {
-        if (expected == ExpectedState.CANCELLED)
+        if (expected == ExpectedState.CANCELLED) {
             return times(1);
+        }
 
         return never();
     }
 
     private VerificationMode failed() {
-        if (expected == ExpectedState.FAILED)
+        if (expected == ExpectedState.FAILED) {
             return times(1);
+        }
 
         return never();
     }

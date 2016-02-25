@@ -4,7 +4,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.TinyAsync;
 import org.openjdk.jmh.annotations.Benchmark;
 
 import java.util.ArrayList;
@@ -13,10 +15,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import eu.toolchain.async.AsyncFramework;
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.TinyAsync;
 
 public class ManyThreads {
     private static final int SIZE = 1000;
@@ -59,7 +57,7 @@ public class ManyThreads {
     public void guava() throws Exception {
         final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
         final ListeningExecutorService listeningExecutor =
-                MoreExecutors.listeningDecorator(executor);
+            MoreExecutors.listeningDecorator(executor);
 
         final List<ListenableFuture<Integer>> futures = new ArrayList<>();
 

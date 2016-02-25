@@ -1,8 +1,5 @@
 package eu.toolchain.async.immediate;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
 import eu.toolchain.async.AbstractImmediateAsyncFuture;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.AsyncFramework;
@@ -16,12 +13,16 @@ import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.Transform;
 import eu.toolchain.async.TransformException;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
 /**
  * A callback which has already been resolved as 'failed'.
  *
  * @param <T>
  */
-public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<T>implements AsyncFuture<T> {
+public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<T>
+    implements AsyncFuture<T> {
     private final AsyncCaller caller;
     private final Throwable cause;
 

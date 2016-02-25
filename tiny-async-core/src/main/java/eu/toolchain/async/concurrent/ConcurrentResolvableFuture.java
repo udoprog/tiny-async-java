@@ -1,12 +1,5 @@
 package eu.toolchain.async.concurrent;
 
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.AbstractQueuedSynchronizer;
-
 import eu.toolchain.async.AbstractImmediateAsyncFuture;
 import eu.toolchain.async.AsyncCaller;
 import eu.toolchain.async.AsyncFramework;
@@ -21,12 +14,21 @@ import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.Transform;
 import lombok.AllArgsConstructor;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+
 // @formatter:off
 /**
- * A class implementing the callback pattern concurrently in a way that any thread can use the callback instance in a
+ * A class implementing the callback pattern concurrently in a way that any thread can use the
+ * callback instance in a
  * safe manner.
  *
- * The callback uses the calling thread to execute result listeners, see {@link #resolve(Object)}, and {@link #on(FutureDone)} for details.
+ * The callback uses the calling thread to execute result listeners, see
+ * {@link #resolve(Object)}, and {@link #on(FutureDone)} for details.
  *
  * It also allows for cancellation in any order.
  *
@@ -46,12 +48,14 @@ import lombok.AllArgsConstructor;
  *            The type being deferred.
  */
 // @formatter:on
-public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<T>implements ResolvableFuture<T> {
+public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<T>
+    implements ResolvableFuture<T> {
     // waiting for value.
     public static final int RUNNING = 0x0;
     public static final int RESULT_UPDATING = 0x1;
 
-    /* valid end state, are required to be greater than RESULT_UPDATING, otherwise {@link isStateReady(int)} will fail. */
+    /* valid end state, are required to be greater than RESULT_UPDATING, otherwise
+    {@link isStateReady(int)} will fail. */
     public static final int RESOLVED = 0x10;
     public static final int FAILED = 0x11;
     public static final int CANCELLED = 0x12;
@@ -68,11 +72,12 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     /**
      * Setup a concurrent future that uses a custom caller implementation.
-     *
-     * The provided caller implementation will be called from the calling thread of {@link #on}, or other public methods
-     * interacting with this future.
-     *
-     * It is therefore suggested to provide an implementation that supports delegating tasks to a separate thread pool.
+     * <p>
+     * The provided caller implementation will be called from the calling thread of {@link #on}, or
+     * other public methods interacting with this future.
+     * <p>
+     * It is therefore suggested to provide an implementation that supports delegating tasks to a
+     * separate thread pool.
      *
      * @param async The async implementation to use.
      * @param caller The caller implementation to use.
@@ -81,7 +86,9 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
         this(async, caller, new Sync());
     }
 
-    protected ConcurrentResolvableFuture(final AsyncFramework async, final AsyncCaller caller, final Sync sync) {
+    protected ConcurrentResolvableFuture(
+        final AsyncFramework async, final AsyncCaller caller, final Sync sync
+    ) {
         super(async);
         this.caller = caller;
         this.sync = sync;
@@ -325,7 +332,8 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     @SuppressWarnings("unchecked")
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public T get(long timeout, TimeUnit unit)
+        throws InterruptedException, ExecutionException, TimeoutException {
         return (T) sync.get(unit.toNanos(timeout));
     }
 
@@ -469,7 +477,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
 
     /**
      * Attempt to add an event listener to the list of listeners.
-     *
+     * <p>
      * This implementation uses a spin-lock, where the loop copies the entire list of listeners.
      *
      * @param type Type of callback to be queued up.
@@ -556,30 +564,32 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return result;
         }
 
-        public Object get(long nanos) throws ExecutionException, InterruptedException, TimeoutException {
-            if (!tryAcquireSharedNanos(-1, nanos))
+        public Object get(long nanos)
+            throws ExecutionException, InterruptedException, TimeoutException {
+            if (!tryAcquireSharedNanos(-1, nanos)) {
                 throw new TimeoutException();
+            }
 
             switch (getState()) {
-            case CANCELLED:
-                throw new CancellationException();
-            case FAILED:
-                throw new ExecutionException((Throwable) result);
-            default:
-                return result;
+                case CANCELLED:
+                    throw new CancellationException();
+                case FAILED:
+                    throw new ExecutionException((Throwable) result);
+                default:
+                    return result;
             }
         }
 
         public Object getNow() throws ExecutionException {
             switch (getState()) {
-            case CANCELLED:
-                throw new CancellationException();
-            case FAILED:
-                throw new ExecutionException((Throwable) result);
-            case RESOLVED:
-                return result;
-            default:
-                throw new IllegalStateException("future is not completed");
+                case CANCELLED:
+                    throw new CancellationException();
+                case FAILED:
+                    throw new ExecutionException((Throwable) result);
+                case RESOLVED:
+                    return result;
+                default:
+                    throw new IllegalStateException("future is not completed");
             }
         }
 
@@ -587,7 +597,8 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          * Same as {@code #complete(int, Object)} but with a null result.
          *
          * @param state The end state to move the synchronizer into.
-         * @return {@code true} if the given transition is valid and happened, {@code false} otherwise}.
+         * @return {@code true} if the given transition is valid and happened, {@code false}
+         * otherwise}.
          * @see #setResult(int, Object)
          */
         public boolean setResult(int state) {
@@ -603,10 +614,11 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
          * Move the synchronizer state to the given end state.
          *
          * @param state The end state to move the synchronizer into.
-         * @param result The result to associate with the end state, if not {@code null} will cause the synchronizer to
-         *            go into an intermediate {@code RESULT_UPDATING} state that has to be accounted for. Use
-         *            {@link #poll()} to avoid this.
-         * @return {@code true} if the given transition is valid and happened, {@code false} otherwise}.
+         * @param result The result to associate with the end state, if not {@code null} will cause
+         * the synchronizer to go into an intermediate {@code RESULT_UPDATING} state that has to be
+         * accounted for. Use {@link #poll()} to avoid this.
+         * @return {@code true} if the given transition is valid and happened, {@code false}
+         * otherwise}.
          */
         public boolean setResult(int state, Object result) {
             if (!compareAndSetState(RUNNING, RESULT_UPDATING)) {
@@ -624,10 +636,11 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
         }
 
         /**
-         * Poll for the current state, this is guaranteed to never return
-         * {@link ConcurrentResolvableFuture#RESULT_UPDATING}.
+         * Poll for the current state, this is guaranteed to never return {@link
+         * ConcurrentResolvableFuture#RESULT_UPDATING}.
          *
-         * @return The current state of the synchronizer. Never {@link ConcurrentResolvableFuture#RESULT_UPDATING}.
+         * @return The current state of the synchronizer. Never
+         * {@link ConcurrentResolvableFuture#RESULT_UPDATING}.
          */
         public int poll() {
             // spin if the current state is changing.

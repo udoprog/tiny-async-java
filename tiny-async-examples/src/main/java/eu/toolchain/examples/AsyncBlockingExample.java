@@ -1,10 +1,10 @@
 package eu.toolchain.examples;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.TinyAsync;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 /**
  * An example application that showcases subscription of events on an {@code AsyncFuture}.

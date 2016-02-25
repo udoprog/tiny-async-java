@@ -1,5 +1,15 @@
 package eu.toolchain.async.helper;
 
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.FutureDone;
+import eu.toolchain.async.LazyTransform;
+import eu.toolchain.async.ResolvableFuture;
+import eu.toolchain.async.TransformException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -7,17 +17,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.FutureDone;
-import eu.toolchain.async.LazyTransform;
-import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.TransformException;
 
 public abstract class TransformHelperTestBase<T> {
     private LazyTransform<T, Object> transform;
@@ -47,8 +46,9 @@ public abstract class TransformHelperTestBase<T> {
         failedTimes = setupFailed();
     }
 
-    protected abstract FutureDone<Object> setupDone(LazyTransform<T, Object> transform,
-            ResolvableFuture<Object> target);
+    protected abstract FutureDone<Object> setupDone(
+        LazyTransform<T, Object> transform, ResolvableFuture<Object> target
+    );
 
     protected Throwable setupError() {
         return new Exception();
@@ -75,8 +75,9 @@ public abstract class TransformHelperTestBase<T> {
     public void testFailed() throws Exception {
         final AsyncFuture<Object> f = mock(AsyncFuture.class);
 
-        if (failedTimes == 1)
+        if (failedTimes == 1) {
             setupVerifyFutureDone(f);
+        }
 
         doReturn(f).when(transform).transform(from);
         done.failed(e);
@@ -97,8 +98,9 @@ public abstract class TransformHelperTestBase<T> {
     public void testResolved() throws Exception {
         final AsyncFuture<Object> f = mock(AsyncFuture.class);
 
-        if (resolvedTimes == 1)
+        if (resolvedTimes == 1) {
             setupVerifyFutureDone(f);
+        }
 
         doReturn(f).when(transform).transform(from);
         done.resolved(from);
@@ -119,8 +121,9 @@ public abstract class TransformHelperTestBase<T> {
     public void testCancelled() throws Exception {
         final AsyncFuture<Object> f = mock(AsyncFuture.class);
 
-        if (cancelledTimes == 1)
+        if (cancelledTimes == 1) {
             setupVerifyFutureDone(f);
+        }
 
         doReturn(f).when(transform).transform(from);
         done.cancelled();

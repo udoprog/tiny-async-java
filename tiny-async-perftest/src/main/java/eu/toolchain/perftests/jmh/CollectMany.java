@@ -2,16 +2,14 @@ package eu.toolchain.perftests.jmh;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.TinyAsync;
 import org.openjdk.jmh.annotations.Benchmark;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import eu.toolchain.async.AsyncFramework;
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.TinyAsync;
 
 public class CollectMany {
     private static final int SIZE = 10000;

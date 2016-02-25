@@ -1,15 +1,5 @@
 package eu.toolchain.async.concurrent;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.Borrowed;
@@ -23,6 +13,16 @@ import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.TinyStackUtils;
 import eu.toolchain.async.Transform;
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConcurrentManaged<T> implements Managed<T> {
     private static final boolean TRACING;
@@ -54,36 +54,43 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     protected final Set<ValidBorrowed<T>> traces;
 
-    protected final AtomicReference<ManagedState> state = new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
+    protected final AtomicReference<ManagedState> state =
+        new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
 
     /**
      * The number of borrowed references that are out in the wild.
      */
     protected final AtomicInteger leases = new AtomicInteger(1);
 
-    public static <T> ConcurrentManaged<T> newManaged(final AsyncFramework async, final ManagedSetup<T> setup) {
+    public static <T> ConcurrentManaged<T> newManaged(
+        final AsyncFramework async, final ManagedSetup<T> setup
+    ) {
         final ResolvableFuture<Void> startFuture = async.future();
         final ResolvableFuture<Void> zeroLeaseFuture = async.future();
         final ResolvableFuture<T> stopReferenceFuture = async.future();
 
-        final AsyncFuture<Void> stopFuture = zeroLeaseFuture.lazyTransform(new LazyTransform<Void, Void>() {
-            @Override
-            public AsyncFuture<Void> transform(Void v) throws Exception {
-                return stopReferenceFuture.lazyTransform(new LazyTransform<T, Void>() {
-                    @Override
-                    public AsyncFuture<Void> transform(T reference) throws Exception {
-                        return setup.destruct(reference);
-                    }
-                });
-            }
-        });
+        final AsyncFuture<Void> stopFuture =
+            zeroLeaseFuture.lazyTransform(new LazyTransform<Void, Void>() {
+                @Override
+                public AsyncFuture<Void> transform(Void v) throws Exception {
+                    return stopReferenceFuture.lazyTransform(new LazyTransform<T, Void>() {
+                        @Override
+                        public AsyncFuture<Void> transform(T reference) throws Exception {
+                            return setup.destruct(reference);
+                        }
+                    });
+                }
+            });
 
-        return new ConcurrentManaged<T>(async, setup, startFuture, zeroLeaseFuture, stopReferenceFuture, stopFuture);
+        return new ConcurrentManaged<T>(async, setup, startFuture, zeroLeaseFuture,
+            stopReferenceFuture, stopFuture);
     }
 
-    protected ConcurrentManaged(final AsyncFramework async, final ManagedSetup<T> setup,
-            final ResolvableFuture<Void> startFuture, final ResolvableFuture<Void> zeroLeaseFuture,
-            final ResolvableFuture<T> stopReferenceFuture, final AsyncFuture<Void> stopFuture) {
+    protected ConcurrentManaged(
+        final AsyncFramework async, final ManagedSetup<T> setup,
+        final ResolvableFuture<Void> startFuture, final ResolvableFuture<Void> zeroLeaseFuture,
+        final ResolvableFuture<T> stopReferenceFuture, final AsyncFuture<Void> stopFuture
+    ) {
         this.async = async;
         this.setup = setup;
 
@@ -101,13 +108,15 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     @Override
     public <R> AsyncFuture<R> doto(final ManagedAction<T, R> action) {
-        // pre-emptively increase the number of leases in order to prevent the underlying object (if valid) to be
+        // pre-emptively increase the number of leases in order to prevent the underlying object
+        // (if valid) to be
         // allocated.
 
         final Borrowed<T> b = borrow();
 
-        if (!b.isValid())
+        if (!b.isValid()) {
             return async.cancelled();
+        }
 
         final T reference = b.get();
 
@@ -125,7 +134,8 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     @Override
     public Borrowed<T> borrow() {
-        // pre-emptively increase the number of leases in order to prevent the underlying object (if valid) to be
+        // pre-emptively increase the number of leases in order to prevent the underlying object
+        // (if valid) to be
         // allocated.
         retain();
 
@@ -138,8 +148,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
         final ValidBorrowed<T> b = new ValidBorrowed<T>(this, async, value, getStackTrace());
 
-        if (TRACING)
+        if (TRACING) {
             traces.add(b);
+        }
 
         return b;
     }
@@ -151,8 +162,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     @Override
     public AsyncFuture<Void> start() {
-        if (!state.compareAndSet(ManagedState.INITIALIZED, ManagedState.STARTED))
+        if (!state.compareAndSet(ManagedState.INITIALIZED, ManagedState.STARTED)) {
             return startFuture;
+        }
 
         final AsyncFuture<T> constructor;
 
@@ -165,8 +177,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
         return constructor.directTransform(new Transform<T, Void>() {
             @Override
             public Void transform(T result) throws Exception {
-                if (result == null)
+                if (result == null) {
                     throw new IllegalArgumentException("setup reference must no non-null");
+                }
 
                 reference.set(result);
                 return null;
@@ -191,8 +204,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     @Override
     public AsyncFuture<Void> stop() {
-        if (!state.compareAndSet(ManagedState.STARTED, ManagedState.STOPPED))
+        if (!state.compareAndSet(ManagedState.STARTED, ManagedState.STOPPED)) {
             return stopFuture;
+        }
 
         stopReferenceFuture.resolve(this.reference.getAndSet(null));
 
@@ -208,16 +222,18 @@ public class ConcurrentManaged<T> implements Managed<T> {
     protected void release() {
         final int lease = leases.decrementAndGet();
 
-        if (lease == 0)
+        if (lease == 0) {
             zeroLeaseFuture.resolve(null);
+        }
     }
 
     @Override
     public String toString() {
         final T reference = this.reference.get();
 
-        if (!TRACING)
+        if (!TRACING) {
             return String.format("Managed(%s, %s)", state, reference);
+        }
 
         return toStringTracing(reference, new ArrayList<>(this.traces));
     }
@@ -239,8 +255,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
     }
 
     protected StackTraceElement[] getStackTrace() {
-        if (!CAPTURE_STACK)
+        if (!CAPTURE_STACK) {
             return EMPTY_STACK;
+        }
 
         final StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         return Arrays.copyOfRange(stack, 0, stack.length - 2);
@@ -301,11 +318,13 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
         @Override
         public void release() {
-            if (!released.compareAndSet(false, true))
+            if (!released.compareAndSet(false, true)) {
                 return;
+            }
 
-            if (TRACING)
+            if (TRACING) {
                 managed.traces.remove(this);
+            }
 
             managed.release();
         }
@@ -330,8 +349,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
          */
         @Override
         protected void finalize() throws Throwable {
-            if (released.get())
+            if (released.get()) {
                 return;
+            }
 
             async.caller().referenceLeaked(reference, stack);
         }

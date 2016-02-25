@@ -1,17 +1,17 @@
 package eu.toolchain.async;
 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.concurrent.ExecutorService;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.util.concurrent.ExecutorService;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class TinyAsyncBuilderTest {
     @Rule
@@ -64,7 +64,7 @@ public class TinyAsyncBuilderTest {
     public void testBuilderDefaultDirectCaller() {
         final TinyAsync async = builder().build();
         assertTrue("if not caller configured, using StderrDefaultAsyncCaller",
-                async.caller() instanceof PrintStreamDefaultAsyncCaller);
+            async.caller() instanceof PrintStreamDefaultAsyncCaller);
     }
 
     @Test
@@ -89,7 +89,8 @@ public class TinyAsyncBuilderTest {
     public void setupThreadedCaller() {
         final AsyncCaller caller = mock(AsyncCaller.class);
         when(caller.isThreaded()).thenReturn(true);
-        final TinyAsync async = builder().callerExecutor(executor).threaded(true).caller(caller).build();
+        final TinyAsync async =
+            builder().callerExecutor(executor).threaded(true).caller(caller).build();
     }
 
     private TinyAsyncBuilder builder() {

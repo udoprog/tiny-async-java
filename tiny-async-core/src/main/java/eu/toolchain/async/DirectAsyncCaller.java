@@ -96,7 +96,8 @@ public abstract class DirectAsyncCaller implements AsyncCaller {
 
     @Override
     public <T> void referenceLeaked(T reference, StackTraceElement[] stack) {
-        internalError(String.format("reference %s leaked @ %s", reference, formatStack(stack)), null);
+        internalError(String.format("reference %s leaked @ %s", reference, formatStack(stack)),
+            null);
     }
 
     @Override

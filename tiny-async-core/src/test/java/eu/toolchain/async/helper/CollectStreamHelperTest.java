@@ -1,19 +1,18 @@
 package eu.toolchain.async.helper;
 
+import eu.toolchain.async.AsyncCaller;
+import eu.toolchain.async.CollectStreamHelper;
+import eu.toolchain.async.ResolvableFuture;
+import eu.toolchain.async.StreamCollector;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import eu.toolchain.async.AsyncCaller;
-import eu.toolchain.async.CollectStreamHelper;
-import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.StreamCollector;
 
 public class CollectStreamHelperTest {
     private AsyncCaller caller;
@@ -39,8 +38,8 @@ public class CollectStreamHelperTest {
 
     @Test
     public void testOneFailed() throws Exception {
-        final CollectStreamHelper<Object, Object> helper = new CollectStreamHelper<Object, Object>(caller, 2,
-                collector, target);
+        final CollectStreamHelper<Object, Object> helper =
+            new CollectStreamHelper<Object, Object>(caller, 2, collector, target);
 
         when(collector.end(1, 1, 0)).thenReturn(transformed);
 
@@ -56,8 +55,8 @@ public class CollectStreamHelperTest {
 
     @Test
     public void testOneCancelled() throws Exception {
-        final CollectStreamHelper<Object, Object> helper = new CollectStreamHelper<Object, Object>(caller, 2,
-                collector, target);
+        final CollectStreamHelper<Object, Object> helper =
+            new CollectStreamHelper<Object, Object>(caller, 2, collector, target);
 
         when(collector.end(1, 0, 1)).thenReturn(transformed);
 
@@ -73,8 +72,8 @@ public class CollectStreamHelperTest {
 
     @Test
     public void testAllResolved() throws Exception {
-        final CollectStreamHelper<Object, Object> helper = new CollectStreamHelper<Object, Object>(caller, 2,
-                collector, target);
+        final CollectStreamHelper<Object, Object> helper =
+            new CollectStreamHelper<Object, Object>(caller, 2, collector, target);
 
         when(collector.end(2, 0, 0)).thenReturn(transformed);
 
@@ -90,8 +89,8 @@ public class CollectStreamHelperTest {
 
     @Test
     public void testEndThrows() throws Exception {
-        final CollectStreamHelper<Object, Object> helper = new CollectStreamHelper<Object, Object>(caller, 1,
-                collector, target);
+        final CollectStreamHelper<Object, Object> helper =
+            new CollectStreamHelper<Object, Object>(caller, 1, collector, target);
 
         when(collector.end(1, 0, 0)).thenThrow(e);
 

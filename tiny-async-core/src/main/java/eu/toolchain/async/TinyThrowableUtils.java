@@ -12,18 +12,21 @@ public class TinyThrowableUtils {
         while (iter.hasNext()) {
             builder.append(iter.next().getMessage());
 
-            if (iter.hasNext())
+            if (iter.hasNext()) {
                 builder.append(", ");
+            }
         }
 
         return builder.toString();
     }
 
     public static Throwable buildCollectedException(Collection<Throwable> errors) {
-        final Exception e = new Exception(errors.size() + " exception(s) caught: " + formatMultiMessage(errors));
+        final Exception e =
+            new Exception(errors.size() + " exception(s) caught: " + formatMultiMessage(errors));
 
-        for (final Throwable s : errors)
+        for (final Throwable s : errors) {
             e.addSuppressed(s);
+        }
 
         return e;
     }

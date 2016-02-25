@@ -3,9 +3,8 @@ package eu.toolchain.async;
 /**
  * Sets up a constructor, and destructor of a managed reference.
  *
- * @author udoprog
- *
  * @param <T> The type of the managed reference.
+ * @author udoprog
  */
 public interface ManagedSetup<T> {
     /**

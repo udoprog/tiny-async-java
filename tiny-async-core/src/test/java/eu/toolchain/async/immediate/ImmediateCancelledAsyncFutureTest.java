@@ -7,8 +7,9 @@ import eu.toolchain.async.ImmediateAsyncFutureTestBase;
 
 public class ImmediateCancelledAsyncFutureTest extends ImmediateAsyncFutureTestBase {
     @Override
-    protected AbstractImmediateAsyncFuture<From> setupFuture(AsyncFramework async, AsyncCaller caller, From result,
-            Throwable cause) {
+    protected AbstractImmediateAsyncFuture<From> setupFuture(
+        AsyncFramework async, AsyncCaller caller, From result, Throwable cause
+    ) {
         return new ImmediateCancelledAsyncFuture<From>(async, caller);
     }
 

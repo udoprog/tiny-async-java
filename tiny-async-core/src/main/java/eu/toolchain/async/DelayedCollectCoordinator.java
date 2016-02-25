@@ -30,10 +30,12 @@ public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable 
     volatile boolean cancel = false;
     volatile boolean done = false;
 
-    public DelayedCollectCoordinator(final AsyncCaller caller,
-            final Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables,
-            final StreamCollector<S, T> collector, final ResolvableFuture<? super T> future,
-            int parallelism) {
+    public DelayedCollectCoordinator(
+        final AsyncCaller caller,
+        final Collection<? extends Callable<? extends AsyncFuture<? extends S>>> callables,
+        final StreamCollector<S, T> collector, final ResolvableFuture<? super T> future,
+        int parallelism
+    ) {
         this.caller = caller;
         this.callables = callables.iterator();
         this.collector = collector;
@@ -105,7 +107,7 @@ public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable 
             if (!callables.hasNext()) {
                 checkEnd();
                 return;
-            } 
+            }
 
             next = callables.next();
         }

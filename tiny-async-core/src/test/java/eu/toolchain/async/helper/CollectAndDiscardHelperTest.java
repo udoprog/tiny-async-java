@@ -1,15 +1,13 @@
 package eu.toolchain.async.helper;
 
+import eu.toolchain.async.ResolvableFuture;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.helper.CollectAndDiscardHelper;
 
 public class CollectAndDiscardHelperTest {
     private static final int size = 2;

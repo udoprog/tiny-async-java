@@ -1,5 +1,11 @@
 package eu.toolchain.perftests;
 
+import com.google.common.base.Stopwatch;
+import eu.toolchain.async.AsyncFramework;
+import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.Collector;
+import eu.toolchain.async.TinyAsync;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -9,18 +15,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Stopwatch;
-
-import eu.toolchain.async.AsyncFramework;
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.Collector;
-import eu.toolchain.async.TinyAsync;
-
 public class FutureVsSync {
     private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
-    private static final ExecutorService asyncThreads = Executors.newFixedThreadPool(AVAILABLE_PROCESSORS);
-    private static final ExecutorService syncThreads = Executors.newFixedThreadPool(AVAILABLE_PROCESSORS);
+    private static final ExecutorService asyncThreads =
+        Executors.newFixedThreadPool(AVAILABLE_PROCESSORS);
+    private static final ExecutorService syncThreads =
+        Executors.newFixedThreadPool(AVAILABLE_PROCESSORS);
 
     private static final AsyncFramework async = TinyAsync.builder().executor(asyncThreads).build();
 
@@ -52,8 +53,9 @@ public class FutureVsSync {
         public Double collect(Collection<Double> results) throws Exception {
             double sum = 0.0d;
 
-            for (final Double r : results)
+            for (final Double r : results) {
                 sum += r;
+            }
 
             return sum;
         }
@@ -98,8 +100,9 @@ public class FutureVsSync {
 
         double sum = 0.0d;
 
-        for (final Future<Double> f : outer)
+        for (final Future<Double> f : outer) {
             sum += f.get();
+        }
 
         return sum;
     }
@@ -121,8 +124,9 @@ public class FutureVsSync {
 
                 double sum = 0.0d;
 
-                for (final Future<Double> f : inner)
+                for (final Future<Double> f : inner) {
                     sum += f.get();
+                }
 
                 return sum;
             }

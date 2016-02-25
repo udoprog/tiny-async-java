@@ -1,10 +1,10 @@
 package eu.toolchain.examples;
 
-import java.util.concurrent.Callable;
-
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.TinyAsync;
 import eu.toolchain.async.Transform;
+
+import java.util.concurrent.Callable;
 
 /**
  * An example application showcasing transforms.

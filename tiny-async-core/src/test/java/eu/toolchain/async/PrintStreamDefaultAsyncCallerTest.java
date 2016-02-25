@@ -1,11 +1,11 @@
 package eu.toolchain.async;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import org.junit.Test;
 
 import java.io.PrintStream;
 
-import org.junit.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class PrintStreamDefaultAsyncCallerTest {
     private static final String message = "message";

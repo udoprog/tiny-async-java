@@ -1,24 +1,16 @@
 package eu.toolchain.async;
 
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicLong;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import eu.toolchain.async.FutureCancelled;
-import eu.toolchain.async.FutureDone;
-import eu.toolchain.async.FutureFailed;
-import eu.toolchain.async.FutureFinished;
-import eu.toolchain.async.FutureResolved;
-import eu.toolchain.async.StreamCollector;
-import eu.toolchain.async.DirectAsyncCaller;
 
 public class DirectAsyncCallerTest {
     private static final Object reference = mock(Object.class);
@@ -251,6 +243,8 @@ public class DirectAsyncCallerTest {
         populated[1] = new StackTraceElement("SomeOtherClass", "method", "file", 0);
         caller.referenceLeaked(reference, populated);
         assertEquals(1, internalErrors.get());
-        assertEquals("reference foo leaked @ SomeClass.method (file:0)\n  SomeOtherClass.method (file:0)", errorMessage);
+        assertEquals(
+            "reference foo leaked @ SomeClass.method (file:0)\n  SomeOtherClass.method (file:0)",
+            errorMessage);
     }
 }

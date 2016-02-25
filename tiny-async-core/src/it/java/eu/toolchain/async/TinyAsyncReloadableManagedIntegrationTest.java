@@ -1,15 +1,15 @@
 package eu.toolchain.async;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class TinyAsyncReloadableManagedIntegrationTest {
     final Object REF = new Object();

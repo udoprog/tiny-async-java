@@ -1,18 +1,16 @@
 package eu.toolchain.perftests.jmh;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.openjdk.jmh.annotations.Benchmark;
-
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-
 import eu.toolchain.async.AsyncFramework;
 import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.TinyAsync;
 import eu.toolchain.async.Transform;
+import org.openjdk.jmh.annotations.Benchmark;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Immediate {
     private static final int ITERATIONS = 10000;
@@ -40,12 +38,13 @@ public class Immediate {
         final List<ListenableFuture<Boolean>> futures = new ArrayList<>();
 
         for (int i = 0; i < ITERATIONS; i++) {
-            futures.add(Futures.transform(Futures.immediateFuture(true), new Function<Boolean, Boolean>() {
-                @Override
-                public Boolean apply(Boolean input) {
-                    return !input;
-                }
-            }));
+            futures.add(
+                Futures.transform(Futures.immediateFuture(true), new Function<Boolean, Boolean>() {
+                    @Override
+                    public Boolean apply(Boolean input) {
+                        return !input;
+                    }
+                }));
         }
 
         Futures.allAsList(futures).get();
