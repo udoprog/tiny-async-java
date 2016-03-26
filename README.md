@@ -89,24 +89,24 @@ The following section contains documentation on how to use TinyAsync.
 
 ## Building futures from scratch
 
-The following methods are provided on ```AsyncFramework``` to build new futures.
+The following methods are provided on `AsyncFramework` to build new futures.
 
-* ```ResolvableFuture<T> AsyncFramework#future()```
-* ```AsyncFuture<T> AsyncFramework#call(Callable<T>)```
-* ```AsyncFuture<T> AsyncFramework#call(Callable<T>, ExecutorService)```
-* ```AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>)```
-* ```AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>, ExecutorService)```
-* ```AsyncFuture<T> AsyncFramework#resolved(T)```
-* ```AsyncFuture<T> AsyncFramework#failed(Throwable)```
-* ```AsyncFuture<T> AsyncFramework#cancelled()```
+* `ResolvableFuture<T> AsyncFramework#future()`
+* `AsyncFuture<T> AsyncFramework#call(Callable<T>)`
+* `AsyncFuture<T> AsyncFramework#call(Callable<T>, ExecutorService)`
+* `AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>)`
+* `AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>, ExecutorService)`
+* `AsyncFuture<T> AsyncFramework#resolved(T)`
+* `AsyncFuture<T> AsyncFramework#failed(Throwable)`
+* `AsyncFuture<T> AsyncFramework#cancelled()`
 
-The first kind of method returns a ```ResolvableFuture<T>``` instance. This is typically used when integrating with other async framework and has direct access to a ```#resolve(T)``` method that will resolve the future.
+The first kind of method returns a `ResolvableFuture<T>` instance. This is typically used when integrating with other async framework and has direct access to a `#resolve(T)` method that will resolve the future.
 
-The methods that take a ```Callable<T>``` builds a new future that will be resolved when the given callable has returned.
+The methods that take a `Callable<T>` builds a new future that will be resolved when the given callable has returned.
 
 The last kind of methods are the ones building futures which have already been either resolved, failed, or cancelled.
 These types of methods are good for returning early from methods that only returns a future.
-An example is if a method throws a checked exception, and you want this to be returned as a future, you can use ```AsyncFramework#failed(Throwable)```.
+An example is if a method throws a checked exception, and you want this to be returned as a future, you can use `AsyncFramework#failed(Throwable)`.
 
 See examples:
 
@@ -119,12 +119,12 @@ See examples:
 The following methods allow you to subscribe to interesting changes on the
 futures.
 
-* ```AsyncFuture<T> AsyncFuture#on(FutureDone<T>)```
-* ```AsyncFuture<T> AsyncFuture#on(FutureFinished)```
-* ```AsyncFuture<T> AsyncFuture#on(FutureCancelled)```
+* `AsyncFuture<T> AsyncFuture#on(FutureDone<T>)`
+* `AsyncFuture<T> AsyncFuture#on(FutureFinished)`
+* `AsyncFuture<T> AsyncFuture#on(FutureCancelled)`
 
 If the event handlers throw an exception, this is intepreted as an 'internal'
-error, and will be reported as such in the provided ```AsyncCaller```.
+error, and will be reported as such in the provided `AsyncCaller`.
 
 There is no other reasonable way to handle this circumstance, and you are
 expected to avoid throwing exceptions here (or implement a sane AsyncCaller
@@ -136,15 +136,15 @@ See examples:
 
 ## Blocking until a result is available
 
-This is the implemented behaviour of ```java.util.concurrent.Future#get()```.
+This is the implemented behaviour of `java.util.concurrent.Future#get()`.
 
 Blocking isn't a terribly interesting async behaviour, and frankly it is beyond
-me why ```java.util.concurrent.Future``` is so poorly designed.
+me why `java.util.concurrent.Future` is so poorly designed.
 
 You should mostly rely on [Subscribing to events](#subscribing-to-events),
 transformers and collectors.
 
-Note: most of these examples make use of ```#get()```, mainly because it is
+Note: most of these examples make use of `#get()`, mainly because it is
 convenient in this contrived context.
 
 See examples:
@@ -159,12 +159,12 @@ They allow you to take a value A, and convert it to a value B.
 
 They also allows to take a falied future, and convert it into a value B.
 
-* ```AsyncFuture<C> AsyncFuture#transform(Transform<T, C>)```
-* ```AsyncFuture<C> AsyncFuture#transform(LazyTransform<T, C>)```
-* ```AsyncFuture<C> AsyncFuture#catchFailure(Transform<Throwable, C>)```
-* ```AsyncFuture<C> AsyncFuture#catchFailure(LazyTransform<Throwable, C>)```
-* ```AsyncFuture<C> AsyncFuture#catchCancelled(Transform<Throwable, C>)```
-* ```AsyncFuture<C> AsyncFuture#catchCancelled(LazyTransform<Throwable, C>)```
+* `AsyncFuture<C> AsyncFuture#directTransform(Transform<T, C>)`
+* `AsyncFuture<C> AsyncFuture#lazyTransform(LazyTransform<T, C>)`
+* `AsyncFuture<C> AsyncFuture#catchFailure(Transform<Throwable, C>)`
+* `AsyncFuture<C> AsyncFuture#catchFailure(LazyTransform<Throwable, C>)`
+* `AsyncFuture<C> AsyncFuture#catchCancelled(Transform<Throwable, C>)`
+* `AsyncFuture<C> AsyncFuture#catchCancelled(LazyTransform<Throwable, C>)`
 
 See examples:
 
@@ -175,25 +175,25 @@ See examples:
 When you have a collection of asynchronous computations, and you want a single
 future that is resolved by them instead.
 
-* ```AsyncFuture<Collection<T>> AsyncFramework#collect(Collection<AsyncFuture<C>>)```
-* ```AsyncFuture<Void> AsyncFramework#collectAndDiscard(Collection<AsyncFuture<C>>)```
-* ```AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, Collector<C, T>)```
-* ```AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, StreamCollector<C, T>)```
-* ```AsyncFuture<T> AsyncFramework#eventuallyCollect(Collection<Callable<AsyncFuture<C>>>, StreamCollector<C, T>, int)```
+* `AsyncFuture<Collection<T>> AsyncFramework#collect(Collection<AsyncFuture<C>>)`
+* `AsyncFuture<Void> AsyncFramework#collectAndDiscard(Collection<AsyncFuture<C>>)`
+* `AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, Collector<C, T>)`
+* `AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, StreamCollector<C, T>)`
+* `AsyncFuture<T> AsyncFramework#eventuallyCollect(Collection<Callable<AsyncFuture<C>>>, StreamCollector<C, T>, int)`
 
-The methods taking the ```Collector``` gathers the result of all computations,
-and provides them to the ```Collector#collect(Collection<C>)``` method.
+The methods taking the `Collector` gathers the result of all computations,
+and provides them to the `Collector#collect(Collection<C>)` method.
 Since this is guaranteed to only be called once, it is very convenient.
 It has the downside of requiring the result of all the collected futures to be
 in memory at once.
 
-The methods taking the ```StreamCollector``` also gathers the result of all
-computations. However in contrast with ```Collector``` it provides methods to
+The methods taking the `StreamCollector` also gathers the result of all
+computations. However in contrast with `Collector` it provides methods to
 incrementally gather the result of all the computations.
 The intermidate result is discarded and can be effectivelly garbage collected
 by the JVM.
-Similarly to ```Collector```, ```StreamCollector``` has the
-```StreamCollector#end(int, int, int)``` method that will be called when all
+Similarly to `Collector`, `StreamCollector` has the
+`StreamCollector#end(int, int, int)` method that will be called when all
 the computations have been finished.
 
 The _eventually_ collector is a lazy type of collector that ensures on a high
@@ -214,6 +214,20 @@ See examples:
 * [collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
 * [stream collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
 
+## Retry Operation
+
+This required TinyAsync to be configured with a `ScheduledExecutorService`.
+
+These operations implement a retry pattern, governed by a
+[`RetryPolicy`](tiny-async-api/src/main/java/eu/toolchain/async/RetryPolicy.java).
+
+* `AsyncFuture<RetryResult<T>> AsyncFramework#retryUntilResolved(Callable<T>, RetryPolicy)`
+
+`retryUntilResolved(...)` returns a `RetryResult<T>` which contains the result
+of the operation, and any errors that happened for previous tries.
+
+* [integration tests](tiny-async-core/src/it/java/eu/toolchain/async/TinyAsyncRetryUntilResolvedTest.java)
+
 ## Managed References
 
 Managed references are values which are reference counted by the framework.
@@ -221,24 +235,26 @@ These are intended to be used for expensive setup, and teardown operations,
 where abruptly tearing the reference down while there are sessions using it can
 cause undesirable behaviour.
 
-* ```Managed<T> AsyncFramework#managed(ManagedSetup<T>)```
-* ```AsyncFuture<Void> Managed#start()```
-* ```AsyncFuture<Void> Managed#stop()```
-* ```AsyncFuture<R> Managed#doto(ManagedAction<T>)```
+* `Managed<T> AsyncFramework#managed(ManagedSetup<T>)`
+* `AsyncFuture<Void> Managed#start()`
+* `AsyncFuture<Void> Managed#stop()`
+* `AsyncFuture<R> Managed#doto(ManagedAction<T>)`
 
-The ```#managed(ManagerSetup<T>)``` method defines a constructor, and
-a destructor for the given reference of type ```<T>```. The user is then
+The `#managed(ManagerSetup<T>)` method defines a constructor, and
+a destructor for the given reference of type `<T>`. The user is then
 responsible for *borrowing* this reference through the
-```Borrowed<T> Managed#borrow()``` method. As soon as this reference is no
+`Borrowed<T> Managed#borrow()` method. As soon as this reference is no
 longer needed, the user must manually de-allocate it.
 
 The user should start and stop the managed reference. After
-```Managed#stop()``` the reference will be destructed once the last borrowed
+`Managed#stop()` the reference will be destructed once the last borrowed
 references are released.
 
-The ```Managed#doto(ManagedAction<T>)``` method provides a convenience method
+The `Managed#doto(ManagedAction<T>)` method provides a convenience method
 that will retain the managed reference, until the future returned is finished.
 This is typically a strong indication that the reference is no longer required.
+
+* [integration tests](tiny-async-core/src/it/java/eu/toolchain/async/TinyAsyncManagedIntegrationTest.java)
 
 ## Other Async Libraries
 

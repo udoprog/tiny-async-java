@@ -508,7 +508,7 @@ public class TinyAsync implements AsyncFramework {
 
     @Override
     public <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
-        final Callable<? extends AsyncFuture<? extends T>> callable, final RetryPolicy policy
+        final Callable<? extends AsyncFuture<? extends T>> action, final RetryPolicy policy
     ) {
         if (scheduler == null) {
             throw new IllegalStateException("no scheduler configured");
@@ -517,7 +517,7 @@ public class TinyAsync implements AsyncFramework {
         final ResolvableFuture<T> future = future();
 
         final RetryCallHelper<T> helper =
-            new RetryCallHelper<>(scheduler, callable, policy, future);
+            new RetryCallHelper<>(scheduler, action, policy, future);
 
         future.onFinished(helper::finished);
 

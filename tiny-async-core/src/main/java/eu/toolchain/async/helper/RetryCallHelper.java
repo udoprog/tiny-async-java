@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class RetryCallHelper<T> implements FutureDone<T> {
     private final ScheduledExecutorService scheduler;
-    private final Callable<? extends AsyncFuture<? extends T>> callable;
+    private final Callable<? extends AsyncFuture<? extends T>> action;
     private final RetryPolicy policy;
     private final ResolvableFuture<T> future;
 
@@ -41,7 +41,7 @@ public class RetryCallHelper<T> implements FutureDone<T> {
         final ResolvableFuture<T> future
     ) {
         this.scheduler = scheduler;
-        this.callable = callable;
+        this.action = callable;
         this.policy = policy;
         this.future = future;
     }
@@ -93,7 +93,7 @@ public class RetryCallHelper<T> implements FutureDone<T> {
         final AsyncFuture<? extends T> result;
 
         try {
-            result = callable.call();
+            result = action.call();
         } catch (final Exception e) {
             // inner catch, since the policy might be user-provided.
             try {
@@ -107,7 +107,7 @@ public class RetryCallHelper<T> implements FutureDone<T> {
         }
 
         if (result == null) {
-            future.fail(new IllegalStateException("Retry callable returned null"));
+            future.fail(new IllegalStateException("Retry action returned null"));
             return;
         }
 

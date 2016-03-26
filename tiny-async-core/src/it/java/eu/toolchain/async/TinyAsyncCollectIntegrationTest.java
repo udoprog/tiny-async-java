@@ -1,5 +1,10 @@
 package eu.toolchain.async;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -150,5 +155,35 @@ public class TinyAsyncCollectIntegrationTest {
                 Assert.assertEquals((Integer) (i * COUNT + j), iter.next());
             }
         }
+    }
+
+    @Test
+    public void testSomething() {
+        final ListeningExecutorService executor =
+            MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final ListenableFuture<Object> future = executor.submit(() -> {
+            latch.await();
+            System.out.println("ok, go");
+            return new Object();
+        });
+
+        Futures.addCallback(future, new FutureCallback<Object>() {
+            @Override
+            public void onSuccess(final Object result) {
+                System.out.println("success");
+            }
+
+            @Override
+            public void onFailure(final Throwable t) {
+                System.out.println("failure");
+                t.printStackTrace(System.out);
+            }
+        });
+
+        future.cancel(false);
+        latch.countDown();
     }
 }

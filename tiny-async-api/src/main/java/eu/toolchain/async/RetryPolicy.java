@@ -2,6 +2,8 @@ package eu.toolchain.async;
 
 /**
  * A policy that governs how and when an operation should be retried.
+ *
+ * Policies decide if a retry should be performed or not by expiring after some given parameters.
  */
 public interface RetryPolicy {
     /**
