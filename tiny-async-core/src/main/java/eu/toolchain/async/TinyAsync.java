@@ -11,6 +11,7 @@ import eu.toolchain.async.helper.FailedLazyTransformHelper;
 import eu.toolchain.async.helper.FailedTransformHelper;
 import eu.toolchain.async.helper.ResolvedLazyTransformHelper;
 import eu.toolchain.async.helper.ResolvedTransformHelper;
+import eu.toolchain.async.helper.RetryCallHelper;
 import eu.toolchain.async.immediate.ImmediateCancelledAsyncFuture;
 import eu.toolchain.async.immediate.ImmediateFailedAsyncFuture;
 import eu.toolchain.async.immediate.ImmediateResolvedAsyncFuture;
@@ -24,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 // @formatter:off
@@ -507,90 +507,21 @@ public class TinyAsync implements AsyncFramework {
     }
 
     @Override
-    public <T> AsyncFuture<T> retryUntilResolved(
-        final Callable<AsyncFuture<T>> callable, final RetryPolicy policy
+    public <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
+        final Callable<? extends AsyncFuture<? extends T>> callable, final RetryPolicy policy
     ) {
         if (scheduler == null) {
             throw new IllegalStateException("no scheduler configured");
         }
 
         final ResolvableFuture<T> future = future();
-        final ArrayList<Throwable> errors = new ArrayList<>();
-        final AtomicReference<ScheduledFuture<?>> nextCall = new AtomicReference<>();
 
-        future.onFinished(new FutureFinished() {
-            @Override
-            public void finished() throws Exception {
-                final ScheduledFuture<?> scheduled = nextCall.getAndSet(null);
+        final RetryCallHelper<T> helper =
+            new RetryCallHelper<>(scheduler, callable, policy, future);
 
-                if (scheduled != null) {
-                    scheduled.cancel(true);
-                }
-            }
-        });
+        future.onFinished(helper::finished);
 
-        setupRetryUntilResolved(callable, policy, future, errors, nextCall);
-
-        return future;
-    }
-
-    protected <T> void setupRetryUntilResolved(
-        final Callable<AsyncFuture<T>> callable, final RetryPolicy policy,
-        final ResolvableFuture<T> future, final ArrayList<Throwable> errors,
-        final AtomicReference<ScheduledFuture<?>> nextCall
-    ) {
-        final AsyncFuture<T> result;
-
-        try {
-            result = callable.call();
-        } catch (final Exception e) {
-            for (final Throwable suppressed : errors) {
-                e.addSuppressed(suppressed);
-            }
-
-            future.fail(e);
-            return;
-        }
-
-        result.onDone(new FutureDone<T>() {
-            @Override
-            public void failed(final Throwable cause) throws Exception {
-                final RetryPolicy.Decision decision = policy.apply();
-
-                if (!decision.shouldRetry()) {
-                    for (final Throwable suppressed : errors) {
-                        cause.addSuppressed(suppressed);
-                    }
-
-                    future.fail(cause);
-                    return;
-                }
-
-                errors.add(cause);
-
-                if (decision.backoff() <= 0) {
-                    setupRetryUntilResolved(callable, policy, future, errors, nextCall);
-                    return;
-                }
-
-                nextCall.set(scheduler.schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        nextCall.set(null);
-                        setupRetryUntilResolved(callable, policy, future, errors, nextCall);
-                    }
-                }, decision.backoff(), TimeUnit.MILLISECONDS));
-            }
-
-            @Override
-            public void resolved(final T result) throws Exception {
-                future.resolve(result);
-            }
-
-            @Override
-            public void cancelled() throws Exception {
-                future.cancel();
-            }
-        });
+        helper.next();
+        return future.directTransform(result -> new RetryResult<>(result, helper.getErrors()));
     }
 }

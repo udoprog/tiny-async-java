@@ -337,5 +337,7 @@ public interface AsyncFramework {
      * @param policy The retry policy to apply.
      * @return A future that will be resolved, when the called future is resolved.
      */
-    <T> AsyncFuture<T> retryUntilResolved(Callable<AsyncFuture<T>> callable, RetryPolicy policy);
+    <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
+        Callable<? extends AsyncFuture<? extends T>> callable, RetryPolicy policy
+    );
 }

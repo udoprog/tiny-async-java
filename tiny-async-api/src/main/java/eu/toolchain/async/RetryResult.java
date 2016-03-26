@@ -1,0 +1,29 @@
+package eu.toolchain.async;
+
+import java.util.List;
+
+/**
+ * Contains the result of a retry operation.
+ * <p>
+ * This class also carries any potential errors that were generated for prior requests {@link
+ * #getErrors()}.
+ *
+ * @param <T> The type of the result.
+ */
+public class RetryResult<T> {
+    final T result;
+    final List<Throwable> errors;
+
+    public RetryResult(final T result, final List<Throwable> errors) {
+        this.result = result;
+        this.errors = errors;
+    }
+
+    public T getResult() {
+        return result;
+    }
+
+    public List<Throwable> getErrors() {
+        return errors;
+    }
+}
