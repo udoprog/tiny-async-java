@@ -24,8 +24,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 // @formatter:off
 /**
@@ -66,10 +64,11 @@ public class TinyAsync implements AsyncFramework {
     private final AsyncCaller caller;
     private final AsyncCaller threadedCaller;
     private final ScheduledExecutorService scheduler;
+    private final ClockSource clockSource;
 
     protected TinyAsync(
         ExecutorService defaultExecutor, AsyncCaller caller, AsyncCaller threadedCaller,
-        ScheduledExecutorService scheduler
+        ScheduledExecutorService scheduler, ClockSource clockSource
     ) {
         if (caller == null) {
             throw new NullPointerException("caller");
@@ -79,6 +78,7 @@ public class TinyAsync implements AsyncFramework {
         this.caller = caller;
         this.threadedCaller = threadedCaller;
         this.scheduler = scheduler;
+        this.clockSource = clockSource;
     }
 
     /**
@@ -510,14 +510,24 @@ public class TinyAsync implements AsyncFramework {
     public <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
         final Callable<? extends AsyncFuture<? extends T>> action, final RetryPolicy policy
     ) {
+        return retryUntilResolved(action, policy, clockSource);
+    }
+
+    @Override
+    public <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
+        final Callable<? extends AsyncFuture<? extends T>> action, final RetryPolicy policy,
+        final ClockSource clockSource
+    ) {
         if (scheduler == null) {
             throw new IllegalStateException("no scheduler configured");
         }
 
         final ResolvableFuture<T> future = future();
 
+        final RetryPolicy.Instance policyInstance = policy.apply(clockSource);
+
         final RetryCallHelper<T> helper =
-            new RetryCallHelper<>(scheduler, action, policy, future);
+            new RetryCallHelper<>(scheduler, action, policyInstance, future, clockSource);
 
         future.onFinished(helper::finished);
 
