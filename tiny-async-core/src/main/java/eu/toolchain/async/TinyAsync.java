@@ -526,8 +526,10 @@ public class TinyAsync implements AsyncFramework {
 
         final RetryPolicy.Instance policyInstance = policy.apply(clockSource);
 
+        final long start = clockSource.now();
+
         final RetryCallHelper<T> helper =
-            new RetryCallHelper<>(scheduler, action, policyInstance, future, clockSource);
+            new RetryCallHelper<>(start, scheduler, action, policyInstance, future, clockSource);
 
         future.onFinished(helper::finished);
 

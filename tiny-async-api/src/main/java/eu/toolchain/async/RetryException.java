@@ -1,14 +1,19 @@
 package eu.toolchain.async;
 
 public class RetryException extends RuntimeException {
-    private final long when;
+    private final long offset;
 
-    public RetryException(final long when, final Throwable cause) {
+    public RetryException(final long offset, final Throwable cause) {
         super(cause);
-        this.when = when;
+        this.offset = offset;
     }
 
-    public long getWhen() {
-        return when;
+    public long getOffsetMillis() {
+        return offset;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " (" + offset + "ms)";
     }
 }

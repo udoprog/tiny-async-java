@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @param <T> The type of the class.
  */
 public class RetryCallHelper<T> implements FutureDone<T> {
+    private final long start;
     private final ScheduledExecutorService scheduler;
     private final Callable<? extends AsyncFuture<? extends T>> action;
     private final RetryPolicy.Instance policyInstance;
@@ -39,11 +40,12 @@ public class RetryCallHelper<T> implements FutureDone<T> {
     private final AtomicReference<ScheduledFuture<?>> nextCall = new AtomicReference<>();
 
     public RetryCallHelper(
-        final ScheduledExecutorService scheduler,
+        final long start, final ScheduledExecutorService scheduler,
         final Callable<? extends AsyncFuture<? extends T>> callable,
         final RetryPolicy.Instance policyInstance, final ResolvableFuture<T> future,
         final ClockSource clockSource
     ) {
+        this.start = start;
         this.scheduler = scheduler;
         this.action = callable;
         this.policyInstance = policyInstance;
@@ -68,7 +70,7 @@ public class RetryCallHelper<T> implements FutureDone<T> {
             return;
         }
 
-        errors.add(new RetryException(clockSource.now(), cause));
+        errors.add(new RetryException(clockSource.now() - start, cause));
 
         if (decision.backoff() <= 0) {
             next();
