@@ -4,27 +4,18 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
 /**
- * An interface that defines a contract with a computation that could be asynchronous.
- * <p>
- * <h1>Thread Safety</h1>
- * <p>
- * <p> All public methods exposed in {@code AsyncFuture} are fully <em>thread-safe</em>,
- * guaranteeing that interactions with the future atomic. </p>
- * <p>
- * <h1>States</h1>
- * <p>
- * <p> A future has four states. </p>
- * <p>
- * <ul> <li><em>running</em>, which indicates that the future is currently active, and has not
- * reached an end-state.</li> <li><em>resolved</em>, which indicates that the computation was
- * successful, and produced a result.</li> <li><em>failed</em>, which indicates that the computation
- * failed through an exception, which can be fetched for inspection.</li> <li><em>cancelled</em>,
- * which indicates that the computation was cancelled.</li> </ul>
- * <p>
- * <p> The last three states are characterized as <em>end states</em>, a future can only transition
- * into one of these, and when in an end-state will never go into another state. If a future is in
- * and end state it is considered <em>done</em> , as is indicated by the {@link #isDone()} method.
- * </p>
+ * An interface that defines a contract with a computation that could be asynchronous. <p>
+ * <h1>Thread Safety</h1> <p> <p> All public methods exposed in {@code AsyncFuture} are fully
+ * <em>thread-safe</em>, guaranteeing that interactions with the future atomic. </p> <p>
+ * <h1>States</h1> <p> <p> A future has four states. </p> <p> <ul> <li><em>running</em>, which
+ * indicates that the future is currently active, and has not reached an end-state.</li>
+ * <li><em>resolved</em>, which indicates that the computation was successful, and produced a
+ * result.</li> <li><em>failed</em>, which indicates that the computation failed through an
+ * exception, which can be fetched for inspection.</li> <li><em>cancelled</em>, which indicates that
+ * the computation was cancelled.</li> </ul> <p> <p> The last three states are characterized as
+ * <em>end states</em>, a future can only transition into one of these, and when in an end-state
+ * will never go into another state. If a future is in and end state it is considered <em>done</em>
+ * , as is indicated by the {@link #isDone()} method. </p>
  *
  * @param <T> The type being provided by the future.
  * @author udoprog

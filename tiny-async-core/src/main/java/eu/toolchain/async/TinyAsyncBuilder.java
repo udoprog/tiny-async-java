@@ -10,6 +10,7 @@ public class TinyAsyncBuilder {
     private ExecutorService executor;
     private ExecutorService callerExecutor;
     private ScheduledExecutorService scheduler;
+    private ClockSource clockSource = ClockSource.system();
 
     protected TinyAsyncBuilder() {
     }
@@ -93,13 +94,22 @@ public class TinyAsyncBuilder {
         return this;
     }
 
+    public TinyAsyncBuilder clockSource(ClockSource clockSource) {
+        if (clockSource == null) {
+            throw new NullPointerException("clockSource");
+        }
+
+        this.clockSource = clockSource;
+        return this;
+    }
+
     public TinyAsync build() {
         final ExecutorService defaultExecutor = setupDefaultExecutor();
         final ExecutorService callerExecutor = setupCallerExecutor(defaultExecutor);
         final AsyncCaller caller = setupCaller();
         final AsyncCaller threadedCaller = setupThreadedCaller(caller, callerExecutor);
 
-        return new TinyAsync(defaultExecutor, caller, threadedCaller, scheduler);
+        return new TinyAsync(defaultExecutor, caller, threadedCaller, scheduler, clockSource);
     }
 
     private AsyncCaller setupThreadedCaller(AsyncCaller caller, ExecutorService callerExecutor) {

@@ -64,6 +64,8 @@ public class TinyAsyncTest {
     @Mock
     private AsyncCaller threadedCaller;
     @Mock
+    private ClockSource clockSource;
+    @Mock
     private Collector<Object, Object> collector;
     @Mock
     private StreamCollector<Object, Object> streamCollector;
@@ -94,7 +96,7 @@ public class TinyAsyncTest {
 
     @Before
     public void setup() {
-        underTest = spy(new TinyAsync(executor, caller, threadedCaller, null));
+        underTest = spy(new TinyAsync(executor, caller, threadedCaller, null, clockSource));
     }
 
     @Test
@@ -104,39 +106,40 @@ public class TinyAsyncTest {
 
     @Test
     public void testGetDefaultExecutor() {
-        assertEquals(executor, new TinyAsync(executor, caller, null, null).defaultExecutor());
+        assertEquals(executor,
+            new TinyAsync(executor, caller, null, null, clockSource).defaultExecutor());
     }
 
     @Test
     public void testGetCaller() {
-        assertEquals(caller, new TinyAsync(null, caller, null, null).caller());
+        assertEquals(caller, new TinyAsync(null, caller, null, null, clockSource).caller());
     }
 
     @Test
     public void testGetThreadedCaller() {
         assertEquals(threadedCaller,
-            new TinyAsync(null, caller, threadedCaller, null).threadedCaller());
+            new TinyAsync(null, caller, threadedCaller, null, clockSource).threadedCaller());
     }
 
     @Test
     public void testNullCaller() {
         except.expect(NullPointerException.class);
         except.expectMessage("caller");
-        new TinyAsync(null, null, null, null);
+        new TinyAsync(null, null, null, null, clockSource);
     }
 
     @Test
     public void testMissingDefaultExecutorThrows() {
         except.expect(IllegalStateException.class);
         except.expectMessage("no default executor");
-        new TinyAsync(null, caller, null, null).defaultExecutor();
+        new TinyAsync(null, caller, null, null, clockSource).defaultExecutor();
     }
 
     @Test
     public void testMissingThreadedCallerThrows() {
         except.expect(IllegalStateException.class);
         except.expectMessage("no threaded caller");
-        new TinyAsync(null, caller, null, null).threadedCaller();
+        new TinyAsync(null, caller, null, null, clockSource).threadedCaller();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

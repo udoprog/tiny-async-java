@@ -1,31 +1,21 @@
 package eu.toolchain.async;
 
 /**
- * Managed lightweight, reference-counted objects.
- * <p>
- * <p> This utility class guarantees that the underlying reference has been initialized and that the
- * block of code using it will never operate on an invalid reference. </p>
- * <p>
- * <p> An invalid reference, is an object that has been 'destructed', an example would be a database
- * connection that has been closed, any subsequent actions on it is very likely to cause an
- * exception to be thrown. By wrapping the connection in a managed reference, any block of code
- * using the reference prevents it from being de-allocated until that block of code has exited.
- * </p>
- * <p>
- * <h1>Usage</h1>
- * <p>
- * <p> Since we cannot rely on the garbage collector being invoked in a timely fashion, the borrowed
- * references has to be manually released. Fortunately, there are some helpers to ease this like
- * {@code #doto(AsyncFramework, ManagedAction)} , the try-with-resources pattern on a {@code
- * Borrowed} reference, and the {@code Borrowed#release()} method. </p>
- * <p>
- * <h2>Example using doto</h2>
- * <p>
- * <p> This pattern is useful if you have a block of code returning a future. </p>
- * <p>
- * <p> It guarantees that the code is executed in a safe fashion, that will release the reference if
- * it throws an exception. After it has successfully returned a future, the borrowed reference will
- * be relased when this future is resolved. </p>
+ * Managed lightweight, reference-counted objects. <p> <p> This utility class guarantees that the
+ * underlying reference has been initialized and that the block of code using it will never operate
+ * on an invalid reference. </p> <p> <p> An invalid reference, is an object that has been
+ * 'destructed', an example would be a database connection that has been closed, any subsequent
+ * actions on it is very likely to cause an exception to be thrown. By wrapping the connection in a
+ * managed reference, any block of code using the reference prevents it from being de-allocated
+ * until that block of code has exited. </p> <p> <h1>Usage</h1> <p> <p> Since we cannot rely on the
+ * garbage collector being invoked in a timely fashion, the borrowed references has to be manually
+ * released. Fortunately, there are some helpers to ease this like {@code #doto(AsyncFramework,
+ * ManagedAction)} , the try-with-resources pattern on a {@code Borrowed} reference, and the {@code
+ * Borrowed#release()} method. </p> <p> <h2>Example using doto</h2> <p> <p> This pattern is useful
+ * if you have a block of code returning a future. </p> <p> <p> It guarantees that the code is
+ * executed in a safe fashion, that will release the reference if it throws an exception. After it
+ * has successfully returned a future, the borrowed reference will be relased when this future is
+ * resolved. </p>
  * <p>
  * <pre>
  * {@code
@@ -97,9 +87,8 @@ public interface Managed<T> {
     public AsyncFuture<Void> start();
 
     /**
-     * Stop the underlying managed reference. Can be called multiple times.
-     * <p>
-     * <p> A stop call will do the following (in order). </p>
+     * Stop the underlying managed reference. Can be called multiple times. <p> <p> A stop call will
+     * do the following (in order). </p>
      * <p>
      * <ul> <li>future borrowed references are <em>not</em> valid</li> <li>waits for number of
      * references to become zero, this indicates that no one is <em>using</em> the reference</li>

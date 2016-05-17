@@ -4,7 +4,6 @@ import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.TransformException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -81,7 +80,7 @@ public abstract class TransformHelperTestBase<T> {
 
         doReturn(f).when(transform).transform(from);
         done.failed(e);
-        verify(target).fail(any(TransformException.class));
+        verify(target).fail(any(Exception.class));
         verify(f, times(failedTimes)).onDone(any(FutureDone.class));
     }
 
@@ -90,7 +89,7 @@ public abstract class TransformHelperTestBase<T> {
         doThrow(e).when(transform).transform(from);
         done.resolved(from);
         verify(target, times(Math.max(cancelledTimes, failedTimes))).resolve(from);
-        verify(target, times(resolvedTimes)).fail(any(TransformException.class));
+        verify(target, times(resolvedTimes)).fail(any(Exception.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -113,7 +112,7 @@ public abstract class TransformHelperTestBase<T> {
         doThrow(e).when(transform).transform(from);
         done.cancelled();
         verify(target, times(Math.max(resolvedTimes, failedTimes))).cancel();
-        verify(target, times(cancelledTimes)).fail(any(TransformException.class));
+        verify(target, times(cancelledTimes)).fail(any(Exception.class));
     }
 
     @SuppressWarnings("unchecked")

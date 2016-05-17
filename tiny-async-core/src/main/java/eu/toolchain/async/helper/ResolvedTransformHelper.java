@@ -3,7 +3,6 @@ package eu.toolchain.async.helper;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.Transform;
-import eu.toolchain.async.TransformException;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -23,7 +22,7 @@ public class ResolvedTransformHelper<S, T> implements FutureDone<S> {
         try {
             value = transform.transform(result);
         } catch (Exception e) {
-            target.fail(new TransformException(e));
+            target.fail(e);
             return;
         }
 

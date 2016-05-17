@@ -48,52 +48,52 @@ public class AbstractAsyncFutureResolvedTest {
     public void testTransformResolved() throws Exception {
         doReturn(to).when(transform).transform(from);
         doReturn(resolved).when(async).resolved(to);
-        doReturn(failed).when(async).failed(any(TransformException.class));
+        doReturn(failed).when(async).failed(any(Exception.class));
 
         assertEquals(resolved, base.transformResolved(transform, from));
 
         final InOrder order = inOrder(transform, async);
         order.verify(transform).transform(from);
         order.verify(async).resolved(to);
-        order.verify(async, never()).failed(any(TransformException.class));
+        order.verify(async, never()).failed(any(Exception.class));
     }
 
     @Test
     public void testTransformResolvedThrows() throws Exception {
         doThrow(cause).when(transform).transform(from);
         doReturn(resolved).when(async).resolved(to);
-        doReturn(failed).when(async).failed(any(TransformException.class));
+        doReturn(failed).when(async).failed(any(Exception.class));
 
         assertEquals(failed, base.transformResolved(transform, from));
 
         final InOrder order = inOrder(transform, async);
         order.verify(transform).transform(from);
         order.verify(async, never()).resolved(to);
-        order.verify(async).failed(any(TransformException.class));
+        order.verify(async).failed(any(Exception.class));
     }
 
     @Test
     public void testTransformLazyResolved() throws Exception {
         doReturn(resolved).when(lazyTransform).transform(from);
-        doReturn(failed).when(async).failed(any(TransformException.class));
+        doReturn(failed).when(async).failed(any(Exception.class));
 
         assertEquals(resolved, base.lazyTransformResolved(lazyTransform, from));
 
         final InOrder order = inOrder(lazyTransform, async);
         order.verify(lazyTransform).transform(from);
-        order.verify(async, never()).failed(any(TransformException.class));
+        order.verify(async, never()).failed(any(Exception.class));
     }
 
     @Test
     public void testTransformLazyResolvedThrows() throws Exception {
         doThrow(cause).when(lazyTransform).transform(from);
-        doReturn(failed).when(async).failed(any(TransformException.class));
+        doReturn(failed).when(async).failed(any(Exception.class));
 
         assertEquals(failed, base.lazyTransformResolved(lazyTransform, from));
 
         final InOrder order = inOrder(lazyTransform, async);
         order.verify(lazyTransform).transform(from);
-        order.verify(async).failed(any(TransformException.class));
+        order.verify(async).failed(any(Exception.class));
     }
 
     public interface From {

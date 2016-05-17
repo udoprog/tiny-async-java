@@ -330,15 +330,21 @@ public interface AsyncFramework {
      */
     <T> ReloadableManaged<T> reloadableManaged(ManagedSetup<T> setup);
 
+    <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
+        Callable<? extends AsyncFuture<? extends T>> action, RetryPolicy policy
+    );
+
     /**
      * Retry the given operation until it has been resolved, or the provided {@link
      * eu.toolchain.async.RetryPolicy} expire.
      *
      * @param action The action to run.
      * @param policy The retry policy to use.
+     * @param clockSource Clock source to use.
      * @return A future that will be resolved, when the called future is resolved.
      */
     <T> AsyncFuture<RetryResult<T>> retryUntilResolved(
-        Callable<? extends AsyncFuture<? extends T>> action, RetryPolicy policy
+        Callable<? extends AsyncFuture<? extends T>> action, RetryPolicy policy,
+        ClockSource clockSource
     );
 }

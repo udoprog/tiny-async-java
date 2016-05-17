@@ -4,7 +4,6 @@ import eu.toolchain.async.AsyncFuture;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.TransformException;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -29,7 +28,7 @@ public class CancelledLazyTransformHelper<T> implements FutureDone<T> {
         try {
             future = transform.transform(null);
         } catch (Exception e) {
-            target.fail(new TransformException(e));
+            target.fail(e);
             return;
         }
 

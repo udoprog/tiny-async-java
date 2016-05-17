@@ -1,8 +1,10 @@
 package eu.toolchain.async.helper;
 
 import eu.toolchain.async.AsyncFuture;
+import eu.toolchain.async.ClockSource;
 import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
+import eu.toolchain.async.RetryException;
 import eu.toolchain.async.RetryPolicy;
 
 import java.util.ArrayList;
@@ -25,34 +27,37 @@ import java.util.concurrent.atomic.AtomicReference;
 public class RetryCallHelper<T> implements FutureDone<T> {
     private final ScheduledExecutorService scheduler;
     private final Callable<? extends AsyncFuture<? extends T>> action;
-    private final RetryPolicy policy;
+    private final RetryPolicy.Instance policyInstance;
     private final ResolvableFuture<T> future;
+    private final ClockSource clockSource;
 
     /*
      * Does not require synchronization since the behaviour of this helper guarantees that only
      * one thread at a time accesses it
      */
-    private final ArrayList<Throwable> errors = new ArrayList<>();
+    private final ArrayList<RetryException> errors = new ArrayList<>();
     private final AtomicReference<ScheduledFuture<?>> nextCall = new AtomicReference<>();
 
     public RetryCallHelper(
         final ScheduledExecutorService scheduler,
-        final Callable<? extends AsyncFuture<? extends T>> callable, final RetryPolicy policy,
-        final ResolvableFuture<T> future
+        final Callable<? extends AsyncFuture<? extends T>> callable,
+        final RetryPolicy.Instance policyInstance, final ResolvableFuture<T> future,
+        final ClockSource clockSource
     ) {
         this.scheduler = scheduler;
         this.action = callable;
-        this.policy = policy;
+        this.policyInstance = policyInstance;
         this.future = future;
+        this.clockSource = clockSource;
     }
 
-    public List<Throwable> getErrors() {
+    public List<RetryException> getErrors() {
         return errors;
     }
 
     @Override
     public void failed(final Throwable cause) throws Exception {
-        final RetryPolicy.Decision decision = policy.apply();
+        final RetryPolicy.Decision decision = policyInstance.next();
 
         if (!decision.shouldRetry()) {
             for (final Throwable suppressed : errors) {
@@ -63,7 +68,7 @@ public class RetryCallHelper<T> implements FutureDone<T> {
             return;
         }
 
-        errors.add(cause);
+        errors.add(new RetryException(clockSource.now(), cause));
 
         if (decision.backoff() <= 0) {
             next();

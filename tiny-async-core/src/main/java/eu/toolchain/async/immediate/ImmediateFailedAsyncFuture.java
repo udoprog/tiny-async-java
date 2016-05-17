@@ -11,7 +11,6 @@ import eu.toolchain.async.FutureFinished;
 import eu.toolchain.async.FutureResolved;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.Transform;
-import eu.toolchain.async.TransformException;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -132,12 +131,12 @@ public class ImmediateFailedAsyncFuture<T> extends AbstractImmediateAsyncFuture<
 
     @Override
     public <R> AsyncFuture<R> directTransform(Transform<? super T, ? extends R> transform) {
-        return async.failed(new TransformException(cause));
+        return async.failed(cause);
     }
 
     @Override
     public <R> AsyncFuture<R> lazyTransform(LazyTransform<? super T, R> transform) {
-        return async.failed(new TransformException(cause));
+        return async.failed(cause);
     }
 
     @Override

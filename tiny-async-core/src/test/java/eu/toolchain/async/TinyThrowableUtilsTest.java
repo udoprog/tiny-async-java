@@ -9,18 +9,6 @@ import static org.junit.Assert.assertEquals;
 
 public class TinyThrowableUtilsTest {
     @Test
-    public void testFormatMultiMessage() {
-        final List<Throwable> errors = new ArrayList<>();
-
-        errors.add(new Exception("foo"));
-        errors.add(new Exception("bar"));
-        errors.add(new Exception("baz"));
-
-        final String message = TinyThrowableUtils.formatMultiMessage(errors);
-        assertEquals("foo, bar, baz", message);
-    }
-
-    @Test
     public void testBuildCollectedException() {
         final List<Throwable> errors = new ArrayList<>();
         final Exception a = new Exception("foo");
@@ -30,7 +18,6 @@ public class TinyThrowableUtilsTest {
         errors.add(b);
 
         final Throwable e = TinyThrowableUtils.buildCollectedException(errors);
-        assertEquals(a, e.getSuppressed()[0]);
-        assertEquals(b, e.getSuppressed()[1]);
+        assertEquals(b, e.getSuppressed()[0]);
     }
 }

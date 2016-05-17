@@ -202,13 +202,13 @@ public abstract class ImmediateAsyncFutureTestBase {
 
         doReturn(target).when(underTest).transformResolved(transform, result);
         doReturn(target).when(async).cancelled();
-        doReturn(target).when(async).failed(any(TransformException.class));
+        doReturn(target).when(async).failed(any(Exception.class));
 
         assertEquals(target, underTest.transform(transform));
 
         verify(underTest, resolved()).transformResolved(transform, result);
         verify(async, cancelled()).cancelled();
-        verify(async, failed()).failed(any(TransformException.class));
+        verify(async, failed()).failed(any(Exception.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -219,13 +219,13 @@ public abstract class ImmediateAsyncFutureTestBase {
 
         doReturn(target).when(underTest).lazyTransformResolved(transform, result);
         doReturn(target).when(async).cancelled();
-        doReturn(target).when(async).failed(any(TransformException.class));
+        doReturn(target).when(async).failed(any(Exception.class));
 
         assertEquals(target, underTest.lazyTransform(transform));
 
         verify(underTest, resolved()).lazyTransformResolved(transform, result);
         verify(async, cancelled()).cancelled();
-        verify(async, failed()).failed(any(TransformException.class));
+        verify(async, failed()).failed(any(Exception.class));
     }
 
     @SuppressWarnings("unchecked")

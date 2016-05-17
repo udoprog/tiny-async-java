@@ -2,16 +2,12 @@ package eu.toolchain.async;
 
 /**
  * A reference to an object that has been <em>borrowed</em>, which can prevent certain actions from
- * being executed as long as the borrowed reference is valid.
- * <p>
- * <p> {@code null} is not a valid borrowed reference, any attempt to borrow a null reference is
- * explicitly prohibited by the framework. </p>
- * <p>
- * <h1>Reference Counting</h1>
- * <p>
- * <p> Borrowed references are <em>reference counted</em>, the user is responsible for releasing the
- * reference when it is no longer used. Use of convenience methods like {@code #releasing()} are
- * encouraged to properly accomplish this. </p>
+ * being executed as long as the borrowed reference is valid. <p> <p> {@code null} is not a valid
+ * borrowed reference, any attempt to borrow a null reference is explicitly prohibited by the
+ * framework. </p> <p> <h1>Reference Counting</h1> <p> <p> Borrowed references are <em>reference
+ * counted</em>, the user is responsible for releasing the reference when it is no longer used. Use
+ * of convenience methods like {@code #releasing()} are encouraged to properly accomplish this.
+ * </p>
  *
  * @param <T> The type of the borrowed reference.
  * @author udoprog
@@ -43,9 +39,8 @@ public interface Borrowed<T> extends AutoCloseable {
     public void release();
 
     /**
-     * Convenience method for binding the release of a borrowed reference to a future.
-     * <p>
-     * <p> Below is a typical usage of {@link #releasing()}. </p>
+     * Convenience method for binding the release of a borrowed reference to a future. <p> <p> Below
+     * is a typical usage of {@link #releasing()}. </p>
      * <p>
      * <pre>
      * {@code

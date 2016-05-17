@@ -12,9 +12,9 @@ import java.util.List;
  */
 public class RetryResult<T> {
     final T result;
-    final List<Throwable> errors;
+    final List<RetryException> errors;
 
-    public RetryResult(final T result, final List<Throwable> errors) {
+    public RetryResult(final T result, final List<RetryException> errors) {
         this.result = result;
         this.errors = errors;
     }
@@ -23,7 +23,7 @@ public class RetryResult<T> {
         return result;
     }
 
-    public List<Throwable> getErrors() {
+    public List<RetryException> getErrors() {
         return errors;
     }
 }

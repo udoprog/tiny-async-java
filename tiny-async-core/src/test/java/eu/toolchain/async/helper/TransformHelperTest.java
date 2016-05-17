@@ -5,7 +5,6 @@ import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.LazyTransform;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.Transform;
-import eu.toolchain.async.TransformException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -113,7 +112,7 @@ public class TransformHelperTest {
         resolved.resolved(result);
 
         verifyTransform(1, 0, 0);
-        verify(target, times(1)).fail(any(TransformException.class));
+        verify(target, times(1)).fail(any(Exception.class));
     }
 
     @Test
@@ -133,7 +132,7 @@ public class TransformHelperTest {
         failed.failed(cause);
 
         verifyTransform(0, 1, 0);
-        verify(target, times(1)).fail(any(TransformException.class));
+        verify(target, times(1)).fail(any(Exception.class));
     }
 
     @Test
@@ -153,7 +152,7 @@ public class TransformHelperTest {
         cancelled.cancelled();
 
         verifyTransform(0, 0, 1);
-        verify(target, times(1)).fail(any(TransformException.class));
+        verify(target, times(1)).fail(any(Exception.class));
     }
 
     private void verifyLazyTransform(int resolved, int failed, int cancelled) throws Exception {
@@ -182,7 +181,7 @@ public class TransformHelperTest {
         lazyResolved.resolved(result);
 
         verifyLazyTransform(1, 0, 0);
-        verify(target, times(1)).fail(any(TransformException.class));
+        verify(target, times(1)).fail(any(Exception.class));
     }
 
     @Test
@@ -205,7 +204,7 @@ public class TransformHelperTest {
         lazyFailed.failed(cause);
 
         verifyLazyTransform(0, 1, 0);
-        verify(target, times(1)).fail(any(TransformException.class));
+        verify(target, times(1)).fail(any(Exception.class));
     }
 
     @Test
@@ -227,6 +226,6 @@ public class TransformHelperTest {
         lazyCancelled.cancelled();
 
         verifyLazyTransform(0, 0, 1);
-        verify(target, times(1)).fail(any(TransformException.class));
+        verify(target, times(1)).fail(any(Exception.class));
     }
 }

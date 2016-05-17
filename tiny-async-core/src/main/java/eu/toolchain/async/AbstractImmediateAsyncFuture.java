@@ -14,8 +14,8 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
 
         try {
             transformed = transform.transform(result);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+        } catch (final Exception e) {
+            return async.failed(e);
         }
 
         return async.resolved(transformed);
@@ -26,8 +26,8 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
     ) {
         try {
             return transform.transform(result);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+        } catch (final Exception e) {
+            return async.failed(e);
         }
     }
 
@@ -38,10 +38,9 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
 
         try {
             result = transform.transform(cause);
-        } catch (Exception e) {
-            final TransformException inner = new TransformException(e);
-            inner.addSuppressed(cause);
-            return async.failed(inner);
+        } catch (final Exception e) {
+            e.addSuppressed(cause);
+            return async.failed(e);
         }
 
         return async.resolved(result);
@@ -52,10 +51,9 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
     ) {
         try {
             return transform.transform(cause);
-        } catch (Exception e) {
-            final TransformException inner = new TransformException(e);
-            inner.addSuppressed(cause);
-            return async.failed(inner);
+        } catch (final Exception e) {
+            e.addSuppressed(cause);
+            return async.failed(e);
         }
     }
 
@@ -64,8 +62,8 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
 
         try {
             transformed = transform.transform(null);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+        } catch (final Exception e) {
+            return async.failed(e);
         }
 
         return async.resolved(transformed);
@@ -74,8 +72,8 @@ public abstract class AbstractImmediateAsyncFuture<T> extends DeprecatedCompatAs
     protected AsyncFuture<T> lazyTransformCancelled(final LazyTransform<Void, T> transform) {
         try {
             return transform.transform(null);
-        } catch (Exception e) {
-            return async.failed(new TransformException(e));
+        } catch (final Exception e) {
+            return async.failed(e);
         }
     }
 }
