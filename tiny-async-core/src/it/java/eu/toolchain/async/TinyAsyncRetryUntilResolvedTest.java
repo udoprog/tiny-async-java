@@ -32,8 +32,12 @@ public class TinyAsyncRetryUntilResolvedTest {
 
         assertEquals(RESULT, result.getResult());
         assertEquals(5, result.getErrors().size());
-        assertEquals(ImmutableList.of("call 0", "call 1", "call 2", "call 3", "call 4"),
-            result.getErrors().stream().map(Throwable::getMessage).collect(Collectors.toList()));
+        assertEquals(ImmutableList.of("call 0", "call 1", "call 2", "call 3", "call 4"), result
+            .getErrors()
+            .stream()
+            .map(Throwable::getCause)
+            .map(Throwable::getMessage)
+            .collect(Collectors.toList()));
         assertEquals(6, calls.get());
     }
 
@@ -54,6 +58,7 @@ public class TinyAsyncRetryUntilResolvedTest {
             assertEquals(4, cause.getSuppressed().length);
             assertEquals(ImmutableList.of("call 0", "call 1", "call 2", "call 3"), Arrays
                 .stream(cause.getSuppressed())
+                .map(Throwable::getCause)
                 .map(Throwable::getMessage)
                 .collect(Collectors.toList()));
             return;

@@ -104,10 +104,12 @@ public class TinyAsyncCollectIntegrationTest {
         } catch (ExecutionException e) {
             Assert.assertNotNull(e.getCause());
             final Throwable[] s = e.getCause().getSuppressed();
-            Assert.assertEquals(2, s.length);
-            Assert.assertTrue(s[0] != s[1]);
-            Assert.assertTrue("A should be in array of supressed", A == s[0] || A == s[1]);
-            Assert.assertTrue("B should be in array of supressed", B == s[0] || B == s[1]);
+            Assert.assertEquals(1, s.length);
+            Assert.assertTrue(e != s[0]);
+            Assert.assertTrue("A should be in array of supressed",
+                A == e.getCause() || A == e.getCause().getSuppressed()[0]);
+            Assert.assertTrue("B should be in array of supressed",
+                B == e.getCause() || B == e.getCause().getSuppressed()[0]);
             return;
         }
 
