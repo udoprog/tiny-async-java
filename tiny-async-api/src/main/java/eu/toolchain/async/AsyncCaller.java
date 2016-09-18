@@ -151,5 +151,7 @@ public interface AsyncCaller {
      *
      * @param runnable Runnable to execute.
      */
-    void execute(Runnable runnable);
+    default void execute(Runnable runnable) {
+        runnable.run();
+    }
 }
