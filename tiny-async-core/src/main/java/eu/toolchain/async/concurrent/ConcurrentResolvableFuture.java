@@ -141,7 +141,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return this;
         }
 
-        runnable.run();
+        caller.execute(runnable);
         return this;
     }
 
@@ -153,7 +153,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return this;
         }
 
-        runnable.run();
+        caller.execute(runnable);
         return this;
     }
 
@@ -165,7 +165,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return this;
         }
 
-        runnable.run();
+        caller.execute(runnable);
         return this;
     }
 
@@ -177,7 +177,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return this;
         }
 
-        runnable.run();
+        caller.execute(runnable);
         return this;
     }
 
@@ -189,7 +189,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return this;
         }
 
-        runnable.run();
+        caller.execute(runnable);
         return this;
     }
 
@@ -201,7 +201,7 @@ public class ConcurrentResolvableFuture<T> extends AbstractImmediateAsyncFuture<
             return this;
         }
 
-        runnable.run();
+        caller.execute(runnable);
         return this;
     }
 

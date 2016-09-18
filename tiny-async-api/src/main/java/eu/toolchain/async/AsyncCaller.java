@@ -145,4 +145,11 @@ public interface AsyncCaller {
      * @see StreamCollector#cancelled()
      */
     public <S, T> void cancel(StreamCollector<S, T> collector);
+
+    /**
+     * Execute the given runnable in a different thread.
+     *
+     * @param runnable Runnable to execute.
+     */
+    void execute(Runnable runnable);
 }

@@ -120,6 +120,12 @@ public final class ExecutorAsyncCaller implements AsyncCaller {
     }
 
     @Override
+    public void execute(final Runnable runnable) {
+        /* action itself is already being deferred */
+        runnable.run();
+    }
+
+    @Override
     public boolean isThreaded() {
         return true;
     }

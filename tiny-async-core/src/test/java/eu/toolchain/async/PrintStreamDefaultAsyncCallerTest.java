@@ -1,5 +1,6 @@
 package eu.toolchain.async;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
 import java.io.PrintStream;
@@ -15,7 +16,8 @@ public class PrintStreamDefaultAsyncCallerTest {
         final PrintStream stream = mock(PrintStream.class);
         final Throwable e = mock(Throwable.class);
 
-        final PrintStreamDefaultAsyncCaller caller = new PrintStreamDefaultAsyncCaller(stream);
+        final PrintStreamDefaultAsyncCaller caller = new PrintStreamDefaultAsyncCaller(
+                stream, MoreExecutors.newDirectExecutorService());
 
         caller.internalError(message, e);
 
@@ -27,7 +29,8 @@ public class PrintStreamDefaultAsyncCallerTest {
     public void testInternalErrorNoThrowable() {
         final PrintStream stream = mock(PrintStream.class);
 
-        final PrintStreamDefaultAsyncCaller caller = new PrintStreamDefaultAsyncCaller(stream);
+        final PrintStreamDefaultAsyncCaller caller = new PrintStreamDefaultAsyncCaller(
+                stream, MoreExecutors.newDirectExecutorService());
 
         caller.internalError(message, null);
 

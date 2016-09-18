@@ -18,6 +18,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -65,6 +66,12 @@ public abstract class ImmediateAsyncFutureTestBase {
 
     @Before
     public void setup() {
+        doAnswer(invocation -> {
+            Runnable runnable1 = invocation.getArgumentAt(0, Runnable.class);
+            runnable1.run();
+            return null;
+        }).when(caller).execute(any(Runnable.class));
+
         underTest = spy(setupFuture(async, caller, result, cause));
         expected = setupState();
     }

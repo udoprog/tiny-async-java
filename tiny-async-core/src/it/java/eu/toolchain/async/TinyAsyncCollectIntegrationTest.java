@@ -180,8 +180,7 @@ public class TinyAsyncCollectIntegrationTest {
 
             @Override
             public void onFailure(final Throwable t) {
-                System.out.println("failure");
-                t.printStackTrace(System.out);
+                System.out.println("failure: " + t);
             }
         });
 

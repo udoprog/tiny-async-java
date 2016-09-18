@@ -1,5 +1,6 @@
 package eu.toolchain.async;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +15,12 @@ public class TinyAsyncManagedIntegrationTest {
     private static final long TIMEOUT = 200;
 
     // setup an direct async framework.
-    final AsyncFramework async = TinyAsync.builder().threaded(false).build();
+    final AsyncFramework async = TinyAsync
+            .builder()
+            .threaded(false)
+            .caller(new PrintStreamDefaultAsyncCaller(
+                    System.err, MoreExecutors.newDirectExecutorService()))
+            .build();
 
     private AtomicInteger start;
     private AtomicInteger stop;

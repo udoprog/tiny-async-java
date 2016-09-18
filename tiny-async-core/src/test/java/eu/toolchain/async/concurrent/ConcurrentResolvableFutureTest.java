@@ -12,7 +12,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -21,11 +23,14 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConcurrentResolvableFutureTest {
@@ -70,6 +75,12 @@ public class ConcurrentResolvableFutureTest {
 
     @Before
     public void setup() {
+        doAnswer(invocation -> {
+            Runnable runnable1 = invocation.getArgumentAt(0, Runnable.class);
+            runnable1.run();
+            return null;
+        }).when(caller).execute(any(Runnable.class));
+
         future = spy(new ConcurrentResolvableFuture<From>(async, caller, sync));
     }
 

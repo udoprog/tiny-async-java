@@ -97,7 +97,6 @@ public class TinyAsyncReloadableManagedIntegrationTest {
         }
 
         for (int i = 0; i < 1000; i++) {
-            System.out.println("Reload #" + (i + 1));
             managed.reload(true).get();
             Thread.sleep(1);
         }

@@ -1,5 +1,6 @@
 package eu.toolchain.async;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,6 +47,11 @@ public class DirectAsyncCallerTest {
         errorMessage = null;
 
         caller = new DirectAsyncCaller() {
+            @Override
+            public void execute(final Runnable runnable) {
+                runnable.run();
+            }
+
             @Override
             protected void internalError(String what, Throwable e) {
                 internalErrors.incrementAndGet();

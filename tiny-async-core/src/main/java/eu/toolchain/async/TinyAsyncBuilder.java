@@ -2,7 +2,9 @@ package eu.toolchain.async;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 public class TinyAsyncBuilder {
     private AsyncCaller caller;
@@ -163,7 +165,15 @@ public class TinyAsyncBuilder {
      */
     private AsyncCaller setupCaller() {
         if (caller == null) {
-            return new PrintStreamDefaultAsyncCaller(System.err);
+            return new PrintStreamDefaultAsyncCaller(
+                    System.err, Executors.newSingleThreadExecutor(new ThreadFactory() {
+                @Override
+                public Thread newThread(final Runnable r) {
+                    final Thread thread = new Thread(r);
+                    thread.setName("tiny-async-deferrer");
+                    return thread;
+                }
+            }));
         }
 
         return caller;

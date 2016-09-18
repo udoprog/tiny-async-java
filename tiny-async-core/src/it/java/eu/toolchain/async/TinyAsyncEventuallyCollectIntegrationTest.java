@@ -42,6 +42,11 @@ public class TinyAsyncEventuallyCollectIntegrationTest {
 
         async = TinyAsync.builder().executor(executor).caller(new DirectAsyncCaller() {
             @Override
+            public void execute(final Runnable runnable) {
+                runnable.run();
+            }
+
+            @Override
             protected void internalError(String what, Throwable e) {
                 internalErrors.incrementAndGet();
             }
