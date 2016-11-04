@@ -101,6 +101,7 @@ public class DelayedCollectCoordinator<S, T> implements FutureDone<S>, Runnable 
                 while (callables.hasNext()) {
                     callables.next();
                     caller.cancel(collector);
+                    cancelled.incrementAndGet();
                 }
             }
 
