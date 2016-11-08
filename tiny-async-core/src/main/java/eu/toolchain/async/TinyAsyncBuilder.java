@@ -9,6 +9,7 @@ import java.util.concurrent.ThreadFactory;
 public class TinyAsyncBuilder {
     private AsyncCaller caller;
     private boolean threaded;
+    private boolean useRecursionSafeCaller;
     private ExecutorService executor;
     private ExecutorService callerExecutor;
     private ScheduledExecutorService scheduler;
@@ -29,6 +30,24 @@ public class TinyAsyncBuilder {
      */
     public TinyAsyncBuilder threaded(boolean threaded) {
         this.threaded = threaded;
+        return this;
+    }
+
+    /**
+     * Configure that all caller invocations should use a recursion safe mechanism. In the normal
+     * case this doesn't change the behaviour of caller and threadedCaller, but when deep recursion
+     * is detected in the current thread the next recursive call is deferred to a separate thread.
+     * <p>
+     * Recursion is tracked for all threads that call the AsyncCallers.
+     * <p>
+     * This will make even the non-threaded caller use a thread in the case of deep recursion.
+     *
+     * @param useRecursionSafeCaller Set {@code true} if all caller invocations should be done with
+     *                               a recursion safe mechanism, {@code false} otherwise.
+     * @return This builder.
+     */
+    public TinyAsyncBuilder recursionSafeAsyncCaller(boolean useRecursionSafeCaller) {
+        this.useRecursionSafeCaller = useRecursionSafeCaller;
         return this;
     }
 
@@ -119,11 +138,17 @@ public class TinyAsyncBuilder {
             return caller;
         }
 
-        if (callerExecutor != null) {
-            return new ExecutorAsyncCaller(callerExecutor, caller);
+        if (callerExecutor == null) {
+            return null;
         }
 
-        return null;
+        AsyncCaller threadedCaller = new ExecutorAsyncCaller(callerExecutor, caller);
+
+        if (useRecursionSafeCaller) {
+            threadedCaller = new RecursionSafeAsyncCaller(callerExecutor, threadedCaller);
+        }
+
+        return threadedCaller;
     }
 
     private ExecutorService setupDefaultExecutor() {
@@ -164,18 +189,28 @@ public class TinyAsyncBuilder {
      * @return A caller implementation according to the provided configuration.
      */
     private AsyncCaller setupCaller() {
-        if (caller == null) {
-            return new PrintStreamDefaultAsyncCaller(
-                    System.err, Executors.newSingleThreadExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(final Runnable r) {
-                    final Thread thread = new Thread(r);
-                    thread.setName("tiny-async-deferrer");
-                    return thread;
-                }
-            }));
+        if (caller != null) {
+            if (useRecursionSafeCaller && callerExecutor != null) {
+                // Wrap user supplied AsyncCaller
+                return new RecursionSafeAsyncCaller(callerExecutor, caller);
+            }
+            return caller;
         }
 
-        return caller;
+        AsyncCaller newCaller = new PrintStreamDefaultAsyncCaller(
+                System.err, Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(final Runnable r) {
+                final Thread thread = new Thread(r);
+                thread.setName("tiny-async-deferrer");
+                return thread;
+            }
+        }));
+
+        if (useRecursionSafeCaller && callerExecutor != null) {
+            newCaller = new RecursionSafeAsyncCaller(callerExecutor, newCaller);
+        }
+
+        return newCaller;
     }
 }
