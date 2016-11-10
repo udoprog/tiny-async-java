@@ -4,7 +4,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 public class TinyAsyncBuilder {
     private AsyncCaller caller;
@@ -127,10 +126,26 @@ public class TinyAsyncBuilder {
     public TinyAsync build() {
         final ExecutorService defaultExecutor = setupDefaultExecutor();
         final ExecutorService callerExecutor = setupCallerExecutor(defaultExecutor);
-        final AsyncCaller caller = setupCaller();
+        final AsyncCaller caller = setupGuardedCaller(callerExecutor, setupCaller());
         final AsyncCaller threadedCaller = setupThreadedCaller(caller, callerExecutor);
 
         return new TinyAsync(defaultExecutor, caller, threadedCaller, scheduler, clockSource);
+    }
+
+    private AsyncCaller setupGuardedCaller(
+            final ExecutorService callerExecutor, final AsyncCaller caller
+    ) {
+        if (!useRecursionSafeCaller) {
+            return caller;
+        }
+
+        if (callerExecutor == null) {
+            throw new IllegalStateException(
+                    "callerExecutor: not configure, but is required for useRecursionSafeCaller"
+            );
+        }
+
+        return new RecursionSafeAsyncCaller(callerExecutor, caller);
     }
 
     private AsyncCaller setupThreadedCaller(AsyncCaller caller, ExecutorService callerExecutor) {
@@ -142,13 +157,7 @@ public class TinyAsyncBuilder {
             return null;
         }
 
-        AsyncCaller threadedCaller = new ExecutorAsyncCaller(callerExecutor, caller);
-
-        if (useRecursionSafeCaller) {
-            threadedCaller = new RecursionSafeAsyncCaller(callerExecutor, threadedCaller);
-        }
-
-        return threadedCaller;
+        return new ExecutorAsyncCaller(callerExecutor, caller);
     }
 
     private ExecutorService setupDefaultExecutor() {
@@ -190,27 +199,14 @@ public class TinyAsyncBuilder {
      */
     private AsyncCaller setupCaller() {
         if (caller != null) {
-            if (useRecursionSafeCaller && callerExecutor != null) {
-                // Wrap user supplied AsyncCaller
-                return new RecursionSafeAsyncCaller(callerExecutor, caller);
-            }
             return caller;
         }
 
-        AsyncCaller newCaller = new PrintStreamDefaultAsyncCaller(
-                System.err, Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(final Runnable r) {
-                final Thread thread = new Thread(r);
-                thread.setName("tiny-async-deferrer");
-                return thread;
-            }
-        }));
-
-        if (useRecursionSafeCaller && callerExecutor != null) {
-            newCaller = new RecursionSafeAsyncCaller(callerExecutor, newCaller);
-        }
-
-        return newCaller;
+        return new PrintStreamDefaultAsyncCaller(System.err,
+                Executors.newSingleThreadExecutor(r -> {
+                    final Thread thread = new Thread(r);
+                    thread.setName("tiny-async-deferrer");
+                    return thread;
+                }));
     }
 }
