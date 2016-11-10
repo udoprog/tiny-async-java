@@ -11,7 +11,7 @@
   <name>tiny-async-parent</name>
 
   <description>
-    A tiny asynchronous library for Java 7.
+    A tiny asynchronous library for Java 8.
   </description>
 
   <properties>
