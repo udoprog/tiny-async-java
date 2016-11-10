@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class TinyAsyncCollectIntegrationTest {
+public class TinyAsyncCollectIT {
     private static final Object REF = new Object();
     private static final Exception A = new Exception("A");
     private static final Exception B = new Exception("B");

@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class TinyAsyncRetryUntilResolvedTest {
+public class TinyAsyncRetryUntilResolvedIT {
     private static final long TIMEOUT = 20000;
     private static final Object RESULT = new Object();
 

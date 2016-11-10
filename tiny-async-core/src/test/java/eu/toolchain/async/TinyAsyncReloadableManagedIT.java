@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class TinyAsyncReloadableManagedIntegrationTest {
+public class TinyAsyncReloadableManagedIT {
     final Object REF = new Object();
 
     private static final long TIMEOUT = 20000;

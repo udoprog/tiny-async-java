@@ -1,6 +1,9 @@
 package eu.toolchain.async;
 
 import com.google.common.util.concurrent.AtomicLongMap;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -9,18 +12,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.lang.Thread;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
-public class RecursionSafeAsyncCallerIntegrationTest {
+public class RecursionSafeAsyncCallerIT {
 
     private AtomicLongMap<Long> recursionDepthPerThread;
     private AtomicLongMap<Long> maxRecursionDepthPerThread;
@@ -34,14 +29,17 @@ public class RecursionSafeAsyncCallerIntegrationTest {
         totIterations = new AtomicLong(0);
     }
 
-
-    public void testBasicRecursionMethod(RecursionSafeAsyncCaller caller, ConcurrentLinkedQueue<Integer> testData) {
+    public void testBasicRecursionMethod(
+            RecursionSafeAsyncCaller caller, ConcurrentLinkedQueue<Integer> testData
+    ) {
 
         class RecursionRunnable implements Runnable {
             RecursionSafeAsyncCaller caller;
             ConcurrentLinkedQueue<Integer> testData;
 
-            RecursionRunnable(RecursionSafeAsyncCaller caller, ConcurrentLinkedQueue<Integer> testData) {
+            RecursionRunnable(
+                    RecursionSafeAsyncCaller caller, ConcurrentLinkedQueue<Integer> testData
+            ) {
                 this.caller = caller;
                 this.testData = testData;
             }
@@ -55,8 +53,9 @@ public class RecursionSafeAsyncCallerIntegrationTest {
                     maxRecursionDepthPerThread.put(threadId, currDepth);
                 }
 
-                if (testData.size() == 0)
+                if (testData.size() == 0) {
                     return;
+                }
                 testData.poll();
                 totIterations.incrementAndGet();
 
@@ -65,7 +64,8 @@ public class RecursionSafeAsyncCallerIntegrationTest {
 
                 recursionDepthPerThread.addAndGet(threadId, -1L);
             }
-        };
+        }
+        ;
 
         RecursionRunnable runnable = new RecursionRunnable(caller, testData);
         caller.execute(runnable);
@@ -75,11 +75,11 @@ public class RecursionSafeAsyncCallerIntegrationTest {
     public void testBasic() throws Exception {
         final long MAX_RECURSION_DEPTH = 2;
         ExecutorService executorServiceReal = Executors.newFixedThreadPool(10);
-        AsyncCaller caller2 = mock(AsyncCaller.class);
+        AsyncCaller caller2 = Mockito.mock(AsyncCaller.class);
         RecursionSafeAsyncCaller recursionCaller =
                 new RecursionSafeAsyncCaller(executorServiceReal, caller2, MAX_RECURSION_DEPTH);
-        ConcurrentLinkedQueue<Integer>
-            testData = new ConcurrentLinkedQueue<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        ConcurrentLinkedQueue<Integer> testData =
+                new ConcurrentLinkedQueue<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
 
         testBasicRecursionMethod(recursionCaller, testData);
 
@@ -99,20 +99,21 @@ public class RecursionSafeAsyncCallerIntegrationTest {
         executorServiceReal.shutdown();
         executorServiceReal.awaitTermination(1000, TimeUnit.MILLISECONDS);
 
-        assert(testData.size() == 0);
-        assert(totIterations.get() == 10);
+        assert (testData.size() == 0);
+        assert (totIterations.get() == 10);
 
-        Long maxStackDepth=-1L;
+        Long maxStackDepth = -1L;
         Map<Long, Long> readOnlyMap = maxRecursionDepthPerThread.asMap();
         for (Long key : readOnlyMap.keySet()) {
             Long val = readOnlyMap.get(key);
-            if (val > maxStackDepth)
+            if (val > maxStackDepth) {
                 maxStackDepth = val;
+            }
         }
-        assert(maxStackDepth != -1L);
+        assert (maxStackDepth != -1L);
 
         // Checking with +1 since our initial call to testBasicRecursionMethod() above adds 1
-        assert(maxStackDepth <= MAX_RECURSION_DEPTH+1);
+        assert (maxStackDepth <= MAX_RECURSION_DEPTH + 1);
     }
 
     @Test(expected = StackOverflowError.class)

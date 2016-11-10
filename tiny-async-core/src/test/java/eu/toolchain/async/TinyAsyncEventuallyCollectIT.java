@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
  * A high-level integration test for {@code TinyAsync#eventuallyCollect(java.util.Collection,
  * StreamCollector, int)}.
  */
-public class TinyAsyncEventuallyCollectIntegrationTest {
+public class TinyAsyncEventuallyCollectIT {
     private ExecutorService executor;
     private ExecutorService otherExecutor;
     private AsyncFramework async;

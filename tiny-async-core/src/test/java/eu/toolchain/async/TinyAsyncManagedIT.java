@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TinyAsyncManagedIntegrationTest {
+public class TinyAsyncManagedIT {
     final Object REF = new Object();
 
     private static final long TIMEOUT = 200;
