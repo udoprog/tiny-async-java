@@ -188,6 +188,14 @@
     </profile>
     <profile>
       <id>integration-tests</id>
+
+      <activation>
+        <property>
+          <name>environment</name>
+          <value>test</value>
+        </property>
+      </activation>
+
       <build>
         <plugins>
           <plugin>

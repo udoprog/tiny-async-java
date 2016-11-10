@@ -5,7 +5,7 @@ jdk:
 
 script:
   # enable integration tests in travis build (found in src/it/java).
-  - mvn -P integration-tests clean test
+  - mvn -D environment=test clean test
 
 after_success:
   # report coverage to coveralls.io, does not include integration tests.
