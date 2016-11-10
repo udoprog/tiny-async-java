@@ -41,11 +41,11 @@ public class TinyAsyncRetryUntilResolvedIT {
         assertEquals(6, calls.get());
     }
 
-    @Test(timeout = TIMEOUT)
+    @Test
     public void testTimeout() throws Exception {
         final AtomicInteger calls = new AtomicInteger();
 
-        final AsyncFuture<RetryResult<Object>> f = runRetry(calls, 1000);
+        final AsyncFuture<RetryResult<Object>> f = runRetry(calls, 175);
 
         try {
             f.get();
@@ -78,6 +78,6 @@ public class TinyAsyncRetryUntilResolvedIT {
             }
 
             return async.resolved(RESULT);
-        }, RetryPolicy.timed(timeout, RetryPolicy.exponential(100)));
+        }, RetryPolicy.timed(timeout, RetryPolicy.linear(50)));
     }
 }
