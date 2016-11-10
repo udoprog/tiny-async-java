@@ -14,18 +14,18 @@ public final class RecursionSafeAsyncCaller implements AsyncCaller {
     private final AsyncCaller caller;
     private final long maxRecursionDepth;
 
-    private class ThreadLocalInteger extends ThreadLocal<Integer> {
+    private final ThreadLocal<Integer> recursionDepthPerThread = new ThreadLocal<Integer>() {
         protected Integer initialValue() {
             return 0;
         }
     };
-    private final ThreadLocalInteger recursionDepthPerThread;
 
-    public RecursionSafeAsyncCaller(ExecutorService executorService, AsyncCaller caller, long maxRecursionDepth) {
+    public RecursionSafeAsyncCaller(
+            ExecutorService executorService, AsyncCaller caller, long maxRecursionDepth
+    ) {
         this.executorService = executorService;
         this.caller = caller;
         this.maxRecursionDepth = maxRecursionDepth;
-        this.recursionDepthPerThread = new ThreadLocalInteger();
     }
 
     public RecursionSafeAsyncCaller(ExecutorService executorService, AsyncCaller caller) {

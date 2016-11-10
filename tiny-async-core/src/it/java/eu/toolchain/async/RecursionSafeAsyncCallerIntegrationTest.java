@@ -1,9 +1,7 @@
 package eu.toolchain.async;
 
 import com.google.common.util.concurrent.AtomicLongMap;
-import com.google.common.util.concurrent.MoreExecutors;
-import eu.toolchain.async.RecursionSafeAsyncCaller;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -14,17 +12,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-import java.lang.ThreadLocal;
 import java.lang.Thread;
-
-import com.google.common.util.concurrent.AtomicLongMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class RecursionSafeAsyncCallerIntegrationTest {
@@ -124,6 +117,7 @@ public class RecursionSafeAsyncCallerIntegrationTest {
 
     @Test(expected = StackOverflowError.class)
     public void testRecursionsFailure() throws Exception {
+        // make sure the stack is too small to accommodate the current test
         doRecursions(false);
     }
 
@@ -132,19 +126,19 @@ public class RecursionSafeAsyncCallerIntegrationTest {
         doRecursions(true);
     }
 
-    private void doRecursions(final boolean recursionSafeAsyncCaller)
+    private void doRecursions(final boolean recursionSafe)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         final AsyncFramework async = TinyAsync
                 .builder()
                 .callerExecutor(Executors.newSingleThreadExecutor())
-                .recursionSafeAsyncCaller(recursionSafeAsyncCaller)
+                .recursionSafe(recursionSafe)
                 .build();
 
         final ResolvableFuture<Integer> source = async.future();
 
         AsyncFuture<Integer> tail = source;
 
-        // 100k should blow up the stack without the recursionSafeAsyncCaller
+        // 100k should blow up the stack comfortably without enabling recursionSafe
         for (int i = 0; i < 100000; i++) {
             tail = tail.lazyTransform(value -> {
                 // immediate future

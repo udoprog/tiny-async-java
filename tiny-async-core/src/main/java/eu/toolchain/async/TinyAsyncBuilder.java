@@ -8,7 +8,8 @@ import java.util.concurrent.ScheduledExecutorService;
 public class TinyAsyncBuilder {
     private AsyncCaller caller;
     private boolean threaded;
-    private boolean useRecursionSafeCaller;
+    private boolean recursionSafe;
+    private long maxRecursionDepth = 100;
     private ExecutorService executor;
     private ExecutorService callerExecutor;
     private ScheduledExecutorService scheduler;
@@ -41,12 +42,27 @@ public class TinyAsyncBuilder {
      * <p>
      * This will make even the non-threaded caller use a thread in the case of deep recursion.
      *
-     * @param useRecursionSafeCaller Set {@code true} if all caller invocations should be done with
-     *                               a recursion safe mechanism, {@code false} otherwise.
+     * @param recursionSafe Set {@code true} if all caller invocations should be done with
+     * a recursion safe mechanism, {@code false} otherwise.
      * @return This builder.
      */
-    public TinyAsyncBuilder recursionSafeAsyncCaller(boolean useRecursionSafeCaller) {
-        this.useRecursionSafeCaller = useRecursionSafeCaller;
+    public TinyAsyncBuilder recursionSafe(boolean recursionSafe) {
+        this.recursionSafe = recursionSafe;
+        return this;
+    }
+
+    /**
+     * Configure how many recursions should be allowed.
+     *
+     * This implies enabling {@link #recursionSafe}.
+     *
+     * @param maxRecursionDepth The max number of times that a caller may go through
+     * {@link eu.toolchain.async.AsyncCaller} in a single thread.
+     * @return This builder.
+     */
+    public TinyAsyncBuilder maxRecursionDepth(long maxRecursionDepth) {
+        this.maxRecursionDepth = maxRecursionDepth;
+        this.recursionSafe = true;
         return this;
     }
 
@@ -135,17 +151,17 @@ public class TinyAsyncBuilder {
     private AsyncCaller setupGuardedCaller(
             final ExecutorService callerExecutor, final AsyncCaller caller
     ) {
-        if (!useRecursionSafeCaller) {
+        if (!recursionSafe) {
             return caller;
         }
 
         if (callerExecutor == null) {
             throw new IllegalStateException(
-                    "callerExecutor: not configure, but is required for useRecursionSafeCaller"
+                    "callerExecutor: not configure, but is required for recursionSafe"
             );
         }
 
-        return new RecursionSafeAsyncCaller(callerExecutor, caller);
+        return new RecursionSafeAsyncCaller(callerExecutor, caller, maxRecursionDepth);
     }
 
     private AsyncCaller setupThreadedCaller(AsyncCaller caller, ExecutorService callerExecutor) {
