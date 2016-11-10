@@ -20,6 +20,7 @@ import java.lang.Thread;
 
 import com.google.common.util.concurrent.AtomicLongMap;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -119,5 +120,39 @@ public class RecursionSafeAsyncCallerIntegrationTest {
 
         // Checking with +1 since our initial call to testBasicRecursionMethod() above adds 1
         assert(maxStackDepth <= MAX_RECURSION_DEPTH+1);
+    }
+
+    @Test(expected = StackOverflowError.class)
+    public void testRecursionsFailure() throws Exception {
+        doRecursions(false);
+    }
+
+    @Test
+    public void testRecursionsSuccess() throws Exception {
+        doRecursions(true);
+    }
+
+    private void doRecursions(final boolean recursionSafeAsyncCaller)
+            throws InterruptedException, java.util.concurrent.ExecutionException {
+        final AsyncFramework async = TinyAsync
+                .builder()
+                .callerExecutor(Executors.newSingleThreadExecutor())
+                .recursionSafeAsyncCaller(recursionSafeAsyncCaller)
+                .build();
+
+        final ResolvableFuture<Integer> source = async.future();
+
+        AsyncFuture<Integer> tail = source;
+
+        // 100k should blow up the stack without the recursionSafeAsyncCaller
+        for (int i = 0; i < 100000; i++) {
+            tail = tail.lazyTransform(value -> {
+                // immediate future
+                return async.resolved(value + 1);
+            });
+        }
+
+        source.resolve(0);
+        assertEquals(100000, (int) tail.get());
     }
 }
