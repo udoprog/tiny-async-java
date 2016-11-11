@@ -9,6 +9,8 @@ import eu.toolchain.concurrent.FutureFramework;
 import eu.toolchain.concurrent.Managed;
 import eu.toolchain.concurrent.ManagedAction;
 import eu.toolchain.concurrent.TinyStackUtils;
+import eu.toolchain.concurrent.immediate.ImmediateCancelled;
+import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,7 +37,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
   private static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
   private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
-  private final FutureFramework async;
   private final FutureCaller caller;
   private final Supplier<? extends CompletionStage<T>> setup;
 
@@ -72,17 +73,15 @@ public class ConcurrentManaged<T> implements Managed<T> {
     final CompletionStage<Void> stopFuture =
         zeroLeaseFuture.thenCompose(v -> stopReferenceFuture.thenCompose(teardown));
 
-    return new ConcurrentManaged<>(async, caller, setup, startFuture, zeroLeaseFuture,
-        stopReferenceFuture, stopFuture);
+    return new ConcurrentManaged<>(caller, setup, startFuture, zeroLeaseFuture, stopReferenceFuture,
+        stopFuture);
   }
 
   protected ConcurrentManaged(
-      final FutureFramework async, final FutureCaller caller,
-      final Supplier<? extends CompletionStage<T>> setup, final CompletableFuture<Void> startFuture,
-      final CompletableFuture<Void> zeroLeaseFuture, final CompletableFuture<T> stopReferenceFuture,
-      final CompletionStage<Void> stopFuture
+      final FutureCaller caller, final Supplier<? extends CompletionStage<T>> setup,
+      final CompletableFuture<Void> startFuture, final CompletableFuture<Void> zeroLeaseFuture,
+      final CompletableFuture<T> stopReferenceFuture, final CompletionStage<Void> stopFuture
   ) {
-    this.async = async;
     this.caller = caller;
     this.setup = setup;
 
@@ -107,7 +106,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
     final Borrowed<T> b = borrow();
 
     if (!b.isValid()) {
-      return async.cancelled();
+      return new ImmediateCancelled<>(caller);
     }
 
     final T reference = b.get();
@@ -118,7 +117,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
       f = action.action(reference);
     } catch (Exception e) {
       b.release();
-      return async.failed(e);
+      return new ImmediateFailed<>(caller, e);
     }
 
     return f.whenFinished(b.releasing());
@@ -163,7 +162,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
     try {
       constructor = setup.get();
     } catch (final Exception e) {
-      return async.failed(e);
+      return new ImmediateFailed<>(caller, e);
     }
 
     return constructor.<Void>thenApply(result -> {

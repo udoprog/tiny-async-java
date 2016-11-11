@@ -28,6 +28,8 @@ import eu.toolchain.concurrent.FutureCaller;
 import eu.toolchain.concurrent.FutureFramework;
 import eu.toolchain.concurrent.ManagedAction;
 import eu.toolchain.concurrent.concurrent.ConcurrentManaged.ValidBorrowed;
+import eu.toolchain.concurrent.immediate.ImmediateCancelled;
+import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -80,7 +82,7 @@ public class ConcurrentManagedTest {
 
   @Before
   public void setup() {
-    underTest = spy(new ConcurrentManaged<>(async, caller, setup, startFuture, zeroLeaseFuture,
+    underTest = spy(new ConcurrentManaged<>(caller, setup, startFuture, zeroLeaseFuture,
         stopReferenceFuture, stopFuture));
   }
 
@@ -162,8 +164,6 @@ public class ConcurrentManagedTest {
   private void verifyDoto(boolean valid, boolean throwing) throws Exception {
     verify(underTest).borrow();
     verify(borrowed).isValid();
-    verify(async, times(!valid ? 1 : 0)).cancelled();
-    verify(async, times(throwing ? 1 : 0)).failed(e);
     verify(borrowed, times(valid ? 1 : 0)).get();
     verify(borrowed, times(valid && !throwing ? 1 : 0)).releasing();
     verify(borrowed, times(throwing ? 1 : 0)).release();
@@ -174,14 +174,14 @@ public class ConcurrentManagedTest {
   @Test
   public void testDotoInvalid() throws Exception {
     setupDoto(false, false);
-    assertEquals(future, underTest.doto(action));
+    assertEquals(new ImmediateCancelled<>(caller), underTest.doto(action));
     verifyDoto(false, false);
   }
 
   @Test
   public void testDotoValidThrows() throws Exception {
     setupDoto(true, true);
-    assertEquals(future, underTest.doto(action));
+    assertEquals(new ImmediateFailed<>(caller, e), underTest.doto(action));
     verifyDoto(true, true);
   }
 
@@ -303,7 +303,7 @@ public class ConcurrentManagedTest {
   @Test
   public void testStartConstructThrows() throws Exception {
     setupStart(true, null, false, true);
-    assertEquals(startFuture, underTest.start());
+    assertEquals(new ImmediateFailed<>(caller, e), underTest.start());
 
     assertEquals(null, underTest.reference.get());
 
