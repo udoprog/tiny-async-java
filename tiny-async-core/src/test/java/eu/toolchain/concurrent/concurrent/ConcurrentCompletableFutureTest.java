@@ -16,7 +16,6 @@ import eu.toolchain.concurrent.CompletableFuture;
 import eu.toolchain.concurrent.CompletionHandle;
 import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
-import eu.toolchain.concurrent.FutureFramework;
 import eu.toolchain.concurrent.helper.TheComposeCancelledHelper;
 import eu.toolchain.concurrent.helper.ThenApplyHelper;
 import eu.toolchain.concurrent.helper.ThenCatchCancelledHelper;
@@ -38,37 +37,24 @@ public class ConcurrentCompletableFutureTest {
 
   @Mock
   private From result;
-
-  @Mock
-  private FutureFramework async;
-
   @Mock
   private FutureCaller caller;
-
   @Mock
   private Runnable runnable;
-
   @Mock
   private CompletionHandle<From> done;
-
   @Mock
   private CompletionStage<?> other;
-
   @Mock
   private Runnable cancelled;
-
   @Mock
   private Consumer<From> resolved;
-
   @Mock
   private Consumer<Throwable> failed;
-
   @Mock
   private Runnable finished;
-
   @Mock
   private CompletableFuture<To> toFuture;
-
   @Mock
   private CompletableFuture<From> fromFuture;
 
@@ -76,7 +62,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Before
   public void setup() {
-    future = spy(new ConcurrentCompletableFuture<From>(async, caller));
+    future = spy(new ConcurrentCompletableFuture<From>(caller));
   }
 
   @Test

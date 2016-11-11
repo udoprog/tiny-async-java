@@ -1,9 +1,10 @@
 package eu.toolchain.concurrent;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -11,6 +12,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import eu.toolchain.concurrent.immediate.ImmediateCancelled;
+import eu.toolchain.concurrent.immediate.ImmediateCompleted;
+import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +39,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @Mock
   private To to;
   @Mock
-  private FutureFramework async;
+  private CompletionStage<To> toFuture;
   @Mock
   private FutureCaller caller;
   @Mock
@@ -51,12 +55,12 @@ public abstract class ImmediateAsyncFutureTestBase {
   @Mock
   private CompletionStage<?> other;
 
-  private AbstractImmediateCompletionStage<From> underTest;
+  private AbstractImmediate<From> underTest;
 
   private ExpectedState expected;
 
-  protected abstract AbstractImmediateCompletionStage<From> setupFuture(
-      FutureFramework async, FutureCaller caller, From result, Throwable cause
+  protected abstract AbstractImmediate<From> setupFuture(
+      FutureCaller caller, From result, Throwable cause
   );
 
   protected abstract ExpectedState setupState();
@@ -66,7 +70,7 @@ public abstract class ImmediateAsyncFutureTestBase {
 
   @Before
   public void setup() {
-    underTest = spy(setupFuture(async, caller, result, cause));
+    underTest = spy(setupFuture(caller, result, cause));
     expected = setupState();
   }
 
@@ -146,84 +150,65 @@ public abstract class ImmediateAsyncFutureTestBase {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testTransform() throws Exception {
-    final Function<From, To> transform = mock(Function.class);
-    final CompletionStage<To> target = mock(CompletionStage.class);
-
-    doReturn(target).when(underTest).transformResolved(transform, result);
-    doReturn(target).when(async).cancelled();
-    doReturn(target).when(async).failed(any(Exception.class));
-
-    assertEquals(target, underTest.thenApply(transform));
-
-    verify(underTest, resolved()).transformResolved(transform, result);
-    verify(async, cancelled()).cancelled();
-    verify(async, failed()).failed(any(Exception.class));
+  public void thenApply() throws Exception {
+    final Function<From, To> fn = mock(Function.class);
+    doReturn(to).when(fn).apply(result);
+    assertThat(underTest.thenApply(fn), is(expected()));
+    verify(fn, completed()).apply(result);
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testLazyTransform() throws Exception {
-    final Function<From, CompletionStage<To>> transform = mock(Function.class);
-    final CompletionStage<To> target = mock(CompletionStage.class);
+  public void thenCompose() throws Exception {
+    final Function<From, CompletionStage<To>> fn = mock(Function.class);
 
-    doReturn(target).when(underTest).lazyTransformResolved(transform, result);
-    doReturn(target).when(async).cancelled();
-    doReturn(target).when(async).failed(any(Exception.class));
-
-    assertEquals(target, underTest.thenCompose(transform));
-
-    verify(underTest, resolved()).lazyTransformResolved(transform, result);
-    verify(async, cancelled()).cancelled();
-    verify(async, failed()).failed(any(Exception.class));
+    doReturn(toFuture).when(fn).apply(result);
+    assertThat(underTest.thenCompose(fn), is(expected(toFuture)));
+    verify(fn, completed()).apply(result);
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testTransformFailed() throws Exception {
+  public void thenCatchFailed() throws Exception {
     final Function<Throwable, From> transform = mock(Function.class);
 
-    doReturn(underTest).when(underTest).transformFailed(transform, cause);
-
+    doReturn(underTest).when(underTest).immediateCatchFailed(transform, cause);
     assertEquals(underTest, underTest.thenCatchFailed(transform));
-
-    verify(underTest, failed()).transformFailed(transform, cause);
+    verify(underTest, failed()).immediateCatchFailed(transform, cause);
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testLazyTransformFailed() throws Exception {
+  public void thenComposeFailed() throws Exception {
     final Function<Throwable, CompletionStage<From>> transform = mock(Function.class);
 
-    doReturn(underTest).when(underTest).lazyTransformFailed(transform, cause);
-
+    doReturn(underTest).when(underTest).immediateComposeFailed(transform, cause);
     assertEquals(underTest, underTest.thenComposeFailed(transform));
-
-    verify(underTest, failed()).lazyTransformFailed(transform, cause);
+    verify(underTest, failed()).immediateComposeFailed(transform, cause);
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testTransformCancelled() throws Exception {
+  public void thenCatchCancelled() throws Exception {
     final Supplier<From> transform = mock(Supplier.class);
 
-    doReturn(underTest).when(underTest).transformCancelled(transform);
+    doReturn(underTest).when(underTest).immediateCatchCancelled(transform);
     assertEquals(underTest, underTest.thenCatchCancelled(transform));
-    verify(underTest, cancelled()).transformCancelled(transform);
+    verify(underTest, cancelled()).immediateCatchCancelled(transform);
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testLazyTransformCancelled() throws Exception {
+  public void thenComposeCancelled() throws Exception {
     final Supplier<CompletionStage<From>> transform = mock(Supplier.class);
 
-    doReturn(underTest).when(underTest).lazyTransformCancelled(transform);
+    doReturn(underTest).when(underTest).immediateComposeCancelled(transform);
     assertEquals(underTest, underTest.thenComposeCancelled(transform));
-    verify(underTest, cancelled()).lazyTransformCancelled(transform);
+    verify(underTest, cancelled()).immediateComposeCancelled(transform);
   }
 
   private boolean isResolved() {
-    return expected == ExpectedState.RESOLVED;
+    return expected == ExpectedState.COMPLETED;
   }
 
   private boolean isCancelled() {
@@ -234,8 +219,8 @@ public abstract class ImmediateAsyncFutureTestBase {
     return expected == ExpectedState.FAILED;
   }
 
-  private VerificationMode resolved() {
-    if (expected == ExpectedState.RESOLVED) {
+  private VerificationMode completed() {
+    if (expected == ExpectedState.COMPLETED) {
       return times(1);
     }
 
@@ -258,13 +243,39 @@ public abstract class ImmediateAsyncFutureTestBase {
     return never();
   }
 
-  protected static interface From {
+  private CompletionStage<To> expected() {
+    switch (expected) {
+      case CANCELLED:
+        return new ImmediateCancelled<>(caller);
+      case COMPLETED:
+        return new ImmediateCompleted<>(caller, to);
+      case FAILED:
+        return new ImmediateFailed<>(caller, cause);
+      default:
+        throw new IllegalStateException("Unexpected mode: " + expected);
+    }
   }
 
-  protected static interface To {
+  private CompletionStage<To> expected(final CompletionStage<To> completed) {
+    switch (expected) {
+      case CANCELLED:
+        return new ImmediateCancelled<>(caller);
+      case COMPLETED:
+        return completed;
+      case FAILED:
+        return new ImmediateFailed<>(caller, cause);
+      default:
+        throw new IllegalStateException("Unexpected mode: " + expected);
+    }
   }
 
-  protected static enum ExpectedState {
-    RESOLVED, CANCELLED, FAILED
+  protected interface From {
+  }
+
+  protected interface To {
+  }
+
+  protected enum ExpectedState {
+    COMPLETED, CANCELLED, FAILED
   }
 }

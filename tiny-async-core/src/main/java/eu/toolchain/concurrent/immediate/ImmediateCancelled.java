@@ -1,31 +1,30 @@
 package eu.toolchain.concurrent.immediate;
 
-import eu.toolchain.concurrent.AbstractImmediateCompletionStage;
+import eu.toolchain.concurrent.AbstractImmediate;
 import eu.toolchain.concurrent.CompletionHandle;
 import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
-import eu.toolchain.concurrent.FutureFramework;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * A callback which has already been resolved as 'resolved'.
  *
  * @param <T>
  */
-public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage<T>
-    implements CompletionStage<T> {
+@EqualsAndHashCode(of = {}, doNotUseGetters = true, callSuper = false)
+@ToString(of = {})
+public class ImmediateCancelled<T> extends AbstractImmediate<T> implements CompletionStage<T> {
   private final FutureCaller caller;
-  private final T result;
 
-  public ImmediateCompletedStage(
-      final FutureFramework async, final FutureCaller caller, final T result
-  ) {
-    super(async);
+  public ImmediateCancelled(final FutureCaller caller) {
+    super(caller);
     this.caller = caller;
-    this.result = result;
   }
 
   @Override
@@ -34,13 +33,14 @@ public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage
   }
 
   @Override
-  public CompletionStage<T> bind(CompletionStage<?> other) {
+  public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
+    caller.cancel(handle);
     return this;
   }
 
   @Override
-  public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
-    caller.resolve(handle, result);
+  public CompletionStage<T> bind(CompletionStage<?> other) {
+    other.cancel();
     return this;
   }
 
@@ -52,12 +52,12 @@ public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage
 
   @Override
   public CompletionStage<T> whenCancelled(Runnable runnable) {
+    caller.cancel(runnable);
     return this;
   }
 
   @Override
   public CompletionStage<T> whenCompleted(Consumer<? super T> consumer) {
-    caller.resolve(consumer, result);
     return this;
   }
 
@@ -73,7 +73,7 @@ public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage
 
   @Override
   public boolean isCompleted() {
-    return true;
+    return false;
   }
 
   @Override
@@ -83,7 +83,7 @@ public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage
 
   @Override
   public boolean isCancelled() {
-    return false;
+    return true;
   }
 
   @Override
@@ -93,29 +93,31 @@ public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage
 
   @Override
   public T join() {
-    return result;
+    throw new CancellationException();
   }
 
   @Override
   public T join(long timeout, TimeUnit unit) {
-    return result;
+    throw new CancellationException();
   }
 
   @Override
   public T joinNow() {
-    return result;
+    throw new CancellationException();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public <R> CompletionStage<R> thenApply(Function<? super T, ? extends R> fn) {
-    return transformResolved(fn, result);
+  public <U> CompletionStage<U> thenApply(Function<? super T, ? extends U> fn) {
+    return new ImmediateCancelled<>(caller);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public <R> CompletionStage<R> thenCompose(
-      Function<? super T, ? extends CompletionStage<R>> fn
+  public <U> CompletionStage<U> thenCompose(
+      Function<? super T, ? extends CompletionStage<U>> fn
   ) {
-    return lazyTransformResolved(fn, result);
+    return new ImmediateCancelled<>(caller);
   }
 
   @Override
@@ -132,11 +134,11 @@ public class ImmediateCompletedStage<T> extends AbstractImmediateCompletionStage
 
   @Override
   public CompletionStage<T> thenCatchCancelled(Supplier<? extends T> supplier) {
-    return this;
+    return immediateCatchCancelled(supplier);
   }
 
   @Override
   public CompletionStage<T> thenComposeCancelled(Supplier<? extends CompletionStage<T>> supplier) {
-    return this;
+    return immediateComposeCancelled(supplier);
   }
 }

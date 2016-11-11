@@ -22,9 +22,9 @@ import eu.toolchain.concurrent.concurrent.ConcurrentCompletableFuture;
 import eu.toolchain.concurrent.concurrent.ConcurrentManaged;
 import eu.toolchain.concurrent.helper.CollectAndDiscardHelper;
 import eu.toolchain.concurrent.helper.CollectHelper;
-import eu.toolchain.concurrent.immediate.ImmediateCancelledStage;
-import eu.toolchain.concurrent.immediate.ImmediateCompletedStage;
-import eu.toolchain.concurrent.immediate.ImmediateFailedStage;
+import eu.toolchain.concurrent.immediate.ImmediateCancelled;
+import eu.toolchain.concurrent.immediate.ImmediateCompleted;
+import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -542,17 +542,17 @@ public class TinyAsyncTest {
 
   @Test
   public void testResolved() {
-    assertTrue(underTest.completed() instanceof ImmediateCompletedStage);
+    assertTrue(underTest.completed() instanceof ImmediateCompleted);
   }
 
   @Test
   public void testFailed() {
-    assertTrue(underTest.failed(e) instanceof ImmediateFailedStage);
+    assertTrue(underTest.failed(e) instanceof ImmediateFailed);
   }
 
   @Test
   public void testCancelled() {
-    assertTrue(underTest.cancelled() instanceof ImmediateCancelledStage);
+    assertTrue(underTest.cancelled() instanceof ImmediateCancelled);
   }
 
   @Test

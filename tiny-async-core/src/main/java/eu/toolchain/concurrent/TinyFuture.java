@@ -6,9 +6,9 @@ import eu.toolchain.concurrent.concurrent.ConcurrentReloadableManaged;
 import eu.toolchain.concurrent.helper.CollectAndDiscardHelper;
 import eu.toolchain.concurrent.helper.CollectHelper;
 import eu.toolchain.concurrent.helper.RetryCallHelper;
-import eu.toolchain.concurrent.immediate.ImmediateCancelledStage;
-import eu.toolchain.concurrent.immediate.ImmediateCompletedStage;
-import eu.toolchain.concurrent.immediate.ImmediateFailedStage;
+import eu.toolchain.concurrent.immediate.ImmediateCancelled;
+import eu.toolchain.concurrent.immediate.ImmediateCompleted;
+import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -145,7 +145,7 @@ public class TinyFuture implements FutureFramework {
 
   @Override
   public <T> CompletableFuture<T> future() {
-    return new ConcurrentCompletableFuture<>(this, caller);
+    return new ConcurrentCompletableFuture<>(caller);
   }
 
   @Override
@@ -155,17 +155,17 @@ public class TinyFuture implements FutureFramework {
 
   @Override
   public <T> CompletionStage<T> completed(T value) {
-    return new ImmediateCompletedStage<>(this, caller, value);
+    return new ImmediateCompleted<>(caller, value);
   }
 
   @Override
   public <T> CompletionStage<T> failed(Throwable e) {
-    return new ImmediateFailedStage<>(this, caller, e);
+    return new ImmediateFailed<>(caller, e);
   }
 
   @Override
   public <T> CompletionStage<T> cancelled() {
-    return new ImmediateCancelledStage<T>(this, caller);
+    return new ImmediateCancelled<T>(caller);
   }
 
   @SuppressWarnings("unchecked")

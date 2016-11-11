@@ -1,32 +1,34 @@
 package eu.toolchain.concurrent.immediate;
 
-import eu.toolchain.concurrent.AbstractImmediateCompletionStage;
+import eu.toolchain.concurrent.AbstractImmediate;
 import eu.toolchain.concurrent.CompletionHandle;
 import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
-import eu.toolchain.concurrent.FutureFramework;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
- * A callback which has already been resolved as 'failed'.
+ * A callback which has already been resolved as 'resolved'.
  *
  * @param <T>
  */
-public class ImmediateFailedStage<T> extends AbstractImmediateCompletionStage<T>
+@EqualsAndHashCode(of = {"result"}, doNotUseGetters = true, callSuper = false)
+@ToString(of = {"result"})
+public class ImmediateCompleted<T> extends AbstractImmediate<T>
     implements CompletionStage<T> {
   private final FutureCaller caller;
-  private final Throwable cause;
+  private final T result;
 
-  public ImmediateFailedStage(
-      FutureFramework async, FutureCaller caller, Throwable cause
+  public ImmediateCompleted(
+      final FutureCaller caller, final T result
   ) {
-    super(async);
+    super(caller);
     this.caller = caller;
-    this.cause = cause;
+    this.result = result;
   }
 
   @Override
@@ -41,7 +43,7 @@ public class ImmediateFailedStage<T> extends AbstractImmediateCompletionStage<T>
 
   @Override
   public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
-    caller.fail(handle, cause);
+    caller.resolve(handle, result);
     return this;
   }
 
@@ -58,12 +60,12 @@ public class ImmediateFailedStage<T> extends AbstractImmediateCompletionStage<T>
 
   @Override
   public CompletionStage<T> whenCompleted(Consumer<? super T> consumer) {
+    caller.resolve(consumer, result);
     return this;
   }
 
   @Override
   public CompletionStage<T> whenFailed(Consumer<? super Throwable> consumer) {
-    caller.fail(consumer, cause);
     return this;
   }
 
@@ -74,12 +76,12 @@ public class ImmediateFailedStage<T> extends AbstractImmediateCompletionStage<T>
 
   @Override
   public boolean isCompleted() {
-    return false;
+    return true;
   }
 
   @Override
   public boolean isFailed() {
-    return true;
+    return false;
   }
 
   @Override
@@ -89,46 +91,46 @@ public class ImmediateFailedStage<T> extends AbstractImmediateCompletionStage<T>
 
   @Override
   public Throwable cause() {
-    return cause;
+    throw new IllegalStateException("future is not in a failed state");
   }
 
   @Override
-  public T join() throws ExecutionException {
-    throw new ExecutionException(cause);
+  public T join() {
+    return result;
   }
 
   @Override
-  public T join(long timeout, TimeUnit unit) throws ExecutionException {
-    throw new ExecutionException(cause);
+  public T join(long timeout, TimeUnit unit) {
+    return result;
   }
 
   @Override
-  public T joinNow() throws ExecutionException {
-    throw new ExecutionException(cause);
+  public T joinNow() {
+    return result;
   }
 
   @Override
-  public <U> CompletionStage<U> thenApply(Function<? super T, ? extends U> fn) {
-    return async.failed(cause);
+  public <R> CompletionStage<R> thenApply(Function<? super T, ? extends R> fn) {
+    return immediateApply(fn, result);
   }
 
   @Override
-  public <U> CompletionStage<U> thenCompose(
-      Function<? super T, ? extends CompletionStage<U>> fn
+  public <R> CompletionStage<R> thenCompose(
+      Function<? super T, ? extends CompletionStage<R>> fn
   ) {
-    return async.failed(cause);
+    return immediateCompose(fn, result);
   }
 
   @Override
   public CompletionStage<T> thenCatchFailed(Function<? super Throwable, ? extends T> fn) {
-    return transformFailed(fn, cause);
+    return this;
   }
 
   @Override
   public CompletionStage<T> thenComposeFailed(
       Function<? super Throwable, ? extends CompletionStage<T>> fn
   ) {
-    return lazyTransformFailed(fn, cause);
+    return this;
   }
 
   @Override

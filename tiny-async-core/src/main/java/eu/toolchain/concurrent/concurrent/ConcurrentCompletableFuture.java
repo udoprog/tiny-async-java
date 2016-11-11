@@ -1,17 +1,18 @@
 package eu.toolchain.concurrent.concurrent;
 
-import eu.toolchain.concurrent.AbstractImmediateCompletionStage;
+import eu.toolchain.concurrent.AbstractImmediate;
 import eu.toolchain.concurrent.CompletableFuture;
 import eu.toolchain.concurrent.CompletionHandle;
 import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
-import eu.toolchain.concurrent.FutureFramework;
 import eu.toolchain.concurrent.helper.TheComposeCancelledHelper;
 import eu.toolchain.concurrent.helper.ThenApplyHelper;
 import eu.toolchain.concurrent.helper.ThenCatchCancelledHelper;
 import eu.toolchain.concurrent.helper.ThenCatchFailedHelper;
 import eu.toolchain.concurrent.helper.ThenComposeFailedHelper;
 import eu.toolchain.concurrent.helper.ThenComposeHelper;
+import eu.toolchain.concurrent.immediate.ImmediateCancelled;
+import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +34,7 @@ import lombok.AllArgsConstructor;
  * @param <T> type of the future
  * @author udoprog
  */
-public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionStage<T>
+public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
     implements CompletableFuture<T> {
   /**
    * the max number of spins allowed before {@link Thread#yield()}
@@ -87,13 +88,10 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
    * It is therefore suggested to provide an implementation that supports delegating tasks to a
    * separate thread pool.
    *
-   * @param async The async implementation to use.
    * @param caller The caller implementation to use.
    */
-  public ConcurrentCompletableFuture(
-      final FutureFramework async, final FutureCaller caller
-  ) {
-    super(async);
+  public ConcurrentCompletableFuture(final FutureCaller caller) {
+    super(caller);
     this.caller = caller;
   }
 
@@ -287,14 +285,14 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
     final int s = state.get();
 
     if (s == CANCELLED) {
-      return async.cancelled();
+      return new ImmediateCancelled<>(caller);
     }
 
     if (s == FAILED) {
-      return async.failed((Throwable) r);
+      return new ImmediateFailed<>(caller, (Throwable) r);
     }
 
-    return transformResolved(fn, result(r));
+    return immediateApply(fn, result(r));
   }
 
   @Override
@@ -312,14 +310,14 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
     final int s = state.get();
 
     if (s == CANCELLED) {
-      return async.cancelled();
+      return new ImmediateCancelled<>(caller);
     }
 
     if (s == FAILED) {
-      return async.failed((Throwable) r);
+      return new ImmediateFailed<>(caller, (Throwable) r);
     }
 
-    return lazyTransformResolved(fn, result(r));
+    return immediateCompose(fn, result(r));
   }
 
   @Override
@@ -335,7 +333,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
     }
 
     if (state.get() == FAILED) {
-      return transformFailed(fn, (Throwable) r);
+      return immediateCatchFailed(fn, (Throwable) r);
     }
 
     return this;
@@ -354,7 +352,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
     }
 
     if (state.get() == FAILED) {
-      return lazyTransformFailed(fn, (Throwable) r);
+      return immediateComposeFailed(fn, (Throwable) r);
     }
 
     return this;
@@ -371,7 +369,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
     }
 
     if (state.get() == CANCELLED) {
-      return transformCancelled(supplier);
+      return immediateCatchCancelled(supplier);
     }
 
     return this;
@@ -390,14 +388,14 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediateCompletionS
     }
 
     if (state.get() == CANCELLED) {
-      return lazyTransformCancelled(supplier);
+      return immediateComposeCancelled(supplier);
     }
 
     return this;
   }
 
   <U> CompletableFuture<U> newFuture() {
-    return new ConcurrentCompletableFuture<>(async, caller);
+    return new ConcurrentCompletableFuture<>(caller);
   }
 
   /**
