@@ -1,13 +1,9 @@
 package eu.toolchain.examples;
 
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.Collector;
-import eu.toolchain.async.TinyAsync;
-
+import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.TinyFuture;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -17,35 +13,26 @@ import java.util.concurrent.ExecutionException;
  * manner conceived.
  */
 public class AsyncCollectorExample {
-    public static void main(String[] argv) throws InterruptedException, ExecutionException {
-        TinyAsync async = AsyncSetup.setup();
+  public static void main(String[] argv) throws InterruptedException, ExecutionException {
+    TinyFuture async = FutureSetup.setup();
 
-        final List<AsyncFuture<Integer>> futures = new ArrayList<>();
+    final List<CompletionStage<Integer>> futures = new ArrayList<>();
 
-        for (int i = 0; i < 100; i++) {
-            final int value = i;
-
-            futures.add(async.call(new Callable<Integer>() {
-                @Override
-                public Integer call() {
-                    return value;
-                }
-            }));
-        }
-
-        final AsyncFuture<Integer> sum = async.collect(futures, new Collector<Integer, Integer>() {
-            @Override
-            public Integer collect(Collection<Integer> results) {
-                int result = 0;
-
-                for (Integer r : results) {
-                    result += r;
-                }
-
-                return result;
-            }
-        });
-
-        System.out.println("result: " + sum.get());
+    for (int i = 0; i < 100; i++) {
+      final int value = i;
+      futures.add(async.call(() -> value));
     }
+
+    final CompletionStage<Integer> sum = async.collect(futures, results -> {
+      int result = 0;
+
+      for (Integer r : results) {
+        result += r;
+      }
+
+      return result;
+    });
+
+    System.out.println("result: " + sum.join());
+  }
 }

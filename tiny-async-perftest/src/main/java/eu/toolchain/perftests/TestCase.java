@@ -1,7 +1,7 @@
 package eu.toolchain.perftests;
 
 public interface TestCase {
-    public void tiny() throws Exception;
+  void tiny() throws Exception;
 
-    public void guava() throws Exception;
+  void guava() throws Exception;
 }

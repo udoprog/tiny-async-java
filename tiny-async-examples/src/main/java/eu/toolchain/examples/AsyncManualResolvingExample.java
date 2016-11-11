@@ -1,32 +1,26 @@
 package eu.toolchain.examples;
 
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.ResolvableFuture;
-import eu.toolchain.async.TinyAsync;
-
+import eu.toolchain.concurrent.CompletableFuture;
+import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.TinyFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
  * An example application showcasing manually resolving a {@code ResolvableFuture}.
  */
 public class AsyncManualResolvingExample {
-    public static AsyncFuture<Integer> somethingReckless(TinyAsync async) {
-        final ResolvableFuture<Integer> future = async.future();
+  public static CompletionStage<Integer> somethingReckless(final TinyFuture async) {
+    final CompletableFuture<Integer> future = async.future();
 
-        // access the configured executor.
-        async.defaultExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                future.resolve(42);
-            }
-        });
+    // access the configured executor.
+    async.executor().execute(() -> future.complete(42));
 
-        return future;
-    }
+    return future;
+  }
 
-    public static void main(String[] argv) throws InterruptedException, ExecutionException {
-        TinyAsync async = AsyncSetup.setup();
+  public static void main(String[] argv) throws InterruptedException, ExecutionException {
+    TinyFuture async = FutureSetup.setup();
 
-        System.out.println(somethingReckless(async).get());
-    }
+    System.out.println(somethingReckless(async).join());
+  }
 }

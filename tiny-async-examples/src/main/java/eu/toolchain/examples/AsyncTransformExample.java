@@ -1,32 +1,20 @@
 package eu.toolchain.examples;
 
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.TinyAsync;
-import eu.toolchain.async.Transform;
-
-import java.util.concurrent.Callable;
+import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.TinyFuture;
+import java.util.function.Function;
 
 /**
  * An example application showcasing transforms.
  */
 public class AsyncTransformExample {
-    public static void main(String[] argv) throws Exception {
-        TinyAsync async = AsyncSetup.setup();
+  public static void main(String[] argv) throws Exception {
+    TinyFuture async = FutureSetup.setup();
 
-        final Transform<Integer, Integer> addTen = new Transform<Integer, Integer>() {
-            @Override
-            public Integer transform(Integer i) {
-                return i + 10;
-            }
-        };
+    final Function<Integer, Integer> addTen = i -> i + 10;
 
-        final AsyncFuture<Integer> f = async.call(new Callable<Integer>() {
-            @Override
-            public Integer call() {
-                return 10;
-            }
-        });
+    final CompletionStage<Integer> f = async.call(() -> 10);
 
-        System.out.println("result: " + f.transform(addTen).get());
-    }
+    System.out.println("result: " + f.thenApply(addTen).join());
+  }
 }

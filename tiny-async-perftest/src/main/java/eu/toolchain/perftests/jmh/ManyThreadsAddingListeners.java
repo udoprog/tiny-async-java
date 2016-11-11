@@ -5,132 +5,112 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import eu.toolchain.async.AsyncFramework;
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.FutureResolved;
-import eu.toolchain.async.TinyAsync;
-import org.openjdk.jmh.annotations.Benchmark;
-
-import java.util.concurrent.Callable;
+import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.FutureFramework;
+import eu.toolchain.concurrent.TinyFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import org.openjdk.jmh.annotations.Benchmark;
 
 public class ManyThreadsAddingListeners {
-    private static final int SIZE = 1;
-    private static final int CALLBACK_COUNT = 10000;
-    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
-    private static final int EXPECTED_SUM =
-        ((SIZE * (SIZE - 1)) / 2) * CALLBACK_COUNT * THREAD_COUNT;
+  private static final int SIZE = 1;
+  private static final int CALLBACK_COUNT = 10000;
+  private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+  private static final int EXPECTED_SUM = ((SIZE * (SIZE - 1)) / 2) * CALLBACK_COUNT * THREAD_COUNT;
 
-    @Benchmark
-    public void tiny() throws Exception {
-        final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-        final AsyncFramework async = TinyAsync.builder().executor(executor).build();
+  @Benchmark
+  public void tiny() throws Exception {
+    final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+    final FutureFramework async = TinyFuture.builder().executor(executor).build();
 
-        final AtomicInteger sum = new AtomicInteger();
-        final CountDownLatch latch = new CountDownLatch(1);
-        final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * THREAD_COUNT * SIZE);
+    final AtomicInteger sum = new AtomicInteger();
+    final CountDownLatch latch = new CountDownLatch(1);
+    final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * THREAD_COUNT * SIZE);
 
-        final FutureResolved<Integer> callback = new FutureResolved<Integer>() {
-            @Override
-            public void resolved(Integer result) {
-                sum.addAndGet(result);
-                tasks.countDown();
-            }
-        };
+    final Consumer<Integer> callback = result -> {
+      sum.addAndGet(result);
+      tasks.countDown();
+    };
 
-        for (int i = 0; i < SIZE; i++) {
-            final int current = i;
+    for (int i = 0; i < SIZE; i++) {
+      final int current = i;
 
-            final AsyncFuture<Integer> future = async.call(new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    latch.await();
-                    return current;
-                }
-            });
+      final CompletionStage<Integer> future = async.call(() -> {
+        latch.await();
+        return current;
+      });
 
-            for (int t = 0; t < THREAD_COUNT; t++) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (int c = 0; c < CALLBACK_COUNT; c++) {
-                            future.onResolved(callback);
-                        }
-                    }
-                });
-            }
-        }
-
-        latch.countDown();
-        tasks.await();
-
-        if (sum.get() != EXPECTED_SUM) {
-            throw new IllegalStateException(
-                String.format("did not properly collect all values: expected %d, but was %d",
-                    EXPECTED_SUM, sum.get()));
-        }
-
-        executor.shutdown();
+      for (int t = 0; t < THREAD_COUNT; t++) {
+        executor.execute(() -> {
+          for (int c = 0; c < CALLBACK_COUNT; c++) {
+            future.whenCompleted(callback);
+          }
+        });
+      }
     }
 
-    @Benchmark
-    public void guava() throws Exception {
-        final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-        final ListeningExecutorService listeningExecutor =
-            MoreExecutors.listeningDecorator(executor);
+    latch.countDown();
+    tasks.await();
 
-        final AtomicInteger sum = new AtomicInteger();
-        final CountDownLatch latch = new CountDownLatch(1);
-        final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * THREAD_COUNT * SIZE);
-
-        final FutureCallback<Integer> callback = new FutureCallback<Integer>() {
-            @Override
-            public void onSuccess(Integer result) {
-                sum.addAndGet(result);
-                tasks.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        };
-
-        for (int i = 0; i < SIZE; i++) {
-            final int current = i;
-
-            final ListenableFuture<Integer> future =
-                listeningExecutor.submit(new Callable<Integer>() {
-                    @Override
-                    public Integer call() throws Exception {
-                        latch.await();
-                        return current;
-                    }
-                });
-
-            for (int t = 0; t < THREAD_COUNT; t++) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (int c = 0; c < CALLBACK_COUNT; c++) {
-                            Futures.addCallback(future, callback);
-                        }
-                    }
-                });
-            }
-        }
-
-        latch.countDown();
-        tasks.await();
-
-        if (sum.get() != EXPECTED_SUM) {
-            throw new IllegalStateException(
-                String.format("did not properly collect all values: expected %d, but was %d",
-                    EXPECTED_SUM, sum.get()));
-        }
-
-        listeningExecutor.shutdown();
+    if (sum.get() != EXPECTED_SUM) {
+      throw new IllegalStateException(
+          String.format("did not properly collect all values: expected %d, but was %d",
+              EXPECTED_SUM, sum.get()));
     }
+
+    executor.shutdown();
+  }
+
+  @Benchmark
+  public void guava() throws Exception {
+    final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+    final ListeningExecutorService listeningExecutor = MoreExecutors.listeningDecorator(executor);
+
+    final AtomicInteger sum = new AtomicInteger();
+    final CountDownLatch latch = new CountDownLatch(1);
+    final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * THREAD_COUNT * SIZE);
+
+    final FutureCallback<Integer> callback = new FutureCallback<Integer>() {
+      @Override
+      public void onSuccess(Integer result) {
+        sum.addAndGet(result);
+        tasks.countDown();
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+      }
+    };
+
+    for (int i = 0; i < SIZE; i++) {
+      final int current = i;
+
+      final ListenableFuture<Integer> future = listeningExecutor.submit(() -> {
+        latch.await();
+        return current;
+      });
+
+      for (int t = 0; t < THREAD_COUNT; t++) {
+        executor.execute(() -> {
+          for (int c = 0; c < CALLBACK_COUNT; c++) {
+            Futures.addCallback(future, callback);
+          }
+        });
+      }
+    }
+
+    latch.countDown();
+    tasks.await();
+
+    if (sum.get() != EXPECTED_SUM) {
+      throw new IllegalStateException(
+          String.format("did not properly collect all values: expected %d, but was %d",
+              EXPECTED_SUM, sum.get()));
+    }
+
+    listeningExecutor.shutdown();
+  }
 }

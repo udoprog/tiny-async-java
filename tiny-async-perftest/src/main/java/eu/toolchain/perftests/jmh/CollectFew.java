@@ -2,38 +2,37 @@ package eu.toolchain.perftests.jmh;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import eu.toolchain.async.AsyncFramework;
-import eu.toolchain.async.AsyncFuture;
-import eu.toolchain.async.TinyAsync;
-import org.openjdk.jmh.annotations.Benchmark;
-
+import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.FutureFramework;
+import eu.toolchain.concurrent.TinyFuture;
 import java.util.ArrayList;
 import java.util.List;
+import org.openjdk.jmh.annotations.Benchmark;
 
 public class CollectFew {
-    private static final int SIZE = 10;
+  private static final int SIZE = 10;
 
-    private static AsyncFramework async = TinyAsync.builder().build();
+  private static FutureFramework async = TinyFuture.builder().build();
 
-    @Benchmark
-    public void tiny() throws Exception {
-        final List<AsyncFuture<Boolean>> futures = new ArrayList<>();
+  @Benchmark
+  public void tiny() throws Exception {
+    final List<CompletionStage<Boolean>> futures = new ArrayList<>();
 
-        for (int i = 0; i < SIZE; i++) {
-            futures.add(async.resolved(true));
-        }
-
-        async.collect(futures).get();
+    for (int i = 0; i < SIZE; i++) {
+      futures.add(async.completed(true));
     }
 
-    @Benchmark
-    public void guava() throws Exception {
-        final List<ListenableFuture<Boolean>> futures = new ArrayList<>();
+    async.collect(futures).join();
+  }
 
-        for (int i = 0; i < SIZE; i++) {
-            futures.add(Futures.immediateFuture(true));
-        }
+  @Benchmark
+  public void guava() throws Exception {
+    final List<ListenableFuture<Boolean>> futures = new ArrayList<>();
 
-        Futures.allAsList(futures).get();
+    for (int i = 0; i < SIZE; i++) {
+      futures.add(Futures.immediateFuture(true));
     }
+
+    Futures.allAsList(futures).get();
+  }
 }
