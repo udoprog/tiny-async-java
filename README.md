@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/udoprog/tiny-async-java.svg?branch=master)](https://travis-ci.org/udoprog/tiny-async-java)
 [![Coverage Status](https://coveralls.io/repos/udoprog/tiny-async-java/badge.svg?branch=master)](https://coveralls.io/r/udoprog/tiny-async-java?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/eu.toolchain.async/tiny-async-api/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22eu.toolchain.async%22) 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/eu.toolchain.async2/tiny-async-api/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22eu.toolchain.async2%22) 
 
 A tiny asynchronous library for Java.
 
