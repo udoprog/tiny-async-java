@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Implementation of {@link FutureFramework#collect(Collection, StreamCollector)}.
+ * Implementation of {@link Async#collect(Collection, StreamCollector)}.
  *
  * @param <S> the source type being collected.
  * @param <T> The type the source type is being collected and transformed into.

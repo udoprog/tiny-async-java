@@ -33,7 +33,6 @@ public class ChartUtils {
   /**
    * Creates a chart.
    *
-   * @param dataset a dataset.
    * @return A chart.
    */
   private static JFreeChart createChart(
@@ -114,8 +113,6 @@ public class ChartUtils {
 
   /**
    * Starting point for the demonstration application.
-   *
-   * @param args ignored.
    */
   public static void showChart(
       String name, String xAxis, String yAxis1, XYDataset dataset1, String yAxis2,

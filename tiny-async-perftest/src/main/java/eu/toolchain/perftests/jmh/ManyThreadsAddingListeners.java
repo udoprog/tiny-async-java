@@ -1,13 +1,12 @@
 package eu.toolchain.perftests.jmh;
 
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import eu.toolchain.concurrent.CompletionStage;
-import eu.toolchain.concurrent.FutureFramework;
-import eu.toolchain.concurrent.TinyFuture;
+import eu.toolchain.concurrent.CoreAsync;
+import eu.toolchain.concurrent.Async;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +23,7 @@ public class ManyThreadsAddingListeners {
   @Benchmark
   public void tiny() throws Exception {
     final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-    final FutureFramework async = TinyFuture.builder().executor(executor).build();
+    final Async async = CoreAsync.builder().executor(executor).build();
 
     final AtomicInteger sum = new AtomicInteger();
     final CountDownLatch latch = new CountDownLatch(1);
@@ -96,7 +95,7 @@ public class ManyThreadsAddingListeners {
       for (int t = 0; t < THREAD_COUNT; t++) {
         executor.execute(() -> {
           for (int c = 0; c < CALLBACK_COUNT; c++) {
-            Futures.addCallback(future, callback);
+            com.google.common.util.concurrent.Futures.addCallback(future, callback);
           }
         });
       }

@@ -13,7 +13,7 @@ public class ManagedIT {
   final Object REF = new Object();
 
   // setup an direct async framework.
-  final FutureFramework async = TinyFuture.builder().build();
+  final Async async = CoreAsync.builder().build();
 
   private AtomicInteger start;
   private AtomicInteger stop;

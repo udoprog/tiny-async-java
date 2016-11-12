@@ -4,8 +4,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import eu.toolchain.concurrent.CompletionStage;
-import eu.toolchain.concurrent.FutureFramework;
-import eu.toolchain.concurrent.TinyFuture;
+import eu.toolchain.concurrent.Async;
+import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +22,7 @@ public class ManyThreads {
   @Benchmark
   public void tiny() throws Exception {
     final ExecutorService executor = Executors.newWorkStealingPool(THREAD_COUNT);
-    final FutureFramework async = TinyFuture.builder().executor(executor).build();
+    final Async async = CoreAsync.builder().executor(executor).build();
 
     final List<CompletionStage<Integer>> futures = new ArrayList<>();
 

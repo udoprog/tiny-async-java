@@ -17,13 +17,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * A high-level integration test for {@code TinyFuture#eventuallyCollect(java.util.Collection,
+ * A high-level integration test for {@code CoreAsync#eventuallyCollect(java.util.Collection,
  * StreamCollector, int)}.
  */
 public class EventuallyCollectIT {
   private ExecutorService executor;
   private ExecutorService otherExecutor;
-  private FutureFramework async;
+  private Async async;
   private AtomicLong internalErrors;
 
   private static final long COUNT = 1000;
@@ -39,7 +39,7 @@ public class EventuallyCollectIT {
 
     internalErrors = new AtomicLong();
 
-    async = TinyFuture.builder().executor(executor).caller(new DirectFutureCaller() {
+    async = CoreAsync.builder().executor(executor).caller(new DirectFutureCaller() {
       @Override
       protected void internalError(String what, Throwable e) {
         internalErrors.incrementAndGet();

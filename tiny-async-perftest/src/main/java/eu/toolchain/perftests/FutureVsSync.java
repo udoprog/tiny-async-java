@@ -2,8 +2,8 @@ package eu.toolchain.perftests;
 
 import com.google.common.base.Stopwatch;
 import eu.toolchain.concurrent.CompletionStage;
-import eu.toolchain.concurrent.FutureFramework;
-import eu.toolchain.concurrent.TinyFuture;
+import eu.toolchain.concurrent.Async;
+import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,7 +22,7 @@ public class FutureVsSync {
   private static final ExecutorService syncThreads =
       Executors.newFixedThreadPool(AVAILABLE_PROCESSORS);
 
-  private static final FutureFramework async = TinyFuture.builder().executor(asyncThreads).build();
+  private static final Async async = CoreAsync.builder().executor(asyncThreads).build();
 
   public static void main(String argv[]) throws Exception {
     final long syncTime;

@@ -20,7 +20,7 @@ public class RetryUntilResolvedIT {
   private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
 
   // setup an direct async framework.
-  final FutureFramework async = TinyFuture.builder().threaded(false).scheduler(scheduler).build();
+  final Async async = CoreAsync.builder().threaded(false).scheduler(scheduler).build();
 
   @Test(timeout = TIMEOUT)
   public void testBasicRetryLogic() throws Exception {

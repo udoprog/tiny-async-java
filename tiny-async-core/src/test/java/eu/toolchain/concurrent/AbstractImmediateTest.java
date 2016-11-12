@@ -6,8 +6,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
-import eu.toolchain.concurrent.immediate.ImmediateCompleted;
-import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.Before;

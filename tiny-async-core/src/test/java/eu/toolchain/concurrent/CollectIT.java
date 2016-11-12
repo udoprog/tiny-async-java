@@ -25,7 +25,7 @@ public class CollectIT {
   private static final Exception B = new Exception("B");
 
   private static ExecutorService executor;
-  private static TinyFuture async;
+  private static CoreAsync async;
 
   private static final long TIMEOUT = 5000;
 
@@ -35,7 +35,7 @@ public class CollectIT {
   @BeforeClass
   public static void beforeClass() {
     executor = Executors.newFixedThreadPool(10);
-    async = TinyFuture.builder().executor(executor).build();
+    async = CoreAsync.builder().executor(executor).build();
   }
 
   @AfterClass

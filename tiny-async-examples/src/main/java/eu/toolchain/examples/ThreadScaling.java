@@ -3,9 +3,7 @@ package eu.toolchain.examples;
 import com.google.common.base.Stopwatch;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -139,41 +137,38 @@ public class ThreadScaling {
         for (int i = 0; i < threads; i++) {
           final int id = i;
 
-          jobs.add(service.submit(new Callable<Double>() {
-            @Override
-            public Double call() throws Exception {
-              double sum = 0.0d;
+          jobs.add(service.submit(() -> {
+            double sum = 0.0d;
 
-              long total = 0;
+            long total = 0;
 
-              while (true) {
-                checkIn.countDown();
-                start.await();
+            while (true) {
+              checkIn.countDown();
+              start.await();
 
-                if (workCounter.getAndIncrement() >= howMuchWork) {
-                  break;
-                }
-
-                counts[id]++;
-
-                final long start = System.nanoTime();
-                sum += someWork(WORK_ITERATIONS);
-                total += System.nanoTime() - start;
-
-                if (sleepProportion == 0) {
-                  continue;
-                }
-
-                while (total >= sleepProportion) {
-                  // this thread will yield time for other threads.
-                  switches.getAndIncrement();
-                  total -= sleepProportion;
-                  Thread.sleep(1);
-                }
+              if (workCounter.getAndIncrement() >= howMuchWork) {
+                break;
               }
 
-              return sum;
+              counts[id]++;
+
+              final long start1 = System.nanoTime();
+              sum += someWork(WORK_ITERATIONS);
+              total += System.nanoTime() - start1;
+
+              if (sleepProportion == 0) {
+                continue;
+              }
+
+              while (total >= sleepProportion) {
+                // this thread will yield time for other threads.
+                switches.getAndIncrement();
+                total -= sleepProportion;
+                Thread.sleep(1);
+              }
             }
+
+            return sum;
           }));
         }
 
@@ -207,12 +202,7 @@ public class ThreadScaling {
         service.shutdown();
       }
 
-      Collections.sort(times, new Comparator<Timing>() {
-        @Override
-        public int compare(Timing a, Timing b) {
-          return Long.compare(a.elapsedNanos, b.elapsedNanos);
-        }
-      });
+      Collections.sort(times, (a, b) -> Long.compare(a.elapsedNanos, b.elapsedNanos));
 
       System.out.println();
       return times;

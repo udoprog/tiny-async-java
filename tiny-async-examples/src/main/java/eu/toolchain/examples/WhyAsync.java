@@ -2,13 +2,12 @@ package eu.toolchain.examples;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.CompletionStage;
-import eu.toolchain.concurrent.FutureFramework;
-import eu.toolchain.concurrent.TinyFuture;
+import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -82,8 +81,7 @@ public class WhyAsync {
         Executors.newFixedThreadPool(NUMBER_OF_SYNC_THREADS,
             new ThreadFactoryBuilder().setNameFormat("sync-%d").build());
 
-    private static final FutureFramework async =
-        TinyFuture.builder().executor(asyncThreads).build();
+    private static final Async async = CoreAsync.builder().executor(asyncThreads).build();
 
     private void run() throws Exception {
       System.out.println("Async making better use of the given threads.");
@@ -139,12 +137,7 @@ public class WhyAsync {
       final List<CompletionStage<Double>> inner = new ArrayList<>();
 
       for (int i = 0; i < INNER_REQUEST_COUNT; i++) {
-        inner.add(async.call(new Callable<Double>() {
-          @Override
-          public Double call() throws Exception {
-            return someWork(WORK_ITERATIONS);
-          }
-        }));
+        inner.add(async.call(() -> someWork(WORK_ITERATIONS)));
       }
 
       return async.collect(inner, summer);
@@ -167,30 +160,22 @@ public class WhyAsync {
     }
 
     private Future<Double> someSyncCall() {
-      return syncThreads.submit(new Callable<Double>() {
-        @Override
-        public Double call() throws Exception {
-          final List<Future<Double>> inner = new ArrayList<>();
+      return syncThreads.submit(() -> {
+        final List<Future<Double>> inner = new ArrayList<>();
 
-          for (int i = 0; i < INNER_REQUEST_COUNT; i++) {
-            inner.add(syncThreads.submit(new Callable<Double>() {
-              @Override
-              public Double call() throws Exception {
-                return someWork(WORK_ITERATIONS);
-              }
-            }));
-          }
-
-          double sum = 0.0d;
-
-          // this is equivalent to all threads blocking for the above result to finish
-          // for some reason.
-          for (final Future<Double> f : inner) {
-            sum += f.get();
-          }
-
-          return sum;
+        for (int i = 0; i < INNER_REQUEST_COUNT; i++) {
+          inner.add(syncThreads.submit(() -> someWork(WORK_ITERATIONS)));
         }
+
+        double sum = 0.0d;
+
+        // this is equivalent to all threads blocking for the above result to finish
+        // for some reason.
+        for (final Future<Double> f : inner) {
+          sum += f.get();
+        }
+
+        return sum;
       });
     }
   }

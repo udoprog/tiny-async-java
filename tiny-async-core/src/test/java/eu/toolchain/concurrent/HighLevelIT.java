@@ -9,11 +9,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class HighLevelIT {
-  private FutureFramework async;
+  private Async async;
 
   @Before
   public void setup() {
-    async = TinyFuture.builder().executor(ForkJoinPool.commonPool()).build();
+    async = CoreAsync.builder().executor(ForkJoinPool.commonPool()).build();
   }
 
   @Test

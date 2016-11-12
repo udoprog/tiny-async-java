@@ -128,7 +128,7 @@ public class RecursionSafeAsyncCallerIT {
 
   private void doRecursions(final boolean recursionSafe)
       throws InterruptedException, java.util.concurrent.ExecutionException {
-    final FutureFramework async = TinyFuture
+    final Async async = CoreAsync
         .builder()
         .executor(Executors.newSingleThreadExecutor())
         .recursionSafe(recursionSafe)

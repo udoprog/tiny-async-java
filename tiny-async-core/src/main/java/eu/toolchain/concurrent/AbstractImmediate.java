@@ -1,7 +1,5 @@
 package eu.toolchain.concurrent;
 
-import eu.toolchain.concurrent.immediate.ImmediateCompleted;
-import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.function.Function;
 import java.util.function.Supplier;
 

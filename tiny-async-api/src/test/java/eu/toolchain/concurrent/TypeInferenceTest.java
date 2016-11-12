@@ -18,11 +18,11 @@ import org.mockito.Mockito;
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class TypeInferenceTest {
-  private FutureFramework async;
+  private Async async;
 
   @Before
   public void setup() {
-    this.async = Mockito.mock(FutureFramework.class);
+    this.async = Mockito.mock(Async.class);
   }
 
   @Test

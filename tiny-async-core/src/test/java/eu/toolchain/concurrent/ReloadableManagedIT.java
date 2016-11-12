@@ -16,7 +16,7 @@ public class ReloadableManagedIT {
   private static final long TIMEOUT = 20000;
 
   // setup an direct async framework.
-  final FutureFramework async = TinyFuture.builder().threaded(false).build();
+  final Async async = CoreAsync.builder().threaded(false).build();
 
   private AtomicInteger start;
   private AtomicInteger stop;

@@ -1,5 +1,7 @@
 package eu.toolchain.concurrent;
 
+import static eu.toolchain.concurrent.CoreAsync.formatStack;
+
 import java.util.function.Consumer;
 
 /**
@@ -99,10 +101,6 @@ public abstract class DirectFutureCaller implements FutureCaller {
   @Override
   public <T> void referenceLeaked(T reference, StackTraceElement[] stack) {
     internalError(String.format("reference %s leaked @ %s", reference, formatStack(stack)), null);
-  }
-
-  String formatStack(StackTraceElement[] stack) {
-    return TinyStackUtils.formatStack(stack);
   }
 
   abstract protected void internalError(String what, Throwable e);

@@ -27,8 +27,10 @@ This has the benefit of making TinyAsync superb for
 about concurrency, all you need to do is mock the expected framework behaviour.
 
 For an overview of the library, check out the
-[API](tiny-async-api/src/main/java/eu/toolchain/concurrent) and the [Usage](#usage)
+[API][api] and the [Usage](#usage)
 section below.
+
+[api]: /tiny-async-api/src/main/java/eu/toolchain/concurrent
 
 ## Guava
 
@@ -37,21 +39,25 @@ futures\*, and these are unnecessarily diffucult to mock.
 
 Also, TinyAsync believes that some aspects of the framework should allow for
 configurable defaults\*\*. The most notable example would be _what the default
-ExecutorService_ is, but also allow the user to [handle undefined
-behaviour](tiny-async-api/src/main/java/eu/toolchain/concurrent/FutureCaller.java)
+ExecutorService_ is, but also allow the user to [handle undefined behaviour][caller]
 edge cases where the framework otherwise has to compromise.
 
-The downside is that you have to provide your components access to the [async
-framework](tiny-async-api/src/main/java/eu/toolchain/concurrent/FutureFramework.java)
+The downside is that you have to provide your components access to the [async framework](async)
 implementation, but you are already using
-[dependency injection](https://github.com/google/guice), right?
+[dependency injection][guice], right?
 
-\*: most notably [Futures](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html)<br />
-\*\*: See [AsyncSetup](tiny-async-examples/src/main/java/eu/toolchain/examples/AsyncSetup.java)
+\*: most notably [Futures][futures]<br />
+\*\*: See [Helpers][helpers]
+
+[caller]: /tiny-async-api/src/main/java/eu/toolchain/concurrent/FutureCaller.java
+[async]: /tiny-async-api/src/main/java/eu/toolchain/concurrent/Async.java
+[guice]: https://github.com/google/guice
+[futures]: http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/Futures.html
+[helpers]: /tiny-async-examples/src/main/java/eu/toolchain/examples/Helpers.java
 
 # Setup
 
-TinyAsync is available [through maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22eu.toolchain.async%2).
+TinyAsync is available [through maven][maven].
 
 If you have an API project, you can add a dependency to **tiny-async-api**, which only contains the interfaces used by TinyAsync and with very little indirection is all you need to interact with the library.
 
@@ -61,8 +67,16 @@ See [Api Separation](#api-separation) for why the api is distributed in a separa
 
 After that, the first step is to instantiate the framework.
 
-See [AsyncSetup.java](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncSetup.java)
-for an example of how to do this.
+```java
+final Async async = CoreAsync.builder().build();
+```
+
+There are [a few options available][builder], for a more detailed example, see
+[Helpers.java][helpers].
+
+[maven]: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22eu.toolchain.async%2
+[builder]: /tiny-async-core/src/main/java/eu/toolchain/concurrent/CoreAsync.java#L476
+[helpers]: /tiny-async-examples/src/main/java/eu/toolchain/examples/Helpers.java
 
 # Api Separation
 
@@ -89,13 +103,13 @@ The following section contains documentation on how to use TinyAsync.
 
 ## Building futures from scratch
 
-The following methods are provided on `FutureFramework` to build new futures.
+The following methods are provided on `Async` to build new futures.
 
-* `CompletableFuture<T> FutureFramework#future()`
-* `CompletionStage<T> FutureFramework#call(Callable<T>)`
-* `CompletionStage<T> FutureFramework#completed(T)`
-* `CompletionStagCompletionStage<T> FutureFramework#failed(Throwable)`
-* `CompletionStage<T> FutureFramework#cancelled()`
+* `CompletableFuture<T> Async#future()`
+* `CompletionStage<T> Async#call(Callable<T>)`
+* `CompletionStage<T> Async#completed(T)`
+* `CompletionStagCompletionStage<T> Async#failed(Throwable)`
+* `CompletionStage<T> Async#cancelled()`
 
 The first kind of method returns a `CompletableFuture<T>` instance. This is typically used when integrating with other async framework and has direct access to a `#resolve(T)` method that will resolve the future.
 
@@ -103,13 +117,13 @@ The methods that take a `Callable<T>` builds a new future that will be resolved 
 
 The last kind of methods are the ones building futures which have already been either resolved, failed, or cancelled.
 These types of methods are good for returning early from methods that only returns a future.
-An example is if a method throws a checked exception, and you want this to be returned as a future, you can use `FutureFramework#failed(Throwable)`.
+An example is if a method throws a checked exception, and you want this to be returned as a future, you can use `Async#failed(Throwable)`.
 
 See examples:
 
-* [blocking example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
-* [static results example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncStaticResultsExample.java)
-* [manually resolving a future](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncManualResolvingExample.java)
+* [blocking example](tiny-async-examples/src/example/java/eu/toolchain/examples/BlockingExample.java)
+* [static results example](tiny-async-examples/src/example/java/eu/toolchain/examples/StaticResultsExample.java)
+* [manually resolving a future](tiny-async-examples/src/example/java/eu/toolchain/examples/ManualResolvingExample.java)
 
 ## Subscribing to changes
 
@@ -130,7 +144,7 @@ handle).
 
 See examples:
 
-* [subscribe example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncSubscribeExample.java)
+* [subscribe example](tiny-async-examples/src/example/java/eu/toolchain/examples/SubscribeExample.java)
 
 ## Blocking until a result is available
 
@@ -147,7 +161,7 @@ convenient in this contrived context.
 
 See examples:
 
-* [blocking example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncBlockingExample.java)
+* [blocking example](tiny-async-examples/src/example/java/eu/toolchain/examples/BlockingExample.java)
 
 ## Transforming results
 
@@ -166,18 +180,18 @@ They also allows to take a falied future, and convert it into a value B.
 
 See examples:
 
-* [transform example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncTransformExample.java)
+* [transform example](tiny-async-examples/src/example/java/eu/toolchain/examples/TransformExample.java)
 
 ## Collecting Many Results
 
 When you have a collection of asynchronous computations, and you want a single
 future that is resolved by them instead.
 
-* `CompletionStage<Collection<T>> FutureFramework#collect(Collection<CompletionStage<T>>)`
-* `CompletionStage<Void> FutureFramework#collectAndDiscard(Collection<CompletionStage<T>>)`
-* `CompletionStage<U> FutureFramework#collect(Collection<CompletionStage<T>>, Function<Collection<T>, U>)`
-* `CompletionStage<U> FutureFramework#collect(Collection<CompletionStage<T>>, StreamCollector<T, U>)`
-* `CompletionStage<U> FutureFramework#eventuallyCollect(Collection<Callable<CompletionStage<T>>>, StreamCollector<T, U>, int parallelism)`
+* `CompletionStage<Collection<T>> Async#collect(Collection<CompletionStage<T>>)`
+* `CompletionStage<Void> Async#collectAndDiscard(Collection<CompletionStage<T>>)`
+* `CompletionStage<U> Async#collect(Collection<CompletionStage<T>>, Function<Collection<T>, U>)`
+* `CompletionStage<U> Async#collect(Collection<CompletionStage<T>>, StreamCollector<T, U>)`
+* `CompletionStage<U> Async#eventuallyCollect(Collection<Callable<CompletionStage<T>>>, StreamCollector<T, U>, int parallelism)`
 
 The methods taking the `Function<Collection<T>, U>` gathers the result of all computations into one
 value. It has the downside of requiring the result of all the collected futures to be in memory at
@@ -206,8 +220,8 @@ computation has been initialized.
 
 See examples:
 
-* [collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncCollectorExample.java)
-* [stream collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/AsyncStreamCollectorExample.java)
+* [collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/CollectorExample.java)
+* [stream collector example](tiny-async-examples/src/example/java/eu/toolchain/examples/StreamCollectorExample.java)
 
 ## Retry Operation
 
@@ -216,7 +230,7 @@ This required TinyAsync to be configured with a `ScheduledExecutorService`.
 These operations implement a retry pattern, governed by a
 [`RetryPolicy`](tiny-async-api/src/main/java/eu/toolchain/concurrent/RetryPolicy.java).
 
-* `CompletionStage<RetryResult<T>> FutureFramework#retryUntilResolved(Callable<T>, RetryPolicy)`
+* `CompletionStage<RetryResult<T>> Async#retryUntilResolved(Callable<T>, RetryPolicy)`
 
 `retryUntilResolved(...)` returns a `RetryResult<T>` which contains the result
 of the operation, and any errors that happened for previous tries.
@@ -230,7 +244,7 @@ These are intended to be used for expensive setup, and teardown operations,
 where abruptly tearing the reference down while there are sessions using it can
 cause undesirable behaviour.
 
-* `Managed<T> FutureFramework#managed(Supplier<CompletionStage<T>> constructor, Function<T, CompletionStage<Void>> destructor)`
+* `Managed<T> Async#managed(Supplier<CompletionStage<T>> constructor, Function<T, CompletionStage<Void>> destructor)`
 * `CompletionStage<Void> Managed#start()`
 * `CompletionStage<Void> Managed#stop()`
 * `CompletionStage<U> Managed#doto(Function<T, U>)`

@@ -12,9 +12,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import eu.toolchain.concurrent.immediate.ImmediateCancelled;
-import eu.toolchain.concurrent.immediate.ImmediateCompleted;
-import eu.toolchain.concurrent.immediate.ImmediateFailed;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

@@ -1,10 +1,9 @@
 package eu.toolchain.perftests.jmh;
 
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import eu.toolchain.concurrent.CompletionStage;
-import eu.toolchain.concurrent.FutureFramework;
-import eu.toolchain.concurrent.TinyFuture;
+import eu.toolchain.concurrent.CoreAsync;
+import eu.toolchain.concurrent.Async;
 import java.util.ArrayList;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -12,7 +11,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 public class CollectFew {
   private static final int SIZE = 10;
 
-  private static FutureFramework async = TinyFuture.builder().build();
+  private static Async async = CoreAsync.builder().build();
 
   @Benchmark
   public void tiny() throws Exception {
@@ -30,9 +29,9 @@ public class CollectFew {
     final List<ListenableFuture<Boolean>> futures = new ArrayList<>();
 
     for (int i = 0; i < SIZE; i++) {
-      futures.add(Futures.immediateFuture(true));
+      futures.add(com.google.common.util.concurrent.Futures.immediateFuture(true));
     }
 
-    Futures.allAsList(futures).get();
+    com.google.common.util.concurrent.Futures.allAsList(futures).get();
   }
 }
