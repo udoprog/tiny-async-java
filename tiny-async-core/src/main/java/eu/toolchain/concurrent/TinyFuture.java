@@ -24,8 +24,7 @@ import java.util.function.Supplier;
 /**
  * Entry point to the tiny async framework.
  *
- * <h4>Example usage</h4>
- *
+ * <p>Example usage:<pre>
  * {@code
  *   TinyFuture async = TinyFuture.builder().caller(new Slf4jCaller()).build();
  *
@@ -34,7 +33,7 @@ import java.util.function.Supplier;
  *   someAsyncOperation(future);
  *
  *   future.on(new CompletionHandle<Integer>() {
- *     void resolved(Integer result) {
+ *     void completed(Integer result) {
  *       // hurray
  *     }
  *
@@ -43,6 +42,7 @@ import java.util.function.Supplier;
  *     }
  *   });
  * }
+ * </pre>
  */
 // @formatter:on
 public class TinyFuture implements FutureFramework {
@@ -211,9 +211,11 @@ public class TinyFuture implements FutureFramework {
 
   /**
    * Shortcut for when the list of futures is empty.
+   *
+   * @param collector collector to apply
    */
   @SuppressWarnings("unchecked")
-  protected <C, T> CompletionStage<T> doCollectEmpty(
+  <C, T> CompletionStage<T> doCollectEmpty(
       final Function<? super Collection<C>, ? extends T> collector
   ) {
     try {
@@ -237,9 +239,13 @@ public class TinyFuture implements FutureFramework {
 
   /**
    * Shortcut for when the list of futures is empty with {@link StreamCollector}.
+   *
+   * @param collector collector to apply
+   * @param <T> source type
+   * @param <U> target type
    */
-  protected <C, T> CompletionStage<T> doStreamCollectEmpty(
-      final StreamCollector<? super C, ? extends T> collector
+  <T, U> CompletionStage<U> doStreamCollectEmpty(
+      final StreamCollector<? super T, ? extends U> collector
   ) {
     try {
       return this.completed(collector.end(0, 0, 0));
@@ -248,16 +254,24 @@ public class TinyFuture implements FutureFramework {
     }
   }
 
-  protected <T, C> CompletionStage<T> doStreamCollect(
-      final Collection<? extends CompletionStage<? extends C>> futures,
-      final StreamCollector<? super C, ? extends T> collector
+  /**
+   * Perform collection for {@link StreamCollector}.
+   *
+   * @param futures futures to apply to collector
+   * @param collector collector to apply
+   * @param <T> source type
+   * @param <U> target type
+   */
+  <T, U> CompletionStage<U> doStreamCollect(
+      final Collection<? extends CompletionStage<? extends T>> futures,
+      final StreamCollector<? super T, ? extends U> collector
   ) {
-    final CompletableFuture<T> target = future();
+    final CompletableFuture<U> target = future();
 
-    final CollectStreamHelper<? super C, ? extends T> done =
+    final CollectStreamHelper<? super T, ? extends U> done =
         new CollectStreamHelper<>(caller, futures.size(), collector, target);
 
-    for (final CompletionStage<? extends C> q : futures) {
+    for (final CompletionStage<? extends T> q : futures) {
       q.handle(done);
     }
 
@@ -282,7 +296,7 @@ public class TinyFuture implements FutureFramework {
     return doEventuallyCollect(callables, collector, parallelism);
   }
 
-  protected <T, C> CompletionStage<T> doEventuallyCollectEmpty(
+  <T, C> CompletionStage<T> doEventuallyCollectEmpty(
       final StreamCollector<? super C, ? extends T> collector
   ) {
     final T value;
@@ -296,7 +310,7 @@ public class TinyFuture implements FutureFramework {
     return completed(value);
   }
 
-  protected <C, T> CompletionStage<T> doEventuallyCollectImmediate(
+  <C, T> CompletionStage<T> doEventuallyCollectImmediate(
       Collection<? extends Callable<? extends CompletionStage<? extends C>>> callables,
       StreamCollector<? super C, ? extends T> collector
   ) {
@@ -318,14 +332,24 @@ public class TinyFuture implements FutureFramework {
     return collect(futures, collector);
   }
 
-  protected <T, C> CompletionStage<T> doEventuallyCollect(
-      final Collection<? extends Callable<? extends CompletionStage<? extends C>>> callables,
-      final StreamCollector<? super C, ? extends T> collector, int parallelism
+  /**
+   * Perform an eventual collection.
+   *
+   * @param tasks tasks to invoke for futures
+   * @param collector collector to apply
+   * @param parallelism number of tasks to run in parallel
+   * @param <T> source type
+   * @param <U> target type
+   * @return a future
+   */
+  <T, U> CompletionStage<U> doEventuallyCollect(
+      final Collection<? extends Callable<? extends CompletionStage<? extends T>>> tasks,
+      final StreamCollector<? super T, ? extends U> collector, int parallelism
   ) {
     final ExecutorService executor = executor();
-    final CompletableFuture<T> future = future();
+    final CompletableFuture<U> future = future();
     executor.execute(
-        new DelayedCollectCoordinator<>(caller, callables, collector, future, parallelism));
+        new DelayedCollectCoordinator<>(caller, tasks, collector, future, parallelism));
     return future;
   }
 
@@ -340,7 +364,13 @@ public class TinyFuture implements FutureFramework {
     return doCollectAndDiscard(futures);
   }
 
-  protected CompletionStage<Void> doCollectAndDiscard(
+  /**
+   * Perform a collect and discard.
+   *
+   * @param futures futures to discard
+   * @return a future
+   */
+  CompletionStage<Void> doCollectAndDiscard(
       Collection<? extends CompletionStage<?>> futures
   ) {
     final CompletableFuture<Void> target = future();
@@ -374,7 +404,7 @@ public class TinyFuture implements FutureFramework {
   /**
    * Build a new TinyFuture instance.
    *
-   * @return A builder for the TinyFuture instance.
+   * @return a builder for the TinyFuture instance
    */
   public static TinyFutureBuilder builder() {
     return new TinyFutureBuilder();
@@ -387,8 +417,8 @@ public class TinyFuture implements FutureFramework {
    * @param target The future to cancel, and fail on.
    * @param futures The futures to cancel, when {@code target} is cancelled.
    */
-  protected <T> void bindSignals(
-      final CompletionStage<T> target, final Collection<? extends CompletionStage<?>> futures
+  void bindSignals(
+      final CompletionStage<?> target, final Collection<? extends CompletionStage<?>> futures
   ) {
     target.whenCancelled(() -> {
       for (final CompletionStage<?> f : futures) {
@@ -415,7 +445,7 @@ public class TinyFuture implements FutureFramework {
 
     final CompletableFuture<T> future = future();
 
-    final RetryPolicy.Instance policyInstance = policy.apply(clockSource);
+    final Supplier<RetryDecision> policyInstance = policy.newInstance(clockSource);
 
     final long start = clockSource.now();
 

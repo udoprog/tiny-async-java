@@ -10,8 +10,8 @@ public final class ExecutorFutureCaller implements FutureCaller {
   private final FutureCaller caller;
 
   @Override
-  public <T> void resolve(final CompletionHandle<T> handle, final T result) {
-    executor.execute(() -> caller.resolve(handle, result));
+  public <T> void complete(final CompletionHandle<T> handle, final T result) {
+    executor.execute(() -> caller.complete(handle, result));
   }
 
   @Override
@@ -25,23 +25,23 @@ public final class ExecutorFutureCaller implements FutureCaller {
   }
 
   @Override
-  public void cancel(final Runnable cancelled) {
-    executor.execute(() -> caller.cancel(cancelled));
+  public void cancel(final Runnable runnable) {
+    executor.execute(() -> caller.cancel(runnable));
   }
 
   @Override
-  public void finish(final Runnable finishable) {
-    executor.execute(() -> caller.finish(finishable));
+  public void finish(final Runnable runnable) {
+    executor.execute(() -> caller.finish(runnable));
   }
 
   @Override
-  public <T> void resolve(final Consumer<T> resolved, final T value) {
-    executor.execute(() -> caller.resolve(resolved, value));
+  public <T> void complete(final Consumer<T> consumer, final T value) {
+    executor.execute(() -> caller.complete(consumer, value));
   }
 
   @Override
-  public <T, R> void resolve(final StreamCollector<T, R> collector, final T result) {
-    executor.execute(() -> caller.resolve(collector, result));
+  public <T, R> void complete(final StreamCollector<T, R> collector, final T result) {
+    executor.execute(() -> caller.complete(collector, result));
   }
 
   @Override
@@ -55,8 +55,8 @@ public final class ExecutorFutureCaller implements FutureCaller {
   }
 
   @Override
-  public void fail(final Consumer<? super Throwable> failed, final Throwable cause) {
-    executor.execute(() -> caller.fail(failed, cause));
+  public void fail(final Consumer<? super Throwable> consumer, final Throwable cause) {
+    executor.execute(() -> caller.fail(consumer, cause));
   }
 
   @Override

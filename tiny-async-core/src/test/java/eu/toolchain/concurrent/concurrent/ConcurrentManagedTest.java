@@ -26,7 +26,6 @@ import eu.toolchain.concurrent.CompletionHandle;
 import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
 import eu.toolchain.concurrent.FutureFramework;
-import eu.toolchain.concurrent.ManagedAction;
 import eu.toolchain.concurrent.concurrent.ConcurrentManaged.ValidBorrowed;
 import eu.toolchain.concurrent.immediate.ImmediateCancelled;
 import eu.toolchain.concurrent.immediate.ImmediateFailed;
@@ -60,7 +59,7 @@ public class ConcurrentManagedTest {
   @Mock
   private Borrowed<Object> borrowed;
   @Mock
-  private ManagedAction<Object, Object> action;
+  private Function<Object, CompletionStage<Object>> action;
   @Mock
   private CompletableFuture<Void> startFuture;
   @Mock
@@ -73,8 +72,6 @@ public class ConcurrentManagedTest {
   private CompletionStage<Object> future;
   @Mock
   private CompletionStage<Object> f;
-  @Mock
-  private Runnable finished;
   @Mock
   private CompletionStage<Void> transformed;
   @Mock
@@ -146,29 +143,27 @@ public class ConcurrentManagedTest {
 
   private void setupDoto(boolean valid, boolean throwing) throws Exception {
     doReturn(borrowed).when(underTest).borrow();
-    doReturn(finished).when(borrowed).releasing();
     doReturn(valid).when(borrowed).isValid();
     doReturn(future).when(async).cancelled();
     doReturn(future).when(async).failed(e);
     doReturn(reference).when(borrowed).get();
 
     if (throwing) {
-      doThrow(e).when(action).action(reference);
+      doThrow(e).when(action).apply(reference);
     } else {
-      doReturn(f).when(action).action(reference);
+      doReturn(f).when(action).apply(reference);
     }
 
-    doReturn(future).when(f).whenFinished(finished);
+    doReturn(future).when(f).whenFinished(any(Runnable.class));
   }
 
   private void verifyDoto(boolean valid, boolean throwing) throws Exception {
     verify(underTest).borrow();
     verify(borrowed).isValid();
     verify(borrowed, times(valid ? 1 : 0)).get();
-    verify(borrowed, times(valid && !throwing ? 1 : 0)).releasing();
     verify(borrowed, times(throwing ? 1 : 0)).release();
-    verify(action, times(valid ? 1 : 0)).action(reference);
-    verify(f, times(valid && !throwing ? 1 : 0)).whenFinished(finished);
+    verify(action, times(valid ? 1 : 0)).apply(reference);
+    verify(f, times(valid && !throwing ? 1 : 0)).whenFinished(any(Runnable.class));
   }
 
   @Test
@@ -415,13 +410,10 @@ public class ConcurrentManagedTest {
   public void testInvalidBorrow() throws Exception {
     final ConcurrentManaged.InvalidBorrowed<Object> invalid =
         new ConcurrentManaged.InvalidBorrowed<>();
-    ConcurrentManaged.InvalidBorrowed.FINISHED.run();
-
     // do nothing implementations
     invalid.close();
     invalid.release();
 
-    assertEquals(ConcurrentManaged.InvalidBorrowed.FINISHED, invalid.releasing());
     assertFalse(invalid.isValid());
 
     try {
@@ -463,17 +455,6 @@ public class ConcurrentManagedTest {
 
     doNothing().when(valid).release();
     valid.close();
-    verify(valid).release();
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testReleasing() throws Exception {
-    final ConcurrentManaged<Object> managed = mock(ConcurrentManaged.class);
-    final ValidBorrowed valid = spy(managed.new ValidBorrowed(reference, stack));
-
-    doNothing().when(valid).release();
-    valid.releasing().run();
     verify(valid).release();
   }
 

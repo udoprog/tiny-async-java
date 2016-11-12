@@ -44,7 +44,7 @@ public class CollectStreamHelperTest {
     when(collector.end(1, 1, 0)).thenReturn(transformed);
 
     helper.resolved(result);
-    verify(caller).resolve(collector, result);
+    verify(caller).complete(collector, result);
     verify(target, never()).complete(transformed);
 
     helper.failed(e);
@@ -61,7 +61,7 @@ public class CollectStreamHelperTest {
     when(collector.end(1, 0, 1)).thenReturn(transformed);
 
     helper.resolved(result);
-    verify(caller).resolve(collector, result);
+    verify(caller).complete(collector, result);
     verify(target, never()).complete(transformed);
 
     helper.cancelled();
@@ -78,12 +78,12 @@ public class CollectStreamHelperTest {
     when(collector.end(2, 0, 0)).thenReturn(transformed);
 
     helper.resolved(result);
-    verify(caller).resolve(collector, result);
+    verify(caller).complete(collector, result);
     verify(target, never()).complete(transformed);
 
     helper.resolved(result);
     verify(collector).end(2, 0, 0);
-    verify(caller, times(2)).resolve(collector, result);
+    verify(caller, times(2)).complete(collector, result);
     verify(target).complete(transformed);
   }
 
@@ -95,7 +95,7 @@ public class CollectStreamHelperTest {
     when(collector.end(1, 0, 0)).thenThrow(e);
 
     helper.resolved(result);
-    verify(caller).resolve(collector, result);
+    verify(caller).complete(collector, result);
     verify(target).fail(any(Exception.class));
   }
 }

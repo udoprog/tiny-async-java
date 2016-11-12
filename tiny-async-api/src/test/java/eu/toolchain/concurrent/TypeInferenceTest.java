@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -19,6 +20,7 @@ import org.mockito.Mockito;
 public class TypeInferenceTest {
   private FutureFramework async;
 
+  @Before
   public void setup() {
     this.async = Mockito.mock(FutureFramework.class);
   }

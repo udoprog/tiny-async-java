@@ -44,7 +44,7 @@ public class CollectStreamHelper<S, T> implements CompletionHandle<S> {
   @Override
   public void resolved(S result) throws Exception {
     successful.incrementAndGet();
-    caller.resolve(collector, result);
+    caller.complete(collector, result);
     check();
   }
 

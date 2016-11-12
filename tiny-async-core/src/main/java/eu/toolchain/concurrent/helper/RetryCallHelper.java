@@ -4,8 +4,8 @@ import eu.toolchain.concurrent.ClockSource;
 import eu.toolchain.concurrent.CompletableFuture;
 import eu.toolchain.concurrent.CompletionHandle;
 import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.RetryDecision;
 import eu.toolchain.concurrent.RetryException;
-import eu.toolchain.concurrent.RetryPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -13,11 +13,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
- * A helper class for retry-until-resolved behaviour.
+ * A helper class for retry-until-completed behaviour.
  * <p>
- * retry-until-resolved is provided by {@link eu.toolchain.concurrent
+ * retry-until-completed is provided by {@link eu.toolchain.concurrent
  * .FutureFramework#retryUntilCompleted(java.util.concurrent.Callable,
  * eu.toolchain.async.RetryPolicy)}.
  *
@@ -27,7 +28,7 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
   private final long start;
   private final ScheduledExecutorService scheduler;
   private final Callable<? extends CompletionStage<? extends T>> action;
-  private final RetryPolicy.Instance policyInstance;
+  private final Supplier<RetryDecision> policyInstance;
   private final CompletableFuture<T> future;
   private final ClockSource clockSource;
 
@@ -41,7 +42,7 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
   public RetryCallHelper(
       final long start, final ScheduledExecutorService scheduler,
       final Callable<? extends CompletionStage<? extends T>> callable,
-      final RetryPolicy.Instance policyInstance, final CompletableFuture<T> future,
+      final Supplier<RetryDecision> policyInstance, final CompletableFuture<T> future,
       final ClockSource clockSource
   ) {
     this.start = start;
@@ -58,7 +59,7 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
 
   @Override
   public void failed(final Throwable cause) throws Exception {
-    final RetryPolicy.Decision decision = policyInstance.next();
+    final RetryDecision decision = policyInstance.get();
 
     if (!decision.shouldRetry()) {
       for (final Throwable suppressed : errors) {

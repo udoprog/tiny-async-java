@@ -9,15 +9,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The asynchronous framework.
- * <p>
- * This type is intended to be passed around in your application, preferably through dependency
+ * Entry-point of the future framework.
+ *
+ * <p>This type is intended to be passed around in your application, preferably through dependency
  * injection.
- * <p>
- * It makes the contract between the framework and your application decoupled, which has several
+ *
+ * <p>It makes the contract between the framework and your application decoupled, which has several
  * benefits for your application's code (see README for details).
- * <p>
- * All methods exposed are fully thread-safe.
  *
  * @author udoprog
  */
@@ -73,7 +71,11 @@ public interface FutureFramework {
   <T> CompletionStage<T> cancelled();
 
   /**
-   * Array-based collecting.
+   * Collect the result of multiple futures from a stream.
+   *
+   * @param stream stream to collect futures from
+   * @param <T> type of the collected futures
+   * @return a new future
    */
   default <T> CompletionStage<Collection<T>> collect(
       final Stream<? extends CompletionStage<T>> stream
@@ -225,11 +227,12 @@ public interface FutureFramework {
   );
 
   /**
-   * Retry the given operation until it has been completed, or the provided {@link
+   * Retry the given action until it has been completed, or the provided {@link
    * eu.toolchain.concurrent.RetryPolicy} expire.
    *
-   * @param callable operation to run
+   * @param callable action to run
    * @param policy retry policy to use
+   * @param <T> the type returned by the action
    * @return a future tied to the operation
    * @see #retryUntilCompleted(java.util.concurrent.Callable, RetryPolicy, ClockSource)
    */
@@ -238,12 +241,13 @@ public interface FutureFramework {
   );
 
   /**
-   * Retry the given operation until it has been completed, or the provided {@link
+   * Retry the given action until it has been completed, or the provided {@link
    * eu.toolchain.concurrent.RetryPolicy} expire.
    *
-   * @param callable operation to run
+   * @param callable action to run
    * @param policy retry policy to use
    * @param clockSource clock source to use
+   * @param <T> the type returned by the action
    * @return a future tied to the operation
    */
   <T> CompletionStage<RetryResult<T>> retryUntilCompleted(

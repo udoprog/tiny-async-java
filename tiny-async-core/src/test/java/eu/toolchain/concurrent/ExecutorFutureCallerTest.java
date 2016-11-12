@@ -59,9 +59,9 @@ public class ExecutorFutureCallerTest {
 
   @Test
   public void testResolveFutureDone() {
-    underTest.resolve(done, result);
+    underTest.complete(done, result);
     verify(executor).execute(any(Runnable.class));
-    verify(caller).resolve(done, result);
+    verify(caller).complete(done, result);
   }
 
   @Test
@@ -94,9 +94,9 @@ public class ExecutorFutureCallerTest {
 
   @Test
   public void testRunFutureResolved() {
-    underTest.resolve(resolved, result);
+    underTest.complete(resolved, result);
     verify(executor).execute(any(Runnable.class));
-    verify(caller).resolve(resolved, result);
+    verify(caller).complete(resolved, result);
   }
 
   @Test
@@ -108,9 +108,9 @@ public class ExecutorFutureCallerTest {
 
   @Test
   public void testResolveStreamCollector() {
-    underTest.resolve(streamCollector, result);
+    underTest.complete(streamCollector, result);
     verify(executor).execute(any(Runnable.class));
-    verify(caller).resolve(streamCollector, result);
+    verify(caller).complete(streamCollector, result);
   }
 
   @Test

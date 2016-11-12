@@ -10,30 +10,28 @@ import java.util.function.Supplier;
 
 /**
  * An interface that defines a contract with a computation that could be asynchronous.
- * <p>
- * <h1>Thread Safety</h1>
- * <p>
- * All methods exposed in {@code CompletionStage} are fully <em>thread-safe</em>, guaranteeing that
- * interactions with the future are atomic.
- * <p>
- * <h1>States</h1>
- * <p>
- * A future has four states.
- * <ul>
+ *
+ * <p>All methods exposed in {@code CompletionStage} are fully <em>thread-safe</em>, guaranteeing
+ * that interactions with the future are atomic.
+ *
+ * <p>A future has four states:<ul>
+ *
  * <li><em>running</em>, which indicates that the future is currently active, and has not reached an
  * end-state.</li>
+ *
  * <li><em>completed</em>, which indicates that the computation was successful, and produced a
  * result.</li>
+ *
  * <li><em>failed</em>, which indicates that the computation failed through an exception, which can
  * be fetched for inspection.</li>
- * <li><em>cancelled</em>, which indicates that the computation was cancelled.</li>
- * </ul>
- * <p>
- * The last three states are characterized as <em>end states</em>, a future can only transition into
- * one of these, and when in an end-state will never go into another state. If a future is in and
- * end state it is considered <em>done</em>, as is indicated by the {@link #isDone()} method.
- * <p>
- * A stage is typically used in combination with future computations.
+ *
+ * <li><em>cancelled</em>, which indicates that the computation was cancelled.</li></ul>
+ *
+ * <p>The last three states are characterized as <em>end states</em>, a future can only transition
+ * into one of these, and when in an end-state will never go into another state. If a future is in
+ * and end state it is considered <em>done</em>, as is indicated by the {@link #isDone()} method.
+ *
+ * <p>A stage is typically used in combination with future computations.
  *
  * @param <T> the type being provided by the future
  * @author udoprog
@@ -53,18 +51,23 @@ public interface CompletionStage<T> {
    * Get the result of the future.
    *
    * @return the result of the computation
-   * @throws ExecutionException if the computation threw an exception
-   * @throws CancellationException if the computation was cancelled
+   * @throws ExecutionException when the underlying computation throws an exception
+   * @throws CancellationException when the computation was cancelled
+   * @throws InterruptedException when this thread is interrupted
    */
   T join() throws ExecutionException, InterruptedException;
 
   /**
    * Get the result of the future.
    *
+   * @param timeout timeout after which {@link java.util.concurrent.TimeoutException} will be
+   * thrown.
+   * @param unit unit of the timeout
    * @return the result of the computation
-   * @throws ExecutionException if the computation threw an exception
+   * @throws ExecutionException when the underlying computation throws an exception
    * @throws CancellationException if the computation was cancelled
-   * @throws TimeoutException if the computation does not finish within the given timeout
+   * @throws TimeoutException when the computation does not finish within the given timeout
+   * @throws InterruptedException when this thread is interrupted
    */
   T join(long timeout, TimeUnit unit)
       throws ExecutionException, InterruptedException, TimeoutException;
@@ -74,7 +77,7 @@ public interface CompletionStage<T> {
    *
    * @return the result of the computation
    * @throws IllegalStateException if the result is not available
-   * @throws ExecutionException if the computation threw an exception
+   * @throws ExecutionException when the underlying computation throws an exception
    * @throws CancellationException if the computation was cancelled
    */
   T joinNow() throws ExecutionException;
@@ -87,9 +90,9 @@ public interface CompletionStage<T> {
   boolean isDone();
 
   /**
-   * Check if future is resolved.
+   * Check if future is completed.
    *
-   * @return {@code true} if the future is in a resolved state, otherwise {@code false}.
+   * @return {@code true} if the future is in a completed state, otherwise {@code false}.
    */
   boolean isCompleted();
 
@@ -126,7 +129,7 @@ public interface CompletionStage<T> {
   CompletionStage<T> bind(CompletionStage<?> other);
 
   /**
-   * Register a listener that is called on all three types of events for this future; resolved,
+   * Register a listener that is called on all three types of events for this future; completed,
    * failed, and cancelled.
    *
    * @param handle handle to register
@@ -151,7 +154,7 @@ public interface CompletionStage<T> {
   CompletionStage<T> whenCancelled(Runnable runnable);
 
   /**
-   * Register a listener to be called when this future is resolved.
+   * Register a listener to be called when this future is completed.
    *
    * @param consumer listener to register
    * @return this future
@@ -167,22 +170,13 @@ public interface CompletionStage<T> {
   CompletionStage<T> whenFailed(Consumer<? super Throwable> consumer);
 
   /**
-   * Transforms the value of this future into another type using a transformer function.
-   * <p>
-   * <pre>
-   * Future<T> (this) - *using transformer* -> Future<C>
-   * </pre>
-   * <p>
-   * Use this if the transformation performed does not require any more async operations.
-   * <p>
-   * <pre>
-   * {@code
-   *   Future<Integer> first = asyncOperation();
-   *   Future<Double> second = future.thenApply(result -> result.doubleValue());
+   * Transform the value of this future into another type using an immediate function.
    *
-   *   # use second
-   * }
-   * </pre>
+   * <p>Translates the result of a completed future as it becomes available:
+   *
+   * <pre>{@code
+   *   operation().thenApply(result -> result / 2);
+   * }</pre>
    *
    * @param <U> the type of the newly applied future
    * @param fn transformation to use
@@ -191,23 +185,13 @@ public interface CompletionStage<T> {
   <U> CompletionStage<U> thenApply(Function<? super T, ? extends U> fn);
 
   /**
-   * Transforms the value of one future into another using a deferred transformer function.
-   * <p>
-   * <pre>
-   * Future<T> (this) - *using deferred transformer* -> Future<C>
-   * </pre>
-   * <p>
-   * A deferred transformer is expected to return a compatible future that when resolved will
-   * complete the future that this function returns.
-   * <p>
-   * <pre>
-   * {@code
-   *   Future<Integer> first = asyncOperation();
-   *   Future<Double> second = first.thenCompose(result -> otherAsyncOperation(result));
+   * Transform the value of one future into another using an asynchronous function.
    *
-   *   # use second
-   * }
-   * </pre>
+   * <p>Translates the result of a completed future as it becomes available:
+   *
+   * <pre>{@code
+   *   operation().thenCompose(result -> otherOperation(result));
+   * }</pre>
    *
    * @param <U> type of the composed future
    * @param fn the function to use when transforming the value

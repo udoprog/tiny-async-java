@@ -19,13 +19,13 @@ public interface CompletionHandle<T> {
   void failed(Throwable cause) throws Exception;
 
   /**
-   * Handle to be called when the underlying future is resolved.
+   * Handle to be called when the underlying future is completed.
    *
-   * @param result The result of the resolved future.
-   * @throws Exception if the resolved future cannot be handled, will <em>not</em> cause the target
+   * @param result The result of the completed future.
+   * @throws Exception if the completed future cannot be handled, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
-   * FutureCaller#resolve(CompletionHandle, Object)}.
-   * @see FutureCaller#resolve(CompletionHandle, Object)
+   * FutureCaller#complete(CompletionHandle, Object)}.
+   * @see FutureCaller#complete(CompletionHandle, Object)
    */
   void resolved(T result) throws Exception;
 

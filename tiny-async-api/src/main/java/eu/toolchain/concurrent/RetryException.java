@@ -1,5 +1,8 @@
 package eu.toolchain.concurrent;
 
+/**
+ * An exception class containing detailed information about when a retried operation failed.
+ */
 public class RetryException extends RuntimeException {
   private final long offset;
 
@@ -8,6 +11,11 @@ public class RetryException extends RuntimeException {
     this.offset = offset;
   }
 
+  /**
+   * Offset from start time in milliseconds that this failure happened.
+   *
+   * @return milliseconds
+   */
   public long getOffsetMillis() {
     return offset;
   }

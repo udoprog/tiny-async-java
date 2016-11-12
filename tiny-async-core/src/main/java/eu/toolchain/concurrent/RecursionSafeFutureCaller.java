@@ -34,8 +34,8 @@ public final class RecursionSafeFutureCaller implements FutureCaller {
   }
 
   @Override
-  public <T> void resolve(final CompletionHandle<T> handle, final T result) {
-    execute(() -> caller.resolve(handle, result));
+  public <T> void complete(final CompletionHandle<T> handle, final T result) {
+    execute(() -> caller.complete(handle, result));
   }
 
   @Override
@@ -49,23 +49,23 @@ public final class RecursionSafeFutureCaller implements FutureCaller {
   }
 
   @Override
-  public void cancel(final Runnable cancelled) {
-    execute(() -> caller.cancel(cancelled));
+  public void cancel(final Runnable runnable) {
+    execute(() -> caller.cancel(runnable));
   }
 
   @Override
-  public void finish(final Runnable finishable) {
-    execute(() -> caller.finish(finishable));
+  public void finish(final Runnable runnable) {
+    execute(() -> caller.finish(runnable));
   }
 
   @Override
-  public <T> void resolve(final Consumer<T> resolved, final T value) {
-    execute(() -> caller.resolve(resolved, value));
+  public <T> void complete(final Consumer<T> consumer, final T value) {
+    execute(() -> caller.complete(consumer, value));
   }
 
   @Override
-  public <T, R> void resolve(final StreamCollector<T, R> collector, final T result) {
-    execute(() -> caller.resolve(collector, result));
+  public <T, R> void complete(final StreamCollector<T, R> collector, final T result) {
+    execute(() -> caller.complete(collector, result));
   }
 
   @Override
@@ -79,8 +79,8 @@ public final class RecursionSafeFutureCaller implements FutureCaller {
   }
 
   @Override
-  public void fail(final Consumer<? super Throwable> failed, final Throwable cause) {
-    execute(() -> caller.fail(failed, cause));
+  public void fail(final Consumer<? super Throwable> consumer, final Throwable cause) {
+    execute(() -> caller.fail(consumer, cause));
   }
 
   @Override

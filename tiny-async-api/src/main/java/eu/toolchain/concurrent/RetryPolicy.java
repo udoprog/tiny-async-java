@@ -1,77 +1,94 @@
 package eu.toolchain.concurrent;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
 /**
  * A policy that governs how and when an operation should be retried.
- * <p>
- * Policies decide if a retry should be performed or not by expiring after some given parameters.
+ *
+ * <p>Policies decide if a retry should be performed or not by expiring after some given parameters.
+ *
+ * <p>Policies are factories, and do not maintain any state in themselves. They can be safely
+ * re-used like this:
+ *
+ * <pre>{@code
+ *   public class Main {
+ *     public static final RetryPolicy LINEAR =
+ *         timed(10, TimeUnit.SECONDS, linear(10, TimeUnit.MILLISECONDS))
+ *   }
+ * }</pre>
  */
+@FunctionalInterface
 public interface RetryPolicy {
   /**
-   * Apply the current policy.
+   * Create a new instance of the policy.
    *
-   * @return The decision arising from applying the current policy.
+   * <p>the provided instance may only be used by one thread at a time
+   *
+   * @param clockSource clock source to use in the instance
+   * @return a policy instance
    */
-  Instance apply(ClockSource clockSource);
+  Supplier<RetryDecision> newInstance(ClockSource clockSource);
 
-  static RetryPolicy linear(long backoff) {
-    return new Linear(backoff);
+  /**
+   * Build a linear retry policy.
+   *
+   * @param duration linear backoff to as a duration to apply
+   * @param unit unit of duration
+   * @return a new retry policy
+   */
+  static RetryPolicy linear(final long duration, final TimeUnit unit) {
+    return new Linear(ClockSource.UNIT.convert(duration, unit));
   }
 
   /**
    * Setup an exponential backoff retry policy.
    *
-   * @param base The base time to backoff in milliseconds.
-   * @return An exponential retry policy.
+   * @param duration the base time to backoff in milliseconds
+   * @param unit unit of duration
+   * @return an exponential retry policy
    */
-  static RetryPolicy exponential(long base) {
-    return exponential(base, (long) (base * Math.pow(2, 5)));
-  }
-
-  /**
-   * Setup an exponential backoff retry policy.
-   *
-   * @param base The base time to backoff in milliseconds.
-   * @param max The maximum allowed backoff in milliseconds.
-   * @return An exponential retry policy.
-   */
-  static RetryPolicy exponential(long base, long max) {
-    return new Exponential(base, max);
+  static ExponentialBuilder exponential(final long duration, final TimeUnit unit) {
+    final long base = ClockSource.UNIT.convert(duration, unit);
+    return new ExponentialBuilder(base);
   }
 
   /**
    * Wrap an existing retry policy which is only valid for a given time.
-   * <p>
-   * This allows you to provide a custom clock source.
    *
-   * @param duration The duration for which the policy should be valid.
-   * @param policy The policy to wrap.
-   * @return A timed retry policy.
+   * <p>This allows you to provide a custom clock source.
+   *
+   * @param duration the duration for which the policy should be valid
+   * @param unit time unit of the duration
+   * @param policy the policy to wrap
+   * @return a timed retry policy
    */
-  static RetryPolicy timed(long duration, RetryPolicy policy) {
-    return new Timed(duration, policy);
+  static RetryPolicy timed(final long duration, final TimeUnit unit, final RetryPolicy policy) {
+    return new Timed(ClockSource.UNIT.convert(duration, unit), policy);
   }
 
   /**
-   * A timed retry policy.
+   * Implementation for the timed retry policy.
    */
   class Timed implements RetryPolicy {
     private final long duration;
     private final RetryPolicy policy;
 
-    public Timed(final long duration, final RetryPolicy policy) {
+    Timed(final long duration, final RetryPolicy policy) {
       this.duration = duration;
       this.policy = policy;
     }
 
     @Override
-    public Instance apply(ClockSource clockSource) {
+    public Supplier<RetryDecision> newInstance(ClockSource clockSource) {
       final long deadline = clockSource.now() + duration;
-      final Instance inner = policy.apply(clockSource);
+      final Supplier<RetryDecision> inner = policy.newInstance(clockSource);
 
       return () -> {
-        final Decision child = inner.next();
-        final boolean shouldRetry = clockSource.now() < deadline && child.shouldRetry();
-        return new Decision(shouldRetry, child.backoff());
+        final RetryDecision d = inner.get();
+        final boolean shouldRetry = clockSource.now() < deadline && d.shouldRetry();
+        return new RetryDecision(shouldRetry, d.backoff());
       };
     }
 
@@ -82,18 +99,18 @@ public interface RetryPolicy {
   }
 
   /**
-   * A linear retry policy.
+   * Implementation for the linear retry policy.
    */
   class Linear implements RetryPolicy {
     private final long backoff;
 
-    public Linear(final long backoff) {
+    Linear(final long backoff) {
       this.backoff = backoff;
     }
 
     @Override
-    public Instance apply(ClockSource clockSource) {
-      final Decision decision = new Decision(true, backoff);
+    public Supplier<RetryDecision> newInstance(ClockSource clockSource) {
+      final RetryDecision decision = new RetryDecision(true, backoff);
       return () -> decision;
     }
 
@@ -104,19 +121,21 @@ public interface RetryPolicy {
   }
 
   /**
-   * An exponential retry policy.
+   * Implementation for the exponential retry policy.
    */
   class Exponential implements RetryPolicy {
     private final long base;
+    private final double factor;
     private final long max;
 
-    public Exponential(final long base, final long max) {
+    Exponential(final long base, final double factor, final long max) {
       this.base = base;
+      this.factor = factor;
       this.max = max;
     }
 
     @Override
-    public Instance apply(ClockSource clockSource) {
+    public Supplier<RetryDecision> newInstance(ClockSource clockSource) {
       return new ExponentialInstance();
     }
 
@@ -125,12 +144,12 @@ public interface RetryPolicy {
       return "Exponential(base=" + base + ", base=" + base + ")";
     }
 
-    private class ExponentialInstance implements Instance {
+    private class ExponentialInstance implements Supplier<RetryDecision> {
       int attempt = 0;
 
       @Override
-      public Decision next() {
-        return new Decision(true, calculateBackoff());
+      public RetryDecision get() {
+        return new RetryDecision(true, calculateBackoff());
       }
 
       private long calculateBackoff() {
@@ -138,8 +157,8 @@ public interface RetryPolicy {
           return max;
         }
 
-        int a = attempt++;
-        final long candidate = (long) (base * Math.pow(2, a));
+        final int a = attempt++;
+        final long candidate = (long) (base * Math.pow(factor, a));
 
         if (candidate <= max) {
           return candidate;
@@ -153,42 +172,49 @@ public interface RetryPolicy {
   }
 
   /**
-   * The decision of an applied retry policy.
+   * Builder of exponential retry policies.
    */
-  class Decision {
-    private final boolean shouldRetry;
-    private final long backoff;
+  class ExponentialBuilder {
+    private final long base;
 
-    public Decision(final boolean shouldRetry, final long backoff) {
-      this.shouldRetry = shouldRetry;
-      this.backoff = backoff;
+    ExponentialBuilder(final long base) {
+      this.base = base;
+    }
+
+    private Optional<Long> max = Optional.empty();
+    private Optional<Double> factor = Optional.empty();
+
+    /**
+     * Max possible delay.
+     *
+     * @param duration duration of max possible delay
+     * @param unit unit of duration
+     * @return this builder
+     */
+    public ExponentialBuilder max(final long duration, final TimeUnit unit) {
+      this.max = Optional.of(ClockSource.UNIT.convert(duration, unit));
+      return this;
     }
 
     /**
-     * If another retry should be attemped.
+     * Factor to use when increasing the retry delay.
      *
-     * @return {@code true} if the operation should be retried, {@code false} othwerise.
+     * @param factor number that must be greater than 1
+     * @return this builder
      */
-    public boolean shouldRetry() {
-      return shouldRetry;
+    public ExponentialBuilder factor(final double factor) {
+      if (factor <= 1.0D) {
+        throw new IllegalArgumentException("factor: must be greater than 1");
+      }
+
+      this.factor = Optional.of(factor);
+      return this;
     }
 
-    /**
-     * How many milliseconds should the retry wait for until it can be retried.
-     *
-     * @return The number of milliseconds the retry should back off for.
-     */
-    public long backoff() {
-      return backoff;
+    public Exponential build() {
+      final double factor = this.factor.orElse(2D);
+      final long max = this.max.orElse((long) (base * Math.pow(factor, 5D)));
+      return new Exponential(base, factor, max);
     }
-
-    @Override
-    public String toString() {
-      return "Decision(shouldRetry=" + shouldRetry + ", backoff=" + backoff + ")";
-    }
-  }
-
-  interface Instance {
-    Decision next();
   }
 }

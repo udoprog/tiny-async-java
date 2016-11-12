@@ -7,7 +7,6 @@ import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
 import eu.toolchain.concurrent.FutureFramework;
 import eu.toolchain.concurrent.Managed;
-import eu.toolchain.concurrent.ManagedAction;
 import eu.toolchain.concurrent.TinyStackUtils;
 import eu.toolchain.concurrent.immediate.ImmediateCancelled;
 import eu.toolchain.concurrent.immediate.ImmediateFailed;
@@ -50,11 +49,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
   // composite future that depends on zero-lease, and stop-reference.
   private final CompletionStage<Void> stopFuture;
-
   private final Set<ValidBorrowed> traces;
 
-  final AtomicReference<ManagedState> state =
-      new AtomicReference<ManagedState>(ManagedState.INITIALIZED);
+  final AtomicReference<ManagedState> state = new AtomicReference<>(ManagedState.INITIALIZED);
 
   /**
    * The number of borrowed references that are out in the wild.
@@ -77,7 +74,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
         stopFuture);
   }
 
-  protected ConcurrentManaged(
+  ConcurrentManaged(
       final FutureCaller caller, final Supplier<? extends CompletionStage<T>> setup,
       final CompletableFuture<Void> startFuture, final CompletableFuture<Void> zeroLeaseFuture,
       final CompletableFuture<T> stopReferenceFuture, final CompletionStage<Void> stopFuture
@@ -98,11 +95,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   @Override
-  public <R> CompletionStage<R> doto(final ManagedAction<T, R> action) {
-    // pre-emptively increase the number of leases in order to prevent the underlying object
-    // (if valid) to be
-    // allocated.
-
+  public <R> CompletionStage<R> doto(
+      final Function<? super T, ? extends CompletionStage<R>> action
+  ) {
     final Borrowed<T> b = borrow();
 
     if (!b.isValid()) {
@@ -114,20 +109,19 @@ public class ConcurrentManaged<T> implements Managed<T> {
     final CompletionStage<R> f;
 
     try {
-      f = action.action(reference);
-    } catch (Exception e) {
+      f = action.apply(reference);
+    } catch (final Exception e) {
       b.release();
       return new ImmediateFailed<>(caller, e);
     }
 
-    return f.whenFinished(b.releasing());
+    return f.whenFinished(b::release);
   }
 
   @Override
   public Borrowed<T> borrow() {
-    // pre-emptively increase the number of leases in order to prevent the underlying object
-    // (if valid) to be
-    // allocated.
+    /* pre-emptively increase the number of leases in order to prevent the underlying object
+     * (if valid) from being de-allocated. */
     retain();
 
     final T value = reference.get();
@@ -257,12 +251,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   static class InvalidBorrowed<T> implements Borrowed<T> {
-    static Runnable FINISHED = new Runnable() {
-      @Override
-      public void run() {
-      }
-    };
-
     @Override
     public void close() {
     }
@@ -279,11 +267,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     @Override
     public void release() {
-    }
-
-    @Override
-    public Runnable releasing() {
-      return FINISHED;
     }
   }
 
@@ -313,11 +296,6 @@ public class ConcurrentManaged<T> implements Managed<T> {
       }
 
       ConcurrentManaged.this.release();
-    }
-
-    @Override
-    public Runnable releasing() {
-      return this::release;
     }
 
     @Override

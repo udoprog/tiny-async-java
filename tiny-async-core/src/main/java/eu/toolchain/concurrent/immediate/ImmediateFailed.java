@@ -13,9 +13,9 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * A callback which has already been resolved as 'failed'.
+ * A future which has already failed.
  *
- * @param <T>
+ * @param <T> type of the future
  */
 @EqualsAndHashCode(of = {"cause"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"cause"})

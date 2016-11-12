@@ -28,7 +28,7 @@ public class AsyncStreamCollectorExample {
           private final AtomicInteger result = new AtomicInteger();
 
           @Override
-          public void resolved(Integer result) throws Exception {
+          public void completed(Integer result) throws Exception {
             this.result.addAndGet(result);
           }
 

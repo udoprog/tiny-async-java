@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -78,6 +79,7 @@ public class TinyAsyncRetryUntilResolvedIT {
       }
 
       return async.completed(RESULT);
-    }, RetryPolicy.timed(timeout, RetryPolicy.linear(50)));
+    }, RetryPolicy.timed(timeout, TimeUnit.MILLISECONDS,
+        RetryPolicy.linear(50, TimeUnit.MILLISECONDS)));
   }
 }

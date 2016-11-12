@@ -14,18 +14,17 @@ public class TinyFutureBuilder {
   private ScheduledExecutorService scheduler;
   private ClockSource clockSource = ClockSource.system();
 
-  protected TinyFutureBuilder() {
+  TinyFutureBuilder() {
   }
 
   /**
    * Configure that all caller invocation, and async tasks should be using a thread pool.
-   * <p>
-   * This will cause the configuration of TinyTask to throw an exception if an executor service is
+   *
+   * <p>This will cause the configuration of TinyTask to throw an exception if an executor service is
    * not available for all purposes.
    *
-   * @param threaded Set {@code true} if all tasks should be executed on a thread pool, {@code
-   * false} otherwise.
-   * @return This builder.
+   * @param threaded {@code true} if all tasks should be executed on a thread pool
+   * @return this builder
    */
   public TinyFutureBuilder threaded(final boolean threaded) {
     this.threaded = threaded;
@@ -36,14 +35,14 @@ public class TinyFutureBuilder {
    * Configure that all caller invocations should use a recursion safe mechanism. In the normal
    * case this doesn't change the behaviour of caller and threadedCaller, but when deep recursion
    * is detected in the current thread the next recursive doCall is deferred to a separate thread.
-   * <p>
-   * Recursion is tracked for all threads that doCall the AsyncCallers.
-   * <p>
-   * This will make even the non-threaded caller use a thread in the case of deep recursion.
    *
-   * @param recursionSafe Set {@code true} if all caller invocations should be done with a recursion
-   * safe mechanism, {@code false} otherwise.
-   * @return This builder.
+   * <p>Recursion is tracked for all threads that doCall the AsyncCallers.
+   *
+   * <p>This will make even the non-threaded caller use a thread in the case of deep recursion.
+   *
+   * @param recursionSafe {@code true} if all caller invocations should be done with a recursion
+   * safe mechanism.
+   * @return this builder
    */
   public TinyFutureBuilder recursionSafe(final boolean recursionSafe) {
     this.recursionSafe = recursionSafe;
@@ -52,12 +51,12 @@ public class TinyFutureBuilder {
 
   /**
    * Configure how many recursions should be allowed.
-   * <p>
-   * This implies enabling {@link #recursionSafe}.
+   *
+   * <p>This implies enabling {@link #recursionSafe}.
    *
    * @param maxRecursionDepth The max number of times that a caller may go through {@link
    * FutureCaller} in a single thread.
-   * @return This builder.
+   * @return this builder
    */
   public TinyFutureBuilder maxRecursionDepth(final long maxRecursionDepth) {
     this.maxRecursionDepth = maxRecursionDepth;
@@ -67,13 +66,13 @@ public class TinyFutureBuilder {
 
   /**
    * Specify an asynchronous caller implementation.
-   * <p>
-   * The 'caller' defines how handles are invoked. The simplest implementations are based of
+   *
+   * <p>The 'caller' defines how handles are invoked. The simplest implementations are based of
    * {@code DirectFutureCaller} , which causes the doCall to be performed directly in the calling
    * thread.
    *
-   * @param caller
-   * @return This builder.
+   * @param caller caller to configure
+   * @return this builder
    */
   public TinyFutureBuilder caller(final FutureCaller caller) {
     if (caller == null) {
@@ -88,8 +87,8 @@ public class TinyFutureBuilder {
    * Configure the default executor to use for caller invocation,and asynchronous tasks submitted
    * through {@link FutureFramework#call(Callable)}.
    *
-   * @param executor Executor to use.
-   * @return This builder.
+   * @param executor Executor to use
+   * @return this builder
    */
   public TinyFutureBuilder executor(final ExecutorService executor) {
     if (executor == null) {
@@ -102,11 +101,11 @@ public class TinyFutureBuilder {
 
   /**
    * Specify a separate executor to use for caller (internal handle) invocation.
-   * <p>
-   * Implies use of threaded caller.
    *
-   * @param callerExecutor Executor to use for callers.
-   * @return This builder.
+   * <p>Implies use of threaded caller.
+   *
+   * @param callerExecutor Executor to use for callers
+   * @return this builder
    */
   public TinyFutureBuilder callerExecutor(final ExecutorService callerExecutor) {
     if (callerExecutor == null) {
@@ -121,14 +120,24 @@ public class TinyFutureBuilder {
   /**
    * Specify a scheduler to use with the built TinyFuture instance.
    *
-   * @param scheduler The scheduler to use.
-   * @return This builder.
+   * @param scheduler The scheduler to use
+   * @return this builder
    */
   public TinyFutureBuilder scheduler(final ScheduledExecutorService scheduler) {
     this.scheduler = scheduler;
     return this;
   }
 
+  /**
+   * Configure clock source.
+   *
+   * <p>A clock source is used to determine what the current time is in order to do timing-related
+   * tasks like retrying an action until it has been completed with a back-off.
+   *
+   * @param clockSource clock source to configure
+   * @return this builder
+   * @see FutureFramework#retryUntilCompleted(java.util.concurrent.Callable, RetryPolicy)
+   */
   public TinyFutureBuilder clockSource(final ClockSource clockSource) {
     if (clockSource == null) {
       throw new NullPointerException("clockSource");
@@ -149,8 +158,8 @@ public class TinyFutureBuilder {
   /**
    * Attempt to setup a caller executor according to the provided implementation.
    *
-   * @param defaultExecutor
-   * @return
+   * @param defaultExecutor configured default executor
+   * @return caller executor
    */
   private ExecutorService setupCallerExecutor(final ExecutorService defaultExecutor) {
     if (callerExecutor != null) {
@@ -167,6 +176,7 @@ public class TinyFutureBuilder {
   /**
    * Setup the future caller.
    *
+   * @param callerExecutor configured caller executor
    * @return A caller implementation according to the provided configuration.
    */
   private FutureCaller setupCaller(final ExecutorService callerExecutor) {

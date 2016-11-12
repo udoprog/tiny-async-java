@@ -44,7 +44,7 @@ public final class FutureSetup {
          *
          * If the configuration of an Executor is omitted, then it will not be possible to doCall
          * the corresponding
-         * #resolve functions which requires a default Executor to be configured. */
+         * #complete functions which requires a default Executor to be configured. */
     final ExecutorService executor = ForkJoinPool.commonPool();
     builder.executor(executor);
 

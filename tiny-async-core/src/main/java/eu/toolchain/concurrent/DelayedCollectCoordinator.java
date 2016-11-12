@@ -55,7 +55,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
 
   @Override
   public void resolved(S result) {
-    caller.resolve(collector, result);
+    caller.complete(collector, result);
     pending.decrementAndGet();
     checkNext();
   }

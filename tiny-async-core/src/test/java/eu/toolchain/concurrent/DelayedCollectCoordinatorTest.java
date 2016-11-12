@@ -63,7 +63,7 @@ public class DelayedCollectCoordinatorTest {
     coordinator.failed(cause);
 
     verify(caller).cancel(collector);
-    verify(caller).resolve(collector, result);
+    verify(caller).complete(collector, result);
     verify(caller).fail(collector, cause);
   }
 
@@ -86,7 +86,7 @@ public class DelayedCollectCoordinatorTest {
     verify(collector).end(2, 0, 0);
 
     verify(caller, never()).cancel(collector);
-    verify(caller, times(2)).resolve(collector, result);
+    verify(caller, times(2)).complete(collector, result);
     verify(caller, never()).fail(collector, cause);
   }
 
@@ -110,7 +110,7 @@ public class DelayedCollectCoordinatorTest {
     verify(collector).end(1, 0, 3);
 
     verify(caller, times(3)).cancel(collector);
-    verify(caller, times(1)).resolve(collector, result);
+    verify(caller, times(1)).complete(collector, result);
     verify(caller, never()).fail(collector, cause);
   }
 }

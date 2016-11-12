@@ -5,7 +5,6 @@ import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.FutureCaller;
 import eu.toolchain.concurrent.FutureFramework;
 import eu.toolchain.concurrent.Managed;
-import eu.toolchain.concurrent.ManagedAction;
 import eu.toolchain.concurrent.ReloadableManaged;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -42,7 +41,9 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   }
 
   @Override
-  public <R> CompletionStage<R> doto(final ManagedAction<T, R> action) {
+  public <U> CompletionStage<U> doto(
+      final Function<? super T, ? extends CompletionStage<U>> action
+  ) {
     final Borrowed<T> b = borrow();
 
     if (!b.isValid()) {
@@ -51,16 +52,16 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
 
     final T reference = b.get();
 
-    final CompletionStage<R> f;
+    final CompletionStage<U> f;
 
     try {
-      f = action.action(reference);
+      f = action.apply(reference);
     } catch (Exception e) {
       b.release();
       return async.failed(e);
     }
 
-    return f.whenFinished(b.releasing());
+    return f.whenFinished(b::release);
   }
 
   @Override
@@ -174,7 +175,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
         // we are stopping
         // block old from successfully stopping until this one has been cleaned up.
         if (old == null) {
-          return next.stop().whenFinished(b.releasing());
+          return next.stop().whenFinished(b::release);
         }
 
         if (!current.compareAndSet(old, next)) {

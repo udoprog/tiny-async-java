@@ -3,20 +3,20 @@ package eu.toolchain.concurrent;
 /**
  * Collect the result of multiple asynchronous computations as they become available.
  *
- * @param <S> The source type of the collector.
- * @param <T> The target type of the collector.
+ * @param <T> The source type of the collector.
+ * @param <U> The target type of the collector.
  * @author udoprog
  */
-public interface StreamCollector<S, T> {
+public interface StreamCollector<T, U> {
   /**
-   * Is called when a future is resolved.
+   * Is called when a future is completed.
    *
-   * @param result The result of the resolved future.
+   * @param result The result of the completed future.
    * @throws Exception if unable to process the result of the future, this will cause the target
    * future to be failed. {@link #end(int, int, int)} will not be called, and all other futures
    * associated with the collector will be cancelled.
    */
-  void resolved(S result) throws Exception;
+  void completed(T result) throws Exception;
 
   /**
    * Is called when a future is failed.
@@ -38,9 +38,9 @@ public interface StreamCollector<S, T> {
   void cancelled() throws Exception;
 
   /**
-   * Implement to fire when all callbacks have been resolved.
+   * Implement to fire when all callbacks have been completed.
    *
-   * @param resolved How many of the collected futures were resolved.
+   * @param resolved How many of the collected futures were completed.
    * @param failed How many of the collected futures were failed.
    * @param cancelled How many of the collected futures were cancelled.
    * @return The collected value.
@@ -48,5 +48,5 @@ public interface StreamCollector<S, T> {
    * target future to be failed. {@link #end(int, int, int)} will not be called will not be called,
    * and all other futures associated with the collector will be cancelled.
    */
-  T end(int resolved, int failed, int cancelled) throws Exception;
+  U end(int resolved, int failed, int cancelled) throws Exception;
 }

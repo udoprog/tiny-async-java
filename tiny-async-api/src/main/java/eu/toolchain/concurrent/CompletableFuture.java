@@ -1,9 +1,9 @@
 package eu.toolchain.concurrent;
 
 /**
- * A future that can be resolved, or failed programmatically.
- * <p>
- * This is typically the 'other end' of an asynchronous computation. By separating the contract we
+ * A future that can be completed.
+ *
+ * <p>This is typically the 'other end' of an asynchronous computation. By separating the contract we
  * limit the capabilities that {@code CompletionStage} has to implement, which allows for
  * optimizations.
  *

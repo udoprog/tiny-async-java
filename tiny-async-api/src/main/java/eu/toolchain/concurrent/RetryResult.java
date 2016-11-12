@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * Contains the result of a retry operation.
- * <p>
- * This class also carries any potential errors that were generated for prior requests {@link
+ *
+ * <p>This class also carries any potential errors that were generated for prior requests {@link
  * #getErrors()}.
  *
  * @param <T> The type of the result.

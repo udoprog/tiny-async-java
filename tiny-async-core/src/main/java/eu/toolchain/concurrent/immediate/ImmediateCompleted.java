@@ -12,9 +12,9 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * A callback which has already been resolved as 'resolved'.
+ * A future which has already been completed.
  *
- * @param <T>
+ * @param <T> type of the future
  */
 @EqualsAndHashCode(of = {"result"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"result"})
@@ -43,7 +43,7 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T>
 
   @Override
   public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
-    caller.resolve(handle, result);
+    caller.complete(handle, result);
     return this;
   }
 
@@ -60,7 +60,7 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T>
 
   @Override
   public CompletionStage<T> whenCompleted(Consumer<? super T> consumer) {
-    caller.resolve(consumer, result);
+    caller.complete(consumer, result);
     return this;
   }
 

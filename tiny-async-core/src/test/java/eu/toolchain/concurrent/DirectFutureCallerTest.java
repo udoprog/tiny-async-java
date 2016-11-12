@@ -78,7 +78,7 @@ public class DirectFutureCallerTest {
 
     streamCollector = mock(StreamCollector.class);
     throwingStreamCollector = mock(StreamCollector.class);
-    doThrow(e).when(throwingStreamCollector).resolved(reference);
+    doThrow(e).when(throwingStreamCollector).completed(reference);
     doThrow(e).when(throwingStreamCollector).cancelled();
     doThrow(e).when(throwingStreamCollector).failed(e);
 
@@ -87,15 +87,15 @@ public class DirectFutureCallerTest {
 
   @Test
   public void testResolveFutureDone() throws Exception {
-    caller.resolve(done, reference);
+    caller.complete(done, reference);
     verify(done).resolved(reference);
     assertEquals(0, internalErrors.get());
     assertEquals(null, errorMessage);
 
-    caller.resolve(throwingDone, reference);
+    caller.complete(throwingDone, reference);
     verify(throwingDone).resolved(reference);
     assertEquals(1, internalErrors.get());
-    assertEquals("CompletionHandle#resolved(T)", errorMessage);
+    assertEquals("CompletionHandle#completed(T)", errorMessage);
   }
 
   @Test
@@ -165,28 +165,28 @@ public class DirectFutureCallerTest {
 
   @Test
   public void testRunFutureResolved() throws Exception {
-    caller.resolve(resolved, reference);
+    caller.complete(resolved, reference);
     verify(resolved).accept(reference);
     assertEquals(0, internalErrors.get());
     assertEquals(null, errorMessage);
 
-    caller.resolve(throwingResolved, reference);
+    caller.complete(throwingResolved, reference);
     verify(throwingResolved).accept(reference);
     assertEquals(1, internalErrors.get());
-    assertEquals("FutureResolved#resolved(T)", errorMessage);
+    assertEquals("FutureResolved#completed(T)", errorMessage);
   }
 
   @Test
   public void testResolveStreamCollector() throws Exception {
-    caller.resolve(streamCollector, reference);
-    verify(streamCollector).resolved(reference);
+    caller.complete(streamCollector, reference);
+    verify(streamCollector).completed(reference);
     assertEquals(0, internalErrors.get());
     assertEquals(null, errorMessage);
 
-    caller.resolve(throwingStreamCollector, reference);
-    verify(throwingStreamCollector).resolved(reference);
+    caller.complete(throwingStreamCollector, reference);
+    verify(throwingStreamCollector).completed(reference);
     assertEquals(1, internalErrors.get());
-    assertEquals("StreamCollector#resolved(T)", errorMessage);
+    assertEquals("StreamCollector#completed(T)", errorMessage);
   }
 
   @Test

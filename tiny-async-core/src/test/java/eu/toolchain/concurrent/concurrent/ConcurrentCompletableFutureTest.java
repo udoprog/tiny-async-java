@@ -188,7 +188,7 @@ public class ConcurrentCompletableFutureTest {
 
     future.doneRunnable(done).run();
 
-    verify(caller, never()).resolve(done, result);
+    verify(caller, never()).complete(done, result);
     verify(caller, never()).cancel(done);
     verify(caller).fail(done, cause);
   }
@@ -200,7 +200,7 @@ public class ConcurrentCompletableFutureTest {
 
     future.doneRunnable(done).run();
 
-    verify(caller, never()).resolve(done, result);
+    verify(caller, never()).complete(done, result);
     verify(caller).cancel(done);
     verify(caller, never()).fail(done, cause);
   }
@@ -212,7 +212,7 @@ public class ConcurrentCompletableFutureTest {
 
     future.doneRunnable(done).run();
 
-    verify(caller).resolve(done, result);
+    verify(caller).complete(done, result);
     verify(caller, never()).cancel(done);
     verify(caller, never()).fail(done, cause);
   }
@@ -246,7 +246,7 @@ public class ConcurrentCompletableFutureTest {
     future.result = result;
 
     future.resolvedRunnable(resolved).run();
-    verify(caller).resolve(resolved, result);
+    verify(caller).complete(resolved, result);
   }
 
   @Test
@@ -256,7 +256,7 @@ public class ConcurrentCompletableFutureTest {
 
     future.resolvedRunnable(resolved).run();
 
-    verify(caller, never()).resolve(resolved, result);
+    verify(caller, never()).complete(resolved, result);
   }
 
   @Test

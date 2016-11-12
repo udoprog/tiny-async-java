@@ -7,11 +7,11 @@ import java.util.function.Consumer;
  */
 public abstract class DirectFutureCaller implements FutureCaller {
   @Override
-  public <T> void resolve(final CompletionHandle<T> handle, final T result) {
+  public <T> void complete(final CompletionHandle<T> handle, final T result) {
     try {
       handle.resolved(result);
     } catch (final Exception e) {
-      internalError("CompletionHandle#resolved(T)", e);
+      internalError("CompletionHandle#completed(T)", e);
     }
   }
 
@@ -34,47 +34,47 @@ public abstract class DirectFutureCaller implements FutureCaller {
   }
 
   @Override
-  public void finish(Runnable run) {
+  public void finish(Runnable runnable) {
     try {
-      run.run();
+      runnable.run();
     } catch (final Exception e) {
       internalError("FutureFinished#finished()", e);
     }
   }
 
   @Override
-  public void cancel(Runnable cancelled) {
+  public void cancel(Runnable runnable) {
     try {
-      cancelled.run();
+      runnable.run();
     } catch (final Exception e) {
       internalError("FutureCancelled#cancelled()", e);
     }
   }
 
   @Override
-  public <T> void resolve(Consumer<T> resolved, T value) {
+  public <T> void complete(Consumer<T> consumer, T value) {
     try {
-      resolved.accept(value);
+      consumer.accept(value);
     } catch (final Exception e) {
-      internalError("FutureResolved#resolved(T)", e);
+      internalError("FutureResolved#completed(T)", e);
     }
   }
 
   @Override
-  public void fail(Consumer<? super Throwable> failed, Throwable cause) {
+  public void fail(Consumer<? super Throwable> consumer, Throwable cause) {
     try {
-      failed.accept(cause);
+      consumer.accept(cause);
     } catch (final Exception e) {
       internalError("FutureFailed#failed(Throwable)", e);
     }
   }
 
   @Override
-  public <S, T> void resolve(StreamCollector<S, T> collector, S result) {
+  public <S, T> void complete(StreamCollector<S, T> collector, S result) {
     try {
-      collector.resolved(result);
+      collector.completed(result);
     } catch (final Exception e) {
-      internalError("StreamCollector#resolved(T)", e);
+      internalError("StreamCollector#completed(T)", e);
     }
   }
 

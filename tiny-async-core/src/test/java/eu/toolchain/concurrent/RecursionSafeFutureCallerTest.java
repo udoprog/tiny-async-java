@@ -59,8 +59,8 @@ public class RecursionSafeFutureCallerTest {
 
   @Test
   public void testResolveFutureDone() {
-    underTest.resolve(done, result);
-    verify(caller).resolve(done, result);
+    underTest.complete(done, result);
+    verify(caller).complete(done, result);
   }
 
   @Test
@@ -89,8 +89,8 @@ public class RecursionSafeFutureCallerTest {
 
   @Test
   public void testRunFutureResolved() {
-    underTest.resolve(resolved, result);
-    verify(caller).resolve(resolved, result);
+    underTest.complete(resolved, result);
+    verify(caller).complete(resolved, result);
   }
 
   @Test
@@ -101,8 +101,8 @@ public class RecursionSafeFutureCallerTest {
 
   @Test
   public void testResolveStreamCollector() {
-    underTest.resolve(streamCollector, result);
-    verify(caller).resolve(streamCollector, result);
+    underTest.complete(streamCollector, result);
+    verify(caller).complete(streamCollector, result);
   }
 
   @Test

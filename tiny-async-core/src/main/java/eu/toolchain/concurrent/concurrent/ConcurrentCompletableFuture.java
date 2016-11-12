@@ -504,7 +504,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
         return;
       }
 
-      caller.resolve(done, result(result));
+      caller.complete(done, result(result));
     };
   }
 
@@ -523,7 +523,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
   Runnable resolvedRunnable(final Consumer<? super T> resolved) {
     return () -> {
       if (state.get() == COMPLETED) {
-        caller.resolve(resolved, result(result));
+        caller.complete(resolved, result(result));
       }
     };
   }

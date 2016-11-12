@@ -85,7 +85,7 @@ public class TinyAsyncEventuallyCollectIT {
             final AtomicLong sum = new AtomicLong();
 
             @Override
-            public void resolved(Long result) throws Exception {
+            public void completed(Long result) throws Exception {
               sum.addAndGet(result);
             }
 
@@ -150,7 +150,7 @@ public class TinyAsyncEventuallyCollectIT {
       final CompletionStage<Long> res =
           async.eventuallyCollect(callables, new StreamCollector<Long, Long>() {
             @Override
-            public void resolved(Long result) throws Exception {
+            public void completed(Long result) throws Exception {
               if (r.nextInt(2) == 1) {
                 expectedInternalErrors.incrementAndGet();
                 throw new RuntimeException("die");
