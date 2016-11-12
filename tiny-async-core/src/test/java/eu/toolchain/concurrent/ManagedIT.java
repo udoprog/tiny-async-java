@@ -9,7 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
 
-public class TinyAsyncManagedIT {
+public class ManagedIT {
   final Object REF = new Object();
 
   // setup an direct async framework.

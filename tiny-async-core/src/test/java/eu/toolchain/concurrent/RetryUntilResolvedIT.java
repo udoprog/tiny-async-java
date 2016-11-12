@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
-public class TinyAsyncRetryUntilResolvedIT {
+public class RetryUntilResolvedIT {
   private static final long TIMEOUT = 20000;
   private static final Object RESULT = new Object();
 

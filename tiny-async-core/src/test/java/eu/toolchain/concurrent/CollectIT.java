@@ -19,7 +19,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TinyAsyncCollectIT {
+public class CollectIT {
   private static final Object REF = new Object();
   private static final Exception A = new Exception("A");
   private static final Exception B = new Exception("B");

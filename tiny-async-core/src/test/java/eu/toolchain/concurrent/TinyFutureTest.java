@@ -44,7 +44,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TinyAsyncTest {
+public class TinyFutureTest {
   private static final Object result = new Object();
   private static final RuntimeException e = new RuntimeException();
 

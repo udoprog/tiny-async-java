@@ -20,7 +20,7 @@ import org.junit.Test;
  * A high-level integration test for {@code TinyFuture#eventuallyCollect(java.util.Collection,
  * StreamCollector, int)}.
  */
-public class TinyAsyncEventuallyCollectIT {
+public class EventuallyCollectIT {
   private ExecutorService executor;
   private ExecutorService otherExecutor;
   private FutureFramework async;

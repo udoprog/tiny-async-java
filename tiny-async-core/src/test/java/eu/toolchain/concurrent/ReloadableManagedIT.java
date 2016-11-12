@@ -10,7 +10,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TinyAsyncReloadableManagedIT {
+public class ReloadableManagedIT {
   final Object REF = new Object();
 
   private static final long TIMEOUT = 20000;
