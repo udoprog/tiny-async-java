@@ -13,7 +13,7 @@ Writing multithreaded code is hard, tiny async tries to make it easier by provid
 # Why TinyAsync?
 
 Everything is tucked behind [a set of API interfaces](
-tiny-async-api/src/main/java/eu/toolchain/async/),
+tiny-async-api/src/main/java/eu/toolchain/concurrent/),
 and some functionality has been moved into the future itself to allow for
 a clean, chained programming style (especially with java 8).
 
@@ -27,7 +27,7 @@ This has the benefit of making TinyAsync superb for
 about concurrency, all you need to do is mock the expected framework behaviour.
 
 For an overview of the library, check out the
-[API](tiny-async-api/src/main/java/eu/toolchain/async) and the [Usage](#usage)
+[API](tiny-async-api/src/main/java/eu/toolchain/concurrent) and the [Usage](#usage)
 section below.
 
 ## Guava
@@ -38,11 +38,11 @@ futures\*, and these are unnecessarily diffucult to mock.
 Also, TinyAsync believes that some aspects of the framework should allow for
 configurable defaults\*\*. The most notable example would be _what the default
 ExecutorService_ is, but also allow the user to [handle undefined
-behaviour](tiny-async-api/src/main/java/eu/toolchain/async/AsyncCaller.java)
+behaviour](tiny-async-api/src/main/java/eu/toolchain/concurrent/FutureCaller.java)
 edge cases where the framework otherwise has to compromise.
 
 The downside is that you have to provide your components access to the [async
-framework](tiny-async-api/src/main/java/eu/toolchain/async/AsyncFramework.java)
+framework](tiny-async-api/src/main/java/eu/toolchain/concurrent/FutureFramework.java)
 implementation, but you are already using
 [dependency injection](https://github.com/google/guice), right?
 
@@ -80,7 +80,7 @@ package will be renamed to avoid future classpath conflicts.
 
 TinyAsync heavily favor isolated unit tests that mock as much as possible,
 see some of the [core test
-suite](tiny-async-core/src/test/java/eu/toolchain/async/) if you want some
+suite](tiny-async-core/src/test/java/eu/toolchain/concurrent/) if you want some
 inspiration.
 
 # Usage
@@ -89,24 +89,21 @@ The following section contains documentation on how to use TinyAsync.
 
 ## Building futures from scratch
 
-The following methods are provided on `AsyncFramework` to build new futures.
+The following methods are provided on `FutureFramework` to build new futures.
 
-* `ResolvableFuture<T> AsyncFramework#future()`
-* `AsyncFuture<T> AsyncFramework#call(Callable<T>)`
-* `AsyncFuture<T> AsyncFramework#call(Callable<T>, ExecutorService)`
-* `AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>)`
-* `AsyncFuture<T> AsyncFramework#lazyCall(Callable<AsyncFuture<T>>, ExecutorService)`
-* `AsyncFuture<T> AsyncFramework#resolved(T)`
-* `AsyncFuture<T> AsyncFramework#failed(Throwable)`
-* `AsyncFuture<T> AsyncFramework#cancelled()`
+* `CompletableFuture<T> FutureFramework#future()`
+* `CompletionStage<T> FutureFramework#call(Callable<T>)`
+* `CompletionStage<T> FutureFramework#completed(T)`
+* `CompletionStagCompletionStage<T> FutureFramework#failed(Throwable)`
+* `CompletionStage<T> FutureFramework#cancelled()`
 
-The first kind of method returns a `ResolvableFuture<T>` instance. This is typically used when integrating with other async framework and has direct access to a `#resolve(T)` method that will resolve the future.
+The first kind of method returns a `CompletableFuture<T>` instance. This is typically used when integrating with other async framework and has direct access to a `#resolve(T)` method that will resolve the future.
 
 The methods that take a `Callable<T>` builds a new future that will be resolved when the given callable has returned.
 
 The last kind of methods are the ones building futures which have already been either resolved, failed, or cancelled.
 These types of methods are good for returning early from methods that only returns a future.
-An example is if a method throws a checked exception, and you want this to be returned as a future, you can use `AsyncFramework#failed(Throwable)`.
+An example is if a method throws a checked exception, and you want this to be returned as a future, you can use `FutureFramework#failed(Throwable)`.
 
 See examples:
 
@@ -119,15 +116,16 @@ See examples:
 The following methods allow you to subscribe to interesting changes on the
 futures.
 
-* `AsyncFuture<T> AsyncFuture#on(FutureDone<T>)`
-* `AsyncFuture<T> AsyncFuture#on(FutureFinished)`
-* `AsyncFuture<T> AsyncFuture#on(FutureCancelled)`
+* `CompletionStage<T> CompletionStage#whenCompleted(Consumer<T>)`
+* `CompletionStage<T> CompletionStage#whenFailed(Consumer<Throwable>)`
+* `CompletionStage<T> CompletionStage#whenCancelled(Runnable)`
+* `CompletionStage<T> CompletionStage#whenFinished(Runnable)`
 
 If the event handlers throw an exception, this is intepreted as an 'internal'
-error, and will be reported as such in the provided `AsyncCaller`.
+error, and will be reported as such in the provided `FutureCaller`.
 
 There is no other reasonable way to handle this circumstance, and you are
-expected to avoid throwing exceptions here (or implement a sane AsyncCaller
+expected to avoid throwing exceptions here (or implement a sane FutureCaller
 handle).
 
 See examples:
@@ -159,12 +157,12 @@ They allow you to take a value A, and convert it to a value B.
 
 They also allows to take a falied future, and convert it into a value B.
 
-* `AsyncFuture<C> AsyncFuture#directTransform(Transform<T, C>)`
-* `AsyncFuture<C> AsyncFuture#lazyTransform(LazyTransform<T, C>)`
-* `AsyncFuture<C> AsyncFuture#catchFailure(Transform<Throwable, C>)`
-* `AsyncFuture<C> AsyncFuture#catchFailure(LazyTransform<Throwable, C>)`
-* `AsyncFuture<C> AsyncFuture#catchCancelled(Transform<Throwable, C>)`
-* `AsyncFuture<C> AsyncFuture#catchCancelled(LazyTransform<Throwable, C>)`
+* `CompletionStage<U> CompletionStage#thenApply(Function<T, U>)`
+* `CompletionStage<U> CompletionStage#thenCompose(Function<T, U>)`
+* `CompletionStage<T> CompletionStage#thenCatchFailed(Function<Throwable, T>)`
+* `CompletionStage<T> CompletionStage#thenComposeFailed(Function<Throwable, CompletionStage<T>>)`
+* `CompletionStage<T> CompletionStage#thenCatchCancelled(Supplier<T>)`
+* `CompletionStage<T> CompletionStage#thenComposeCancelled(Supplier<CompletionStage<T>>)`
 
 See examples:
 
@@ -175,25 +173,22 @@ See examples:
 When you have a collection of asynchronous computations, and you want a single
 future that is resolved by them instead.
 
-* `AsyncFuture<Collection<T>> AsyncFramework#collect(Collection<AsyncFuture<C>>)`
-* `AsyncFuture<Void> AsyncFramework#collectAndDiscard(Collection<AsyncFuture<C>>)`
-* `AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, Collector<C, T>)`
-* `AsyncFuture<T> AsyncFramework#collect(Collection<AsyncFuture<C>>, StreamCollector<C, T>)`
-* `AsyncFuture<T> AsyncFramework#eventuallyCollect(Collection<Callable<AsyncFuture<C>>>, StreamCollector<C, T>, int)`
+* `CompletionStage<Collection<T>> FutureFramework#collect(Collection<CompletionStage<T>>)`
+* `CompletionStage<Void> FutureFramework#collectAndDiscard(Collection<CompletionStage<T>>)`
+* `CompletionStage<U> FutureFramework#collect(Collection<CompletionStage<T>>, Function<Collection<T>, U>)`
+* `CompletionStage<U> FutureFramework#collect(Collection<CompletionStage<T>>, StreamCollector<T, U>)`
+* `CompletionStage<U> FutureFramework#eventuallyCollect(Collection<Callable<CompletionStage<T>>>, StreamCollector<T, U>, int parallelism)`
 
-The methods taking the `Collector` gathers the result of all computations,
-and provides them to the `Collector#collect(Collection<C>)` method.
-Since this is guaranteed to only be called once, it is very convenient.
-It has the downside of requiring the result of all the collected futures to be
-in memory at once.
+The methods taking the `Function<Collection<T>, U>` gathers the result of all computations into one
+value. It has the downside of requiring the result of all the collected futures to be in memory at
+once.
 
 The methods taking the `StreamCollector` also gathers the result of all
 computations. However in contrast with `Collector` it provides methods to
 incrementally gather the result of all the computations.
 The intermidate result is discarded and can be effectivelly garbage collected
 by the JVM.
-Similarly to `Collector`, `StreamCollector` has the
-`StreamCollector#end(int, int, int)` method that will be called when all
+`StreamCollector` has the `StreamCollector#end(int, int, int)` method that will be called when all
 the computations have been finished.
 
 The _eventually_ collector is a lazy type of collector that ensures on a high
@@ -219,14 +214,14 @@ See examples:
 This required TinyAsync to be configured with a `ScheduledExecutorService`.
 
 These operations implement a retry pattern, governed by a
-[`RetryPolicy`](tiny-async-api/src/main/java/eu/toolchain/async/RetryPolicy.java).
+[`RetryPolicy`](tiny-async-api/src/main/java/eu/toolchain/concurrent/RetryPolicy.java).
 
-* `AsyncFuture<RetryResult<T>> AsyncFramework#retryUntilResolved(Callable<T>, RetryPolicy)`
+* `CompletionStage<RetryResult<T>> FutureFramework#retryUntilResolved(Callable<T>, RetryPolicy)`
 
 `retryUntilResolved(...)` returns a `RetryResult<T>` which contains the result
 of the operation, and any errors that happened for previous tries.
 
-* [integration tests](tiny-async-core/src/it/java/eu/toolchain/async/TinyAsyncRetryUntilResolvedTest.java)
+* [integration tests](tiny-async-core/src/test/java/eu/toolchain/concurrent/RetryUntilResolvedIT.java)
 
 ## Managed References
 
@@ -235,12 +230,12 @@ These are intended to be used for expensive setup, and teardown operations,
 where abruptly tearing the reference down while there are sessions using it can
 cause undesirable behaviour.
 
-* `Managed<T> AsyncFramework#managed(ManagedSetup<T>)`
-* `AsyncFuture<Void> Managed#start()`
-* `AsyncFuture<Void> Managed#stop()`
-* `AsyncFuture<R> Managed#doto(ManagedAction<T>)`
+* `Managed<T> FutureFramework#managed(Supplier<CompletionStage<T>> constructor, Function<T, CompletionStage<Void>> destructor)`
+* `CompletionStage<Void> Managed#start()`
+* `CompletionStage<Void> Managed#stop()`
+* `CompletionStage<U> Managed#doto(Function<T, U>)`
 
-The `#managed(ManagerSetup<T>)` method defines a constructor, and
+The `#managed(...)` method defines a constructor, and
 a destructor for the given reference of type `<T>`. The user is then
 responsible for *borrowing* this reference through the
 `Borrowed<T> Managed#borrow()` method. As soon as this reference is no
@@ -250,11 +245,11 @@ The user should start and stop the managed reference. After
 `Managed#stop()` the reference will be destructed once the last borrowed
 references are released.
 
-The `Managed#doto(ManagedAction<T>)` method provides a convenience method
+The `Managed#doto(Function<T, U>)` method provides a convenience method
 that will retain the managed reference, until the future returned is finished.
 This is typically a strong indication that the reference is no longer required.
 
-* [integration tests](tiny-async-core/src/it/java/eu/toolchain/async/TinyAsyncManagedIntegrationTest.java)
+* [integration tests](tiny-async-core/src/test/java/eu/toolchain/concurrent/ManagedIT.java)
 
 ## Other Async Libraries
 
