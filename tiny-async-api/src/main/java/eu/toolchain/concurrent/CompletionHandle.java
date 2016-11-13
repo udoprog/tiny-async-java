@@ -13,10 +13,8 @@ public interface CompletionHandle<T> {
    * @param cause Exception that caused the underlying future to except.
    * @throws Exception if the failed future cannot be handled, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
-   * FutureCaller#fail(CompletionHandle, Throwable)}.
-   * @see FutureCaller#fail(CompletionHandle, Throwable)
    */
-  void failed(Throwable cause) throws Exception;
+  void failed(Throwable cause);
 
   /**
    * Handle to be called when the underlying future is completed.
@@ -24,18 +22,14 @@ public interface CompletionHandle<T> {
    * @param result The result of the completed future.
    * @throws Exception if the completed future cannot be handled, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
-   * FutureCaller#complete(CompletionHandle, Object)}.
-   * @see FutureCaller#complete(CompletionHandle, Object)
    */
-  void resolved(T result) throws Exception;
+  void completed(T result);
 
   /**
    * Handle to be called when the underlying future is cancelled.
    *
    * @throws Exception if unable to handle the cancelled future, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
-   * FutureCaller#cancel(CompletionHandle)}.
-   * @see FutureCaller#cancel(CompletionHandle)
    */
-  void cancelled() throws Exception;
+  void cancelled();
 }

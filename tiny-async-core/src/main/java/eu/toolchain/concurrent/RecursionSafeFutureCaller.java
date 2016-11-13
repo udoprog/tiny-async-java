@@ -8,7 +8,6 @@
 package eu.toolchain.concurrent;
 
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 
 public final class RecursionSafeFutureCaller implements FutureCaller {
   private final ExecutorService executorService;
@@ -34,61 +33,12 @@ public final class RecursionSafeFutureCaller implements FutureCaller {
   }
 
   @Override
-  public <T> void complete(final CompletionHandle<T> handle, final T result) {
-    execute(() -> caller.complete(handle, result));
-  }
-
-  @Override
-  public <T> void fail(final CompletionHandle<T> handle, final Throwable error) {
-    execute(() -> caller.fail(handle, error));
-  }
-
-  @Override
-  public <T> void cancel(final CompletionHandle<T> handle) {
-    execute(() -> caller.cancel(handle));
-  }
-
-  @Override
-  public void cancel(final Runnable runnable) {
-    execute(() -> caller.cancel(runnable));
-  }
-
-  @Override
-  public void finish(final Runnable runnable) {
-    execute(() -> caller.finish(runnable));
-  }
-
-  @Override
-  public <T> void complete(final Consumer<T> consumer, final T value) {
-    execute(() -> caller.complete(consumer, value));
-  }
-
-  @Override
-  public <T, R> void complete(final StreamCollector<T, R> collector, final T result) {
-    execute(() -> caller.complete(collector, result));
-  }
-
-  @Override
-  public <T, R> void fail(final StreamCollector<T, R> collector, final Throwable error) {
-    execute(() -> caller.fail(collector, error));
-  }
-
-  @Override
-  public <T, R> void cancel(final StreamCollector<T, R> collector) {
-    execute(() -> caller.cancel(collector));
-  }
-
-  @Override
-  public void fail(final Consumer<? super Throwable> consumer, final Throwable cause) {
-    execute(() -> caller.fail(consumer, cause));
-  }
-
-  @Override
-  public <T> void referenceLeaked(final T reference, final StackTraceElement[] stack) {
+  public void referenceLeaked(final Object reference, final StackTraceElement[] stack) {
     execute(() -> caller.referenceLeaked(reference, stack));
   }
 
-  void execute(final Runnable runnable) {
+  @Override
+  public void execute(final Runnable runnable) {
     // Use thread local counter for recursionDepth
     final Integer recursionDepth = recursionDepthPerThread.get();
     // ++

@@ -160,17 +160,17 @@ public class ConcurrentManaged<T> implements Managed<T> {
       return null;
     }).handle(new CompletionHandle<Void>() {
       @Override
-      public void failed(Throwable cause) throws Exception {
+      public void failed(final Throwable cause) {
         startFuture.fail(cause);
       }
 
       @Override
-      public void resolved(Void result) throws Exception {
+      public void completed(Void result) {
         startFuture.complete(null);
       }
 
       @Override
-      public void cancelled() throws Exception {
+      public void cancelled() {
         startFuture.cancel();
       }
     });

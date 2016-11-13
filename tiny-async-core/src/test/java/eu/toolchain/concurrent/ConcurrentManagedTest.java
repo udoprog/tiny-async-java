@@ -250,7 +250,7 @@ public class ConcurrentManagedTest {
         if (cancelled) {
           done.cancelled();
         } else {
-          done.resolved(null);
+          done.completed(null);
         }
 
         return startFuture;

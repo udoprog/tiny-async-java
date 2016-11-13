@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -20,14 +19,6 @@ public class ExecutorFutureCallerTest {
   private FutureCaller caller;
 
   private ExecutorFutureCaller underTest;
-
-  private CompletionHandle<Object> done;
-  private Runnable cancelled;
-  private Runnable finished;
-  private Consumer<Object> resolved;
-  private Consumer<Throwable> failed;
-
-  private StreamCollector<Object, Object> streamCollector;
 
   private StackTraceElement[] stack = new StackTraceElement[0];
 
@@ -47,84 +38,14 @@ public class ExecutorFutureCallerTest {
 
     caller = mock(FutureCaller.class);
     underTest = new ExecutorFutureCaller(executor, caller);
-
-    done = mock(CompletionHandle.class);
-    cancelled = mock(Runnable.class);
-    finished = mock(Runnable.class);
-    resolved = mock(Consumer.class);
-    failed = mock(Consumer.class);
-
-    streamCollector = mock(StreamCollector.class);
   }
 
   @Test
-  public void testResolveFutureDone() {
-    underTest.complete(done, result);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).complete(done, result);
-  }
-
-  @Test
-  public void testFailFutureDone() {
-    underTest.fail(done, cause);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).fail(done, cause);
-  }
-
-  @Test
-  public void testCancelFutureDone() {
-    underTest.cancel(done);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).cancel(done);
-  }
-
-  @Test
-  public void testRunFutureCancelled() {
-    underTest.cancel(cancelled);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).cancel(cancelled);
-  }
-
-  @Test
-  public void testRunFutureFinished() {
-    underTest.finish(finished);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).finish(finished);
-  }
-
-  @Test
-  public void testRunFutureResolved() {
-    underTest.complete(resolved, result);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).complete(resolved, result);
-  }
-
-  @Test
-  public void testRunFutureFailed() {
-    underTest.fail(failed, cause);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).fail(failed, cause);
-  }
-
-  @Test
-  public void testResolveStreamCollector() {
-    underTest.complete(streamCollector, result);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).complete(streamCollector, result);
-  }
-
-  @Test
-  public void testFailStreamCollector() {
-    underTest.fail(streamCollector, cause);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).fail(streamCollector, cause);
-  }
-
-  @Test
-  public void testCancelStreamCollector() {
-    underTest.cancel(streamCollector);
-    verify(executor).execute(any(Runnable.class));
-    verify(caller).cancel(streamCollector);
+  public void testExecute() {
+    final Runnable runnable = mock(Runnable.class);
+    underTest.execute(runnable);
+    verify(executor).execute(runnable);
+    verify(runnable).run();
   }
 
   @Test

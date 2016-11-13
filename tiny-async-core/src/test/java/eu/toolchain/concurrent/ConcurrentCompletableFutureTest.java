@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -53,6 +54,11 @@ public class ConcurrentCompletableFutureTest {
   @Before
   public void setup() {
     future = spy(new ConcurrentCompletableFuture<From>(caller));
+
+    doAnswer(invocation -> {
+      invocation.getArgumentAt(0, Runnable.class).run();
+      return null;
+    }).when(caller).execute(any(Runnable.class));
   }
 
   @Test
@@ -178,9 +184,9 @@ public class ConcurrentCompletableFutureTest {
 
     future.doneRunnable(done).run();
 
-    verify(caller, never()).complete(done, result);
-    verify(caller, never()).cancel(done);
-    verify(caller).fail(done, cause);
+    verify(done, never()).completed(result);
+    verify(done, never()).cancelled();
+    verify(done).failed(cause);
   }
 
   @Test
@@ -190,9 +196,9 @@ public class ConcurrentCompletableFutureTest {
 
     future.doneRunnable(done).run();
 
-    verify(caller, never()).complete(done, result);
-    verify(caller).cancel(done);
-    verify(caller, never()).fail(done, cause);
+    verify(done, never()).completed(result);
+    verify(done).cancelled();
+    verify(done, never()).failed(cause);
   }
 
   @Test
@@ -202,9 +208,9 @@ public class ConcurrentCompletableFutureTest {
 
     future.doneRunnable(done).run();
 
-    verify(caller).complete(done, result);
-    verify(caller, never()).cancel(done);
-    verify(caller, never()).fail(done, cause);
+    verify(done).completed(result);
+    verify(done, never()).cancelled();
+    verify(done, never()).failed(cause);
   }
 
   @Test
@@ -213,7 +219,7 @@ public class ConcurrentCompletableFutureTest {
     future.result = ConcurrentCompletableFuture.CANCEL;
 
     future.cancelledRunnable(cancelled).run();
-    verify(caller).cancel(cancelled);
+    verify(cancelled).run();
   }
 
   @Test
@@ -221,13 +227,13 @@ public class ConcurrentCompletableFutureTest {
     future.state.set(~ConcurrentCompletableFuture.CANCELLED);
 
     future.cancelledRunnable(cancelled).run();
-    verify(caller, never()).cancel(cancelled);
+    verify(cancelled, never()).run();
   }
 
   @Test
   public void testFinishedRunnable() {
     future.finishedRunnable(finished).run();
-    verify(caller).finish(finished);
+    verify(finished).run();
   }
 
   @Test
@@ -236,7 +242,7 @@ public class ConcurrentCompletableFutureTest {
     future.result = result;
 
     future.resolvedRunnable(resolved).run();
-    verify(caller).complete(resolved, result);
+    verify(resolved).accept(result);
   }
 
   @Test
@@ -246,7 +252,7 @@ public class ConcurrentCompletableFutureTest {
 
     future.resolvedRunnable(resolved).run();
 
-    verify(caller, never()).complete(resolved, result);
+    verify(resolved, never()).accept(result);
   }
 
   @Test
@@ -255,7 +261,7 @@ public class ConcurrentCompletableFutureTest {
     future.result = cause;
 
     future.failedRunnable(failed).run();
-    verify(caller).fail(failed, cause);
+    verify(failed).accept(cause);
   }
 
   @Test
@@ -264,7 +270,7 @@ public class ConcurrentCompletableFutureTest {
     future.result = result;
 
     future.failedRunnable(failed).run();
-    verify(caller, never()).fail(failed, cause);
+    verify(failed, never()).accept(cause);
   }
 
   @Test

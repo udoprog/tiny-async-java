@@ -23,18 +23,18 @@ public class CollectAndDiscardHelper implements CompletionHandle<Object> {
   }
 
   @Override
-  public void failed(Throwable e) throws Exception {
+  public void failed(Throwable e) {
     errors.add(e);
     check();
   }
 
   @Override
-  public void resolved(Object result) throws Exception {
+  public void completed(Object result) {
     check();
   }
 
   @Override
-  public void cancelled() throws Exception {
+  public void cancelled() {
     cancelled.incrementAndGet();
     check();
   }
@@ -53,7 +53,7 @@ public class CollectAndDiscardHelper implements CompletionHandle<Object> {
     target.complete(null);
   }
 
-  private void check() throws Exception {
+  private void check() {
     if (countdown.decrementAndGet() == 0) {
       done();
     }

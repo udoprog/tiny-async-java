@@ -1,6 +1,7 @@
 package eu.toolchain.concurrent;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -46,6 +47,11 @@ public class DelayedCollectCoordinatorTest {
     when(callable2.call()).thenReturn(f2);
     when(callable3.call()).thenReturn(f3);
     when(callable4.call()).thenReturn(f4);
+
+    doAnswer(invocation -> {
+      invocation.getArgumentAt(0, Runnable.class).run();
+      return null;
+    }).when(caller).execute(any(Runnable.class));
   }
 
   @Test
@@ -59,12 +65,12 @@ public class DelayedCollectCoordinatorTest {
     final Throwable cause = new Throwable();
 
     coordinator.cancelled();
-    coordinator.resolved(result);
+    coordinator.completed(result);
     coordinator.failed(cause);
 
-    verify(caller).cancel(collector);
-    verify(caller).complete(collector, result);
-    verify(caller).fail(collector, cause);
+    verify(collector).cancelled();
+    verify(collector).completed(result);
+    verify(collector).failed(cause);
   }
 
   @Test
@@ -79,15 +85,15 @@ public class DelayedCollectCoordinatorTest {
 
     coordinator.run();
 
-    coordinator.resolved(result);
+    coordinator.completed(result);
     verify(collector, never()).end(2, 0, 0);
 
-    coordinator.resolved(result);
+    coordinator.completed(result);
     verify(collector).end(2, 0, 0);
 
-    verify(caller, never()).cancel(collector);
-    verify(caller, times(2)).complete(collector, result);
-    verify(caller, never()).fail(collector, cause);
+    verify(collector, never()).cancelled();
+    verify(collector, times(2)).completed(result);
+    verify(collector, never()).failed(cause);
   }
 
   @Test
@@ -103,14 +109,14 @@ public class DelayedCollectCoordinatorTest {
 
     coordinator.run();
 
-    coordinator.resolved(result);
+    coordinator.completed(result);
     verify(collector, never()).end(any(Integer.class), any(Integer.class), any(Integer.class));
 
     coordinator.cancelled();
     verify(collector).end(1, 0, 3);
 
-    verify(caller, times(3)).cancel(collector);
-    verify(caller, times(1)).complete(collector, result);
-    verify(caller, never()).fail(collector, cause);
+    verify(collector, times(3)).cancelled();
+    verify(collector, times(1)).completed(result);
+    verify(collector, never()).failed(cause);
   }
 }

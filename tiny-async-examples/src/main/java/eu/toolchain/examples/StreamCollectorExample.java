@@ -28,20 +28,20 @@ public class StreamCollectorExample {
           private final AtomicInteger result = new AtomicInteger();
 
           @Override
-          public void completed(Integer result) throws Exception {
+          public void completed(Integer result) {
             this.result.addAndGet(result);
           }
 
           @Override
-          public void failed(Throwable cause) throws Exception {
+          public void failed(Throwable cause) {
           }
 
           @Override
-          public void cancelled() throws Exception {
+          public void cancelled() {
           }
 
           @Override
-          public Integer end(int resolved, int failed, int cancelled) throws Exception {
+          public Integer end(int resolved, int failed, int cancelled) {
             return this.result.get();
           }
         });

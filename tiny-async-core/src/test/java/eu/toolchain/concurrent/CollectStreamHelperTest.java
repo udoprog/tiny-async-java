@@ -1,6 +1,7 @@
 package eu.toolchain.concurrent;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -17,7 +18,7 @@ public class CollectStreamHelperTest {
 
   private final Object transformed = new Object();
   private final Object result = new Object();
-  private final Exception e = new Exception();
+  private final RuntimeException e = new RuntimeException();
 
   @SuppressWarnings("unchecked")
   @Before
@@ -25,6 +26,11 @@ public class CollectStreamHelperTest {
     caller = mock(FutureCaller.class);
     collector = mock(StreamCollector.class);
     target = mock(CompletableFuture.class);
+
+    doAnswer(invocation -> {
+      invocation.getArgumentAt(0, Runnable.class).run();
+      return null;
+    }).when(caller).execute(any(Runnable.class));
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -39,13 +45,13 @@ public class CollectStreamHelperTest {
 
     when(collector.end(1, 1, 0)).thenReturn(transformed);
 
-    helper.resolved(result);
-    verify(caller).complete(collector, result);
+    helper.completed(result);
+    verify(caller).execute(any(Runnable.class));
     verify(target, never()).complete(transformed);
 
     helper.failed(e);
     verify(collector).end(1, 1, 0);
-    verify(caller).fail(collector, e);
+    verify(collector).failed(e);
     verify(target).complete(transformed);
   }
 
@@ -56,13 +62,13 @@ public class CollectStreamHelperTest {
 
     when(collector.end(1, 0, 1)).thenReturn(transformed);
 
-    helper.resolved(result);
-    verify(caller).complete(collector, result);
+    helper.completed(result);
+    verify(caller).execute(any(Runnable.class));
     verify(target, never()).complete(transformed);
 
     helper.cancelled();
     verify(collector).end(1, 0, 1);
-    verify(caller).cancel(collector);
+    verify(collector).cancelled();
     verify(target).complete(transformed);
   }
 
@@ -73,13 +79,13 @@ public class CollectStreamHelperTest {
 
     when(collector.end(2, 0, 0)).thenReturn(transformed);
 
-    helper.resolved(result);
-    verify(caller).complete(collector, result);
+    helper.completed(result);
+    verify(caller).execute(any(Runnable.class));
     verify(target, never()).complete(transformed);
 
-    helper.resolved(result);
+    helper.completed(result);
     verify(collector).end(2, 0, 0);
-    verify(caller, times(2)).complete(collector, result);
+    verify(collector, times(2)).completed(result);
     verify(target).complete(transformed);
   }
 
@@ -90,8 +96,8 @@ public class CollectStreamHelperTest {
 
     when(collector.end(1, 0, 0)).thenThrow(e);
 
-    helper.resolved(result);
-    verify(caller).complete(collector, result);
+    helper.completed(result);
+    verify(collector).completed(result);
     verify(target).fail(any(Exception.class));
   }
 }

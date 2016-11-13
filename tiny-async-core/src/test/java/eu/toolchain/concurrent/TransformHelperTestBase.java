@@ -82,7 +82,7 @@ public abstract class TransformHelperTestBase<T> {
   @Test
   public void testResolvedThrows() throws Exception {
     doThrow(e).when(transform).apply(from);
-    done.resolved(from);
+    done.completed(from);
     verify(target, times(Math.max(cancelledTimes, failedTimes))).complete(from);
     verify(target, times(resolvedTimes)).fail(any(Exception.class));
   }
@@ -97,7 +97,7 @@ public abstract class TransformHelperTestBase<T> {
     }
 
     doReturn(f).when(transform).apply(from);
-    done.resolved(from);
+    done.completed(from);
     verify(target, times(Math.max(cancelledTimes, failedTimes))).complete(from);
     verify(f, times(resolvedTimes)).handle(any(CompletionHandle.class));
   }
@@ -131,7 +131,7 @@ public abstract class TransformHelperTestBase<T> {
       final CompletionHandle<Object> done1 =
           (CompletionHandle<Object>) invocation.getArguments()[0];
       done1.cancelled();
-      done1.resolved(onResult);
+      done1.completed(onResult);
       done1.failed(onCause);
 
       verify(target).cancel();

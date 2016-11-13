@@ -9,12 +9,12 @@ public class ThenComposeHelper<S, T> implements CompletionHandle<S> {
   private final CompletableFuture<T> target;
 
   @Override
-  public void failed(Throwable e) throws Exception {
+  public void failed(Throwable e) {
     target.fail(e);
   }
 
   @Override
-  public void resolved(S result) throws Exception {
+  public void completed(S result) {
     final CompletionStage<? extends T> t;
 
     try {
@@ -26,24 +26,24 @@ public class ThenComposeHelper<S, T> implements CompletionHandle<S> {
 
     t.handle(new CompletionHandle<T>() {
       @Override
-      public void failed(Throwable e) throws Exception {
+      public void failed(Throwable e) {
         target.fail(e);
       }
 
       @Override
-      public void resolved(T result) throws Exception {
+      public void completed(T result) {
         target.complete(result);
       }
 
       @Override
-      public void cancelled() throws Exception {
+      public void cancelled() {
         target.cancel();
       }
     });
   }
 
   @Override
-  public void cancelled() throws Exception {
+  public void cancelled() {
     target.cancel();
   }
 }

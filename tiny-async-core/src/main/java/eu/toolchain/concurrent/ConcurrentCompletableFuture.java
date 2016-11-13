@@ -49,10 +49,8 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
    */
   static final RunnablePair END = new RunnablePair(null, null);
 
-  /**
-   * a linked list of callbacks to execute
-   */
-  final AtomicReference<RunnablePair> callbacks = new AtomicReference<>();
+  private final FutureCaller caller;
+
   /**
    * Current state of the future.
    */
@@ -62,8 +60,10 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
    * Never stored null, but uses {@link #NULL} as a surrogate instead.
    */
   volatile Object result = null;
-
-  private final FutureCaller caller;
+  /**
+   * a linked list of callbacks to execute
+   */
+  final AtomicReference<RunnablePair> callbacks = new AtomicReference<>();
 
   /**
    * Setup a concurrent future that uses a custom caller implementation.
@@ -127,7 +127,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
       return this;
     }
 
-    runnable.run();
+    caller.execute(runnable);
     return this;
   }
 
@@ -139,7 +139,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
       return this;
     }
 
-    runnable.run();
+    caller.execute(runnable);
     return this;
   }
 
@@ -151,7 +151,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
       return this;
     }
 
-    runnable.run();
+    caller.execute(runnable);
     return this;
   }
 
@@ -163,7 +163,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
       return this;
     }
 
-    runnable.run();
+    caller.execute(runnable);
     return this;
   }
 
@@ -175,7 +175,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
       return this;
     }
 
-    runnable.run();
+    caller.execute(runnable);
     return this;
   }
 
@@ -187,7 +187,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
       return this;
     }
 
-    runnable.run();
+    caller.execute(runnable);
     return this;
   }
 
@@ -403,7 +403,7 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
     RunnablePair entries = takeAndClear();
 
     while (entries != null) {
-      entries.runnable.run();
+      caller.execute(entries.runnable);
       entries = entries.next;
     }
   }
@@ -479,46 +479,44 @@ public class ConcurrentCompletableFuture<T> extends AbstractImmediate<T>
 
   Runnable doneRunnable(final CompletionHandle<? super T> done) {
     return () -> {
-      final int s = state.get();
-
-      if (s == FAILED) {
-        caller.fail(done, (Throwable) result);
-        return;
+      switch (state.get()) {
+        case FAILED:
+          done.failed((Throwable) result);
+          break;
+        case CANCELLED:
+          done.cancelled();
+          break;
+        default:
+          done.completed(result(result));
+          break;
       }
-
-      if (s == CANCELLED) {
-        caller.cancel(done);
-        return;
-      }
-
-      caller.complete(done, result(result));
     };
   }
 
   Runnable cancelledRunnable(final Runnable cancelled) {
     return () -> {
       if (state.get() == CANCELLED) {
-        caller.cancel(cancelled);
+        cancelled.run();
       }
     };
   }
 
   Runnable finishedRunnable(final Runnable finishable) {
-    return () -> caller.finish(finishable);
+    return finishable;
   }
 
-  Runnable resolvedRunnable(final Consumer<? super T> resolved) {
+  Runnable resolvedRunnable(final Consumer<? super T> consumer) {
     return () -> {
       if (state.get() == COMPLETED) {
-        caller.complete(resolved, result(result));
+        consumer.accept(result(result));
       }
     };
   }
 
-  Runnable failedRunnable(final Consumer<? super Throwable> failed) {
+  Runnable failedRunnable(final Consumer<? super Throwable> consumer) {
     return () -> {
       if (state.get() == FAILED) {
-        caller.fail(failed, (Throwable) result);
+        consumer.accept((Throwable) result);
       }
     };
   }

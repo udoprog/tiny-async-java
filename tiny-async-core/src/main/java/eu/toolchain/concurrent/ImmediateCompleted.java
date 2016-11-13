@@ -14,8 +14,7 @@ import lombok.ToString;
  */
 @EqualsAndHashCode(of = {"result"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"result"})
-public class ImmediateCompleted<T> extends AbstractImmediate<T>
-    implements CompletionStage<T> {
+public class ImmediateCompleted<T> extends AbstractImmediate<T> implements CompletionStage<T> {
   private final FutureCaller caller;
   private final T result;
 
@@ -39,13 +38,13 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T>
 
   @Override
   public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
-    caller.complete(handle, result);
+    caller.execute(() -> handle.completed(result));
     return this;
   }
 
   @Override
   public CompletionStage<T> whenFinished(Runnable runnable) {
-    caller.finish(runnable);
+    caller.execute(runnable);
     return this;
   }
 
@@ -56,7 +55,7 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T>
 
   @Override
   public CompletionStage<T> whenCompleted(Consumer<? super T> consumer) {
-    caller.complete(consumer, result);
+    caller.execute(() -> consumer.accept(result));
     return this;
   }
 

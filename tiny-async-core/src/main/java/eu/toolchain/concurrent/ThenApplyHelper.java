@@ -9,12 +9,12 @@ public class ThenApplyHelper<S, T> implements CompletionHandle<S> {
   private final CompletableFuture<T> target;
 
   @Override
-  public void failed(Throwable cause) throws Exception {
+  public void failed(Throwable cause) {
     target.fail(cause);
   }
 
   @Override
-  public void resolved(S result) throws Exception {
+  public void completed(S result) {
     final T value;
 
     try {
@@ -28,7 +28,7 @@ public class ThenApplyHelper<S, T> implements CompletionHandle<S> {
   }
 
   @Override
-  public void cancelled() throws Exception {
+  public void cancelled() {
     target.cancel();
   }
 }

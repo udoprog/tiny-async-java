@@ -19,18 +19,18 @@ public class SubscribeExample {
 
     f.handle(new CompletionHandle<Integer>() {
       @Override
-      public void resolved(Integer result) throws Exception {
+      public void completed(Integer result) {
         System.out.println("result: " + result);
       }
 
       // uh-oh. Something went wrong.
       @Override
-      public void failed(Throwable e) throws Exception {
+      public void failed(Throwable e) {
         System.out.println("error: " + e);
       }
 
       @Override
-      public void cancelled() throws Exception {
+      public void cancelled() {
         System.out.println("cancelled");
       }
     });

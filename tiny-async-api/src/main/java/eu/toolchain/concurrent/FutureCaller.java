@@ -39,99 +39,13 @@ public interface FutureCaller {
    * @param reference The reference that was leaked
    * @param stack The stacktrace for where it was leaked, can be {@code null} if information is
    * unavailable
-   * @param <T> type of the reference being leaked
    */
-  <T> void referenceLeaked(T reference, StackTraceElement[] stack);
+  void referenceLeaked(Object reference, StackTraceElement[] stack);
 
   /**
-   * Run completed handle on {@code CompletionHandle}.
+   * Execute the given runnable.
    *
-   * @param handle The handle to run
-   * @param result The result that completed the future
-   * @param <T> type of the handle
-   * @see CompletionHandle#resolved(Object)
+   * @param runnable Runnable to execute.
    */
-  <T> void complete(CompletionHandle<T> handle, T result);
-
-  /**
-   * Run failed handle on {@code CompletionHandle}.
-   *
-   * @param handle The handle to run
-   * @param cause The cause of the failure
-   * @param <T> the type of the handle
-   * @see CompletionHandle#failed(Throwable)
-   */
-  <T> void fail(CompletionHandle<T> handle, Throwable cause);
-
-  /**
-   * Run cancelled handle on {@code CompletionHandle}.
-   *
-   * @param handle The handle to run on
-   * @param <T> type of the handle
-   * @see CompletionHandle#cancelled()
-   */
-  <T> void cancel(CompletionHandle<T> handle);
-
-  /**
-   * Run finished handle on {@code FutureFinished}.
-   *
-   * @param runnable handle to run
-   */
-  void finish(Runnable runnable);
-
-  /**
-   * Run cancelled handle on {@code FutureCancelled}.
-   *
-   * @param runnable handle to run on
-   */
-  void cancel(Runnable runnable);
-
-  /**
-   * Run completed handle on {@code FutureResolved<T>}.
-   *
-   * @param consumer The handle to run
-   * @param result The result to complete the future
-   * @param <T> type of the completed value
-   */
-  <T> void complete(Consumer<T> consumer, T result);
-
-  /**
-   * Run failed handle on {@code FutureFailed}.
-   *
-   * @param consumer The handle to run
-   * @param cause The error thrown
-   */
-  void fail(Consumer<? super Throwable> consumer, Throwable cause);
-
-  /**
-   * Run completed handle on {@code StreamCollector}.
-   *
-   * @param collector collector to run handle
-   * @param result result to provide to collector
-   * @param <S> source type of the collector
-   * @param <T> target type of the collector
-   * @see StreamCollector#completed(Object)
-   */
-  <S, T> void complete(StreamCollector<S, T> collector, S result);
-
-  /**
-   * Run failed handle on {@code StreamCollector}.
-   *
-   * @param collector Collector to run handle on
-   * @param cause Error to provide to collector
-   * @param <S> source type of the collector
-   * @param <T> target type of the collector
-   * @see StreamCollector#failed(Throwable)
-   */
-  <S, T> void fail(StreamCollector<S, T> collector, Throwable cause);
-
-  /**
-   * Run cancelled handle on {@code StreamCollector}.
-   *
-   * @param collector Collector to run handle on
-   * @param <S> source type of the collector
-   * @param <T> target type of the collector
-   * @see StreamCollector#cancelled()
-   */
-  <S, T> void cancel(StreamCollector<S, T> collector);
+  void execute(final Runnable runnable);
 }

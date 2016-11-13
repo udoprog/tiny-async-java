@@ -73,18 +73,18 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
   }
 
   @Override
-  public void resolved(S result) throws Exception {
+  public void completed(S result) {
     add(RESOLVED, result);
   }
 
   @Override
-  public void failed(Throwable e) throws Exception {
+  public void failed(Throwable e) {
     add(FAILED, e);
     checkFailed();
   }
 
   @Override
-  public void cancelled() throws Exception {
+  public void cancelled() {
     add(CANCELLED, null);
     checkFailed();
   }

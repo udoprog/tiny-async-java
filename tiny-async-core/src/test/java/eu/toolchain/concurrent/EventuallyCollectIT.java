@@ -85,20 +85,20 @@ public class EventuallyCollectIT {
             final AtomicLong sum = new AtomicLong();
 
             @Override
-            public void completed(Long result) throws Exception {
+            public void completed(Long result) {
               sum.addAndGet(result);
             }
 
             @Override
-            public void failed(Throwable cause) throws Exception {
+            public void failed(Throwable cause) {
             }
 
             @Override
-            public void cancelled() throws Exception {
+            public void cancelled() {
             }
 
             @Override
-            public Long end(int resolved, int failed, int cancelled) throws Exception {
+            public Long end(int resolved, int failed, int cancelled) {
               return sum.get();
             }
           }, PARALLELISM);
@@ -150,7 +150,7 @@ public class EventuallyCollectIT {
       final CompletionStage<Long> res =
           async.eventuallyCollect(callables, new StreamCollector<Long, Long>() {
             @Override
-            public void completed(Long result) throws Exception {
+            public void completed(Long result) {
               if (r.nextInt(2) == 1) {
                 expectedInternalErrors.incrementAndGet();
                 throw new RuntimeException("die");
@@ -158,7 +158,7 @@ public class EventuallyCollectIT {
             }
 
             @Override
-            public void failed(Throwable cause) throws Exception {
+            public void failed(Throwable cause) {
               if (r.nextInt(2) == 1) {
                 expectedInternalErrors.incrementAndGet();
                 throw new RuntimeException("die");
@@ -166,7 +166,7 @@ public class EventuallyCollectIT {
             }
 
             @Override
-            public void cancelled() throws Exception {
+            public void cancelled() {
               if (r.nextInt(2) == 1) {
                 expectedInternalErrors.incrementAndGet();
                 throw new RuntimeException("die");
@@ -174,7 +174,7 @@ public class EventuallyCollectIT {
             }
 
             @Override
-            public Long end(int resolved, int failed, int cancelled) throws Exception {
+            public Long end(int resolved, int failed, int cancelled) {
               return (long) (resolved + failed + cancelled);
             }
           }, PARALLELISM);

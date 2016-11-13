@@ -51,7 +51,7 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
   }
 
   @Override
-  public void failed(final Throwable cause) throws Exception {
+  public void failed(final Throwable cause) {
     final RetryDecision decision = policyInstance.get();
 
     if (!decision.shouldRetry()) {
@@ -76,12 +76,12 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
   }
 
   @Override
-  public void resolved(final T result) throws Exception {
+  public void completed(final T result) {
     future.complete(result);
   }
 
   @Override
-  public void cancelled() throws Exception {
+  public void cancelled() {
     future.cancel();
   }
 

@@ -56,7 +56,7 @@ public class CollectHelperTest {
   @Test
   public void testResolved() throws Exception {
     doNothing().when(helper).add(any(Byte.class), anyObject());
-    helper.resolved(result);
+    helper.completed(result);
     verify(helper).add(CollectHelper.RESOLVED, result);
   }
 

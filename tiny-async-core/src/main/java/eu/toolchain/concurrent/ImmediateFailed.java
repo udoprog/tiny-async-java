@@ -15,8 +15,7 @@ import lombok.ToString;
  */
 @EqualsAndHashCode(of = {"cause"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"cause"})
-public class ImmediateFailed<T> extends AbstractImmediate<T>
-    implements CompletionStage<T> {
+public class ImmediateFailed<T> extends AbstractImmediate<T> implements CompletionStage<T> {
   private final FutureCaller caller;
   private final Throwable cause;
 
@@ -40,13 +39,13 @@ public class ImmediateFailed<T> extends AbstractImmediate<T>
 
   @Override
   public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
-    caller.fail(handle, cause);
+    caller.execute(() -> handle.failed(cause));
     return this;
   }
 
   @Override
   public CompletionStage<T> whenFinished(Runnable runnable) {
-    caller.finish(runnable);
+    caller.execute(runnable);
     return this;
   }
 
@@ -62,7 +61,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T>
 
   @Override
   public CompletionStage<T> whenFailed(Consumer<? super Throwable> consumer) {
-    caller.fail(consumer, cause);
+    caller.execute(() -> consumer.accept(cause));
     return this;
   }
 

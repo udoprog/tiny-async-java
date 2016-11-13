@@ -46,7 +46,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
 
   @Override
   public void failed(Throwable cause) {
-    caller.fail(collector, cause);
+    caller.execute(() -> collector.failed(cause));
     pending.decrementAndGet();
     failed.incrementAndGet();
     cancel = true;
@@ -54,15 +54,15 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
   }
 
   @Override
-  public void resolved(S result) {
-    caller.complete(collector, result);
+  public void completed(S result) {
+    caller.execute(() -> collector.completed(result));
     pending.decrementAndGet();
     checkNext();
   }
 
   @Override
   public void cancelled() {
-    caller.cancel(collector);
+    caller.execute(collector::cancelled);
     pending.decrementAndGet();
     cancelled.incrementAndGet();
     cancel = true;
@@ -97,7 +97,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
       if (cancel) {
         while (callables.hasNext()) {
           callables.next();
-          caller.cancel(collector);
+          caller.execute(collector::cancelled);
           cancelled.incrementAndGet();
         }
       }

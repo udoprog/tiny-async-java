@@ -35,27 +35,27 @@ public class CollectStreamHelper<S, T> implements CompletionHandle<S> {
   }
 
   @Override
-  public void failed(Throwable e) throws Exception {
+  public void failed(Throwable e) {
     failed.incrementAndGet();
-    caller.fail(collector, e);
+    caller.execute(() -> collector.failed(e));
     check();
   }
 
   @Override
-  public void resolved(S result) throws Exception {
+  public void completed(S result) {
     successful.incrementAndGet();
-    caller.complete(collector, result);
+    caller.execute(() -> collector.completed(result));
     check();
   }
 
   @Override
-  public void cancelled() throws Exception {
+  public void cancelled() {
     cancelled.incrementAndGet();
-    caller.cancel(collector);
+    caller.execute(collector::cancelled);
     check();
   }
 
-  private void check() throws Exception {
+  private void check() {
     if (countdown.decrementAndGet() == 0) {
       done();
     }

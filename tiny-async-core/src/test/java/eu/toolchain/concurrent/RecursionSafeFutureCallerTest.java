@@ -58,66 +58,6 @@ public class RecursionSafeFutureCallerTest {
   }
 
   @Test
-  public void testResolveFutureDone() {
-    underTest.complete(done, result);
-    verify(caller).complete(done, result);
-  }
-
-  @Test
-  public void testFailFutureDone() {
-    underTest.fail(done, cause);
-    verify(caller).fail(done, cause);
-  }
-
-  @Test
-  public void testCancelFutureDone() {
-    underTest.cancel(done);
-    verify(caller).cancel(done);
-  }
-
-  @Test
-  public void testRunFutureCancelled() {
-    underTest.cancel(cancelled);
-    verify(caller).cancel(cancelled);
-  }
-
-  @Test
-  public void testRunFutureFinished() {
-    underTest.finish(finished);
-    verify(caller).finish(finished);
-  }
-
-  @Test
-  public void testRunFutureResolved() {
-    underTest.complete(resolved, result);
-    verify(caller).complete(resolved, result);
-  }
-
-  @Test
-  public void testRunFutureFailed() {
-    underTest.fail(failed, cause);
-    verify(caller).fail(failed, cause);
-  }
-
-  @Test
-  public void testResolveStreamCollector() {
-    underTest.complete(streamCollector, result);
-    verify(caller).complete(streamCollector, result);
-  }
-
-  @Test
-  public void testFailStreamCollector() {
-    underTest.fail(streamCollector, cause);
-    verify(caller).fail(streamCollector, cause);
-  }
-
-  @Test
-  public void testCancelStreamCollector() {
-    underTest.cancel(streamCollector);
-    verify(caller).cancel(streamCollector);
-  }
-
-  @Test
   public void testLeakedManagedReference() {
     underTest.referenceLeaked(result, stack);
     verify(caller).referenceLeaked(result, stack);

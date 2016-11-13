@@ -33,8 +33,8 @@ public class CollectAndDiscardHelperTest {
 
   @Test
   public void testResolved() throws Exception {
-    helper.resolved(result);
-    helper.resolved(result);
+    helper.completed(result);
+    helper.completed(result);
 
     verifyTarget(1, 0, 0);
   }
@@ -42,14 +42,14 @@ public class CollectAndDiscardHelperTest {
   @Test
   public void testFailed() throws Exception {
     helper.failed(cause);
-    helper.resolved(result);
+    helper.completed(result);
 
     verifyTarget(0, 1, 0);
   }
 
   @Test
   public void testCancelled() throws Exception {
-    helper.resolved(result);
+    helper.completed(result);
     helper.cancelled();
 
     verifyTarget(0, 0, 1);

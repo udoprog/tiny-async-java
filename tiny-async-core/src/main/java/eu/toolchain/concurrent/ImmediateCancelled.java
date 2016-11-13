@@ -30,25 +30,25 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Compl
 
   @Override
   public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
-    caller.cancel(handle);
+    caller.execute(handle::cancelled);
     return this;
   }
 
   @Override
   public CompletionStage<T> bind(CompletionStage<?> other) {
-    other.cancel();
+    caller.execute(other::cancel);
     return this;
   }
 
   @Override
   public CompletionStage<T> whenFinished(Runnable runnable) {
-    caller.finish(runnable);
+    caller.execute(runnable);
     return this;
   }
 
   @Override
   public CompletionStage<T> whenCancelled(Runnable runnable) {
-    caller.cancel(runnable);
+    caller.execute(runnable);
     return this;
   }
 

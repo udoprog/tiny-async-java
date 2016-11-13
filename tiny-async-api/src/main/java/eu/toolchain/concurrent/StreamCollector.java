@@ -16,7 +16,7 @@ public interface StreamCollector<T, U> {
    * future to be failed. {@link #end(int, int, int)} will not be called, and all other futures
    * associated with the collector will be cancelled.
    */
-  void completed(T result) throws Exception;
+  void completed(T result);
 
   /**
    * Is called when a future is failed.
@@ -26,7 +26,7 @@ public interface StreamCollector<T, U> {
    * be failed. {@link #end(int, int, int)} will not be called will not be called, and all other
    * futures associated with the collector will be cancelled.
    */
-  void failed(Throwable cause) throws Exception;
+  void failed(Throwable cause);
 
   /**
    * Is called when a future is cancelled.
@@ -35,7 +35,7 @@ public interface StreamCollector<T, U> {
    * to be failed. {@link #end(int, int, int)} will not be called, and all other futures associated
    * with the collector will be cancelled.
    */
-  void cancelled() throws Exception;
+  void cancelled();
 
   /**
    * Implement to fire when all callbacks have been completed.
@@ -48,5 +48,5 @@ public interface StreamCollector<T, U> {
    * target future to be failed. {@link #end(int, int, int)} will not be called will not be called,
    * and all other futures associated with the collector will be cancelled.
    */
-  U end(int resolved, int failed, int cancelled) throws Exception;
+  U end(int resolved, int failed, int cancelled);
 }
