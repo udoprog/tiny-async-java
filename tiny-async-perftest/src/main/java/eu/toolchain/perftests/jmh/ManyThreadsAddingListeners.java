@@ -4,47 +4,72 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.CompletionStage;
 import eu.toolchain.concurrent.CoreAsync;
-import eu.toolchain.concurrent.Async;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
+@BenchmarkMode(Mode.AverageTime)
+@State(Scope.Benchmark)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@Fork(value = 2, jvmArgsAppend = "-Djmh.stack.lines=3")
+@Warmup(iterations = 2)
+@Measurement(iterations = 2)
 public class ManyThreadsAddingListeners {
-  private static final int SIZE = 1;
-  private static final int CALLBACK_COUNT = 10000;
-  private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
-  private static final int EXPECTED_SUM = ((SIZE * (SIZE - 1)) / 2) * CALLBACK_COUNT * THREAD_COUNT;
+  public static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+
+  @State(Scope.Benchmark)
+  public static class ThreadPool {
+    final ExecutorService executor = Executors.newWorkStealingPool(THREAD_COUNT);
+    final Async async = CoreAsync.builder().executor(executor).build();
+    final ListeningExecutorService listeningExecutor = MoreExecutors.listeningDecorator(executor);
+  }
+
+  @Param({"1", "5", "10"})
+  public int size;
+
+  @Param({"1", "10", "100", "1000", "10000"})
+  public int callbackCount;
 
   @Benchmark
-  public void tiny() throws Exception {
-    final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-    final Async async = CoreAsync.builder().executor(executor).build();
+  public int tiny(final ThreadPool pool) throws Exception {
+    final int expectedSum = ((size * (size - 1)) / 2) * callbackCount * THREAD_COUNT;
 
     final AtomicInteger sum = new AtomicInteger();
     final CountDownLatch latch = new CountDownLatch(1);
-    final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * THREAD_COUNT * SIZE);
+    final CountDownLatch tasks = new CountDownLatch(callbackCount * size * THREAD_COUNT);
 
     final Consumer<Integer> callback = result -> {
       sum.addAndGet(result);
       tasks.countDown();
     };
 
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < size; i++) {
       final int current = i;
 
-      final CompletionStage<Integer> future = async.call(() -> {
+      final CompletionStage<Integer> future = pool.async.call(() -> {
         latch.await();
         return current;
       });
 
       for (int t = 0; t < THREAD_COUNT; t++) {
-        executor.execute(() -> {
-          for (int c = 0; c < CALLBACK_COUNT; c++) {
+        pool.executor.execute(() -> {
+          for (int c = 0; c < callbackCount; c++) {
             future.whenCompleted(callback);
           }
         });
@@ -54,23 +79,22 @@ public class ManyThreadsAddingListeners {
     latch.countDown();
     tasks.await();
 
-    if (sum.get() != EXPECTED_SUM) {
+    if (sum.get() != expectedSum) {
       throw new IllegalStateException(
           String.format("did not properly collect all values: expected %d, but was %d",
-              EXPECTED_SUM, sum.get()));
+              expectedSum, sum.get()));
     }
 
-    executor.shutdown();
+    return expectedSum;
   }
 
   @Benchmark
-  public void guava() throws Exception {
-    final ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-    final ListeningExecutorService listeningExecutor = MoreExecutors.listeningDecorator(executor);
+  public int guava(final ThreadPool pool) throws Exception {
+    final int expectedSum = ((size * (size - 1)) / 2) * callbackCount * THREAD_COUNT;
 
     final AtomicInteger sum = new AtomicInteger();
     final CountDownLatch latch = new CountDownLatch(1);
-    final CountDownLatch tasks = new CountDownLatch(CALLBACK_COUNT * THREAD_COUNT * SIZE);
+    final CountDownLatch tasks = new CountDownLatch(callbackCount * size * THREAD_COUNT);
 
     final FutureCallback<Integer> callback = new FutureCallback<Integer>() {
       @Override
@@ -84,17 +108,17 @@ public class ManyThreadsAddingListeners {
       }
     };
 
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < size; i++) {
       final int current = i;
 
-      final ListenableFuture<Integer> future = listeningExecutor.submit(() -> {
+      final ListenableFuture<Integer> future = pool.listeningExecutor.submit(() -> {
         latch.await();
         return current;
       });
 
       for (int t = 0; t < THREAD_COUNT; t++) {
-        executor.execute(() -> {
-          for (int c = 0; c < CALLBACK_COUNT; c++) {
+        pool.executor.execute(() -> {
+          for (int c = 0; c < callbackCount; c++) {
             com.google.common.util.concurrent.Futures.addCallback(future, callback);
           }
         });
@@ -104,12 +128,12 @@ public class ManyThreadsAddingListeners {
     latch.countDown();
     tasks.await();
 
-    if (sum.get() != EXPECTED_SUM) {
+    if (sum.get() != expectedSum) {
       throw new IllegalStateException(
           String.format("did not properly collect all values: expected %d, but was %d",
-              EXPECTED_SUM, sum.get()));
+              expectedSum, sum.get()));
     }
 
-    listeningExecutor.shutdown();
+    return expectedSum;
   }
 }
