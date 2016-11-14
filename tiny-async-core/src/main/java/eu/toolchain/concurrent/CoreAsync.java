@@ -178,7 +178,7 @@ public class CoreAsync implements Async {
         new CollectHelper<>(futures.size(), collector, futures, target);
 
     for (final CompletionStage<? extends C> q : futures) {
-      q.handle(done);
+      q.thenHandle(done);
     }
 
     bindSignals(target, futures);
@@ -248,7 +248,7 @@ public class CoreAsync implements Async {
         new CollectStreamHelper<>(caller, futures.size(), collector, target);
 
     for (final CompletionStage<? extends T> q : futures) {
-      q.handle(done);
+      q.thenHandle(done);
     }
 
     bindSignals(target, futures);
@@ -354,7 +354,7 @@ public class CoreAsync implements Async {
     final CollectAndDiscardHelper done = new CollectAndDiscardHelper(futures.size(), target);
 
     for (final CompletionStage<?> q : futures) {
-      q.handle(done);
+      q.thenHandle(done);
     }
 
     bindSignals(target, futures);
@@ -569,7 +569,7 @@ public class CoreAsync implements Async {
     }
 
     /**
-     * Specify a separate executor to use for caller (internal handle) invocation.
+     * Specify a separate executor to use for caller (internal thenHandle) invocation.
      *
      * <p>Implies use of threaded caller.
      *

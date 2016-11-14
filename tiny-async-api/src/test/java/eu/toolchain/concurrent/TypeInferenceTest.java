@@ -172,10 +172,10 @@ public class TypeInferenceTest {
     final CompletionStage<A> a = Mockito.mock(CompletionStage.class);
 
     {
-      a.thenCatchFailed(A);
+      a.thenApplyFailed(A);
     }
     {
-      a.thenCatchFailed(B);
+      a.thenApplyFailed(B);
     }
   }
 

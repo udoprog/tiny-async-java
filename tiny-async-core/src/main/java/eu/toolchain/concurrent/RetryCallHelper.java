@@ -111,7 +111,7 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
       return;
     }
 
-    result.handle(this);
+    result.thenHandle(this);
   }
 
   /**

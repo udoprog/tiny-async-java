@@ -17,7 +17,7 @@ public class SubscribeExample {
       return 10;
     });
 
-    f.handle(new CompletionHandle<Integer>() {
+    f.thenHandle(new CompletionHandle<Integer>() {
       @Override
       public void completed(Integer result) {
         System.out.println("result: " + result);

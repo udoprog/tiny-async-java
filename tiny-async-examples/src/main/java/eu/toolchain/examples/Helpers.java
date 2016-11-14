@@ -12,7 +12,7 @@ public final class Helpers {
 
     /* This step is optional, but recommended.
      *
-     * It guarantees that all aspects of handle and task executions will happen on a thread
+     * It guarantees that all aspects of thenHandle and task executions will happen on a thread
      * pool.
      *
      * If a configuration is provided that would prevent this, an exception will be thrown

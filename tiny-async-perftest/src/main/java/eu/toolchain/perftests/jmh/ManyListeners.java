@@ -47,7 +47,7 @@ public class ManyListeners {
       });
 
       for (int c = 0; c < CALLBACK_COUNT; c++) {
-        future.whenCompleted(callback);
+        future.whenComplete(callback);
       }
     }
 

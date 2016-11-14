@@ -125,7 +125,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
       return;
     }
 
-    f.handle(this);
+    f.thenHandle(this);
   }
 
   private void checkEnd() {

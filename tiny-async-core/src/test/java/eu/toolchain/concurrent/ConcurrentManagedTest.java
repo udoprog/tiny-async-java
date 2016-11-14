@@ -255,7 +255,7 @@ public class ConcurrentManagedTest {
 
         return startFuture;
       }
-    }).when(transformed).handle(any(CompletionHandle.class));
+    }).when(transformed).thenHandle(any(CompletionHandle.class));
 
     doAnswer(new Answer<CompletionStage<Void>>() {
       @Override
@@ -264,7 +264,7 @@ public class ConcurrentManagedTest {
         done.failed(e);
         return startFuture;
       }
-    }).when(errored).handle(any(CompletionHandle.class));
+    }).when(errored).thenHandle(any(CompletionHandle.class));
 
     doAnswer(new Answer<CompletionStage<Void>>() {
       @Override

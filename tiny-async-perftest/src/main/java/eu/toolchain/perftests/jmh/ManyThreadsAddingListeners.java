@@ -70,7 +70,7 @@ public class ManyThreadsAddingListeners {
       for (int t = 0; t < THREAD_COUNT; t++) {
         pool.executor.execute(() -> {
           for (int c = 0; c < callbackCount; c++) {
-            future.whenCompleted(callback);
+            future.whenComplete(callback);
           }
         });
       }

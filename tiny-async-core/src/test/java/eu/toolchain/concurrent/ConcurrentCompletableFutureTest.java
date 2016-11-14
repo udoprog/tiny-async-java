@@ -45,9 +45,9 @@ public class ConcurrentCompletableFutureTest {
   @Mock
   private Runnable finished;
   @Mock
-  private CompletableFuture<To> toFuture;
+  private ConcurrentCompletableFuture<To> toFuture;
   @Mock
-  private CompletableFuture<From> fromFuture;
+  private ConcurrentCompletableFuture<From> fromFuture;
 
   private ConcurrentCompletableFuture<From> future;
 
@@ -116,35 +116,11 @@ public class ConcurrentCompletableFutureTest {
   }
 
   @Test
-  public void testBind() {
-    doReturn(runnable).when(future).otherRunnable(other);
-    doReturn(true).when(future).add(runnable);
-
-    assertEquals(future, future.bind(other));
-
-    verify(future).otherRunnable(other);
-    verify(future).add(runnable);
-    verify(runnable, never()).run();
-  }
-
-  @Test
-  public void testBindDirect() {
-    doReturn(runnable).when(future).otherRunnable(other);
-    doReturn(false).when(future).add(runnable);
-
-    assertEquals(future, future.bind(other));
-
-    verify(future).otherRunnable(other);
-    verify(future).add(runnable);
-    verify(runnable).run();
-  }
-
-  @Test
   public void testHandle() {
     doReturn(runnable).when(future).doneRunnable(done);
     doReturn(true).when(future).add(runnable);
 
-    assertEquals(future, future.handle(done));
+    assertEquals(future, future.thenHandle(done));
 
     verify(future).doneRunnable(done);
     verify(future).add(runnable);
@@ -156,25 +132,11 @@ public class ConcurrentCompletableFutureTest {
     doReturn(runnable).when(future).doneRunnable(done);
     doReturn(false).when(future).add(runnable);
 
-    assertEquals(future, future.handle(done));
+    assertEquals(future, future.thenHandle(done));
 
     verify(future).doneRunnable(done);
     verify(future).add(runnable);
     verify(runnable).run();
-  }
-
-  @Test
-  public void testOtherRunnable1() {
-    future.state.set(ConcurrentCompletableFuture.CANCELLED);
-    future.otherRunnable(other).run();
-    verify(other).cancel();
-  }
-
-  @Test
-  public void testOtherRunnable2() {
-    future.state.set(~ConcurrentCompletableFuture.CANCELLED);
-    future.otherRunnable(other).run();
-    verify(other, never()).cancel();
   }
 
   @Test
@@ -228,12 +190,6 @@ public class ConcurrentCompletableFutureTest {
 
     future.cancelledRunnable(cancelled).run();
     verify(cancelled, never()).run();
-  }
-
-  @Test
-  public void testFinishedRunnable() {
-    future.finishedRunnable(finished).run();
-    verify(finished).run();
   }
 
   @Test
@@ -307,9 +263,9 @@ public class ConcurrentCompletableFutureTest {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private void verifyTransform(Class<? extends CompletionHandle> done) {
+  private void verifyTransform() {
     verify(future).newFuture();
-    verify(future).handle(any(done));
+    verify(future).whenFinished(any(Runnable.class));
   }
 
   @Test
@@ -317,10 +273,10 @@ public class ConcurrentCompletableFutureTest {
     @SuppressWarnings("unchecked") final Function<Object, Object> fn = mock(Function.class);
 
     doReturn(toFuture).when(future).newFuture();
-    doReturn(toFuture).when(toFuture).bind(future);
+    doReturn(toFuture).when(toFuture).whenCancelled(any(Runnable.class));
 
     assertEquals(toFuture, future.thenApply(fn));
-    verifyTransform(ThenApplyHelper.class);
+    verifyTransform();
   }
 
   @Test
@@ -329,10 +285,10 @@ public class ConcurrentCompletableFutureTest {
         mock(Function.class);
 
     doReturn(toFuture).when(future).newFuture();
-    doReturn(toFuture).when(toFuture).bind(future);
+    doReturn(toFuture).when(toFuture).whenCancelled(any(Runnable.class));
 
     assertEquals(toFuture, future.thenCompose(fn));
-    verifyTransform(ThenComposeHelper.class);
+    verifyTransform();
   }
 
   @Test
@@ -340,10 +296,10 @@ public class ConcurrentCompletableFutureTest {
     @SuppressWarnings("unchecked") final Function<Throwable, From> fn = mock(Function.class);
 
     doReturn(fromFuture).when(future).newFuture();
-    doReturn(fromFuture).when(fromFuture).bind(future);
+    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
 
-    assertEquals(fromFuture, future.thenCatchFailed(fn));
-    verifyTransform(ThenCatchFailedHelper.class);
+    assertEquals(fromFuture, future.thenApplyFailed(fn));
+    verifyTransform();
   }
 
   @Test
@@ -352,10 +308,10 @@ public class ConcurrentCompletableFutureTest {
         mock(Function.class);
 
     doReturn(fromFuture).when(future).newFuture();
-    doReturn(fromFuture).when(fromFuture).bind(future);
+    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
 
     assertEquals(fromFuture, future.thenComposeFailed(fn));
-    verifyTransform(ThenComposeFailedHelper.class);
+    verifyTransform();
   }
 
   @Test
@@ -363,10 +319,10 @@ public class ConcurrentCompletableFutureTest {
     @SuppressWarnings("unchecked") final Supplier<From> fn = mock(Supplier.class);
 
     doReturn(fromFuture).when(future).newFuture();
-    doReturn(fromFuture).when(fromFuture).bind(future);
+    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
 
-    assertEquals(fromFuture, future.thenCatchCancelled(fn));
-    verifyTransform(ThenCatchCancelledHelper.class);
+    assertEquals(fromFuture, future.thenApplyCancelled(fn));
+    verifyTransform();
   }
 
   @Test
@@ -374,10 +330,10 @@ public class ConcurrentCompletableFutureTest {
     @SuppressWarnings("unchecked") final Supplier<CompletionStage<From>> fn = mock(Supplier.class);
 
     doReturn(fromFuture).when(future).newFuture();
-    doReturn(fromFuture).when(fromFuture).bind(future);
+    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
 
     assertEquals(fromFuture, future.thenComposeCancelled(fn));
-    verifyTransform(TheComposeCancelledHelper.class);
+    verifyTransform();
   }
 
   private interface To {

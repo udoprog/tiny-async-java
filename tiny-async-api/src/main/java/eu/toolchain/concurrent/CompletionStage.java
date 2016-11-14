@@ -121,21 +121,13 @@ public interface CompletionStage<T> {
   Throwable cause();
 
   /**
-   * Register a future that will be cancelled by this future.
-   *
-   * @param other other future to bind to
-   * @return this future
-   */
-  CompletionStage<T> bind(CompletionStage<?> other);
-
-  /**
    * Register a listener that is called on all three types of events for this future; completed,
    * failed, and cancelled.
    *
-   * @param handle handle to register
+   * @param handle thenHandle to register
    * @return this future
    */
-  CompletionStage<T> handle(CompletionHandle<? super T> handle);
+  CompletionStage<T> thenHandle(CompletionHandle<? super T> handle);
 
   /**
    * Register a listener to be called when this future finishes for any reason.
@@ -146,20 +138,12 @@ public interface CompletionStage<T> {
   CompletionStage<T> whenFinished(Runnable runnable);
 
   /**
-   * Register an listener to be called when this future is cancelled.
-   *
-   * @param runnable listener to register
-   * @return this future
-   */
-  CompletionStage<T> whenCancelled(Runnable runnable);
-
-  /**
    * Register a listener to be called when this future is completed.
    *
    * @param consumer listener to register
    * @return this future
    */
-  CompletionStage<T> whenCompleted(Consumer<? super T> consumer);
+  CompletionStage<T> whenComplete(Consumer<? super T> consumer);
 
   /**
    * Register a listener that is called when a future is failed.
@@ -168,6 +152,14 @@ public interface CompletionStage<T> {
    * @return this future
    */
   CompletionStage<T> whenFailed(Consumer<? super Throwable> consumer);
+
+  /**
+   * Register an listener to be called when this future is cancelled.
+   *
+   * @param runnable listener to register
+   * @return this future
+   */
+  CompletionStage<T> whenCancelled(Runnable runnable);
 
   /**
    * Transform the value of this future into another type using an immediate function.
@@ -185,12 +177,14 @@ public interface CompletionStage<T> {
   <U> CompletionStage<U> thenApply(Function<? super T, ? extends U> fn);
 
   /**
-   * Transform the value of one future into another using an asynchronous function.
+   * Compose the current stage with the given function.
    *
-   * <p>Translates the result of a completed future as it becomes available:
+   * <p>When the current stage has completed, calls the given function with the result of the
+   * current stage.
    *
    * <pre>{@code
-   *   operation().thenCompose(result -> otherOperation(result));
+   *   CompletionStage<A> a = op1();
+   *   CompletionStage<B> a.thenCompose(result -> op2(result));
    * }</pre>
    *
    * @param <U> type of the composed future
@@ -205,7 +199,7 @@ public interface CompletionStage<T> {
    * @param fn the transformation to use
    * @return the applied future
    */
-  CompletionStage<T> thenCatchFailed(Function<? super Throwable, ? extends T> fn);
+  CompletionStage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn);
 
   /**
    * Compose a failed future.
@@ -223,7 +217,7 @@ public interface CompletionStage<T> {
    * @param supplier supplier to get value from
    * @return the applied future
    */
-  CompletionStage<T> thenCatchCancelled(Supplier<? extends T> supplier);
+  CompletionStage<T> thenApplyCancelled(Supplier<? extends T> supplier);
 
   /**
    * Supply an a future when this future is cancelled

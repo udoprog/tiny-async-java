@@ -388,8 +388,8 @@ public class CoreAsyncTest {
 
     verify(underTest).future();
     verify(underTest).bindSignals(completableFuture, futures);
-    verify(f1).handle(any(CollectHelper.class));
-    verify(f2).handle(any(CollectHelper.class));
+    verify(f1).thenHandle(any(CollectHelper.class));
+    verify(f2).thenHandle(any(CollectHelper.class));
   }
 
   @SuppressWarnings("unchecked")
@@ -456,8 +456,8 @@ public class CoreAsyncTest {
 
     verify(underTest).future();
     verify(underTest).bindSignals(completableFuture, futures);
-    verify(f1).handle(any(CollectHelper.class));
-    verify(f2).handle(any(CollectHelper.class));
+    verify(f1).thenHandle(any(CollectHelper.class));
+    verify(f2).thenHandle(any(CollectHelper.class));
   }
 
   @Test
@@ -520,8 +520,8 @@ public class CoreAsyncTest {
 
     verify(underTest).future();
     verify(underTest).bindSignals(completableFuture, futures);
-    verify(f1).handle(any(CollectAndDiscardHelper.class));
-    verify(f2).handle(any(CollectAndDiscardHelper.class));
+    verify(f1).thenHandle(any(CollectAndDiscardHelper.class));
+    verify(f2).thenHandle(any(CollectAndDiscardHelper.class));
   }
 
   @Test

@@ -33,12 +33,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Completi
   }
 
   @Override
-  public CompletionStage<T> bind(CompletionStage<?> other) {
-    return this;
-  }
-
-  @Override
-  public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
+  public CompletionStage<T> thenHandle(CompletionHandle<? super T> handle) {
     caller.execute(() -> handle.failed(cause));
     return this;
   }
@@ -55,7 +50,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Completi
   }
 
   @Override
-  public CompletionStage<T> whenCompleted(Consumer<? super T> consumer) {
+  public CompletionStage<T> whenComplete(Consumer<? super T> consumer) {
     return this;
   }
 
@@ -120,7 +115,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Completi
   }
 
   @Override
-  public CompletionStage<T> thenCatchFailed(Function<? super Throwable, ? extends T> fn) {
+  public CompletionStage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
     return immediateCatchFailed(fn, cause);
   }
 
@@ -132,7 +127,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Completi
   }
 
   @Override
-  public CompletionStage<T> thenCatchCancelled(Supplier<? extends T> supplier) {
+  public CompletionStage<T> thenApplyCancelled(Supplier<? extends T> supplier) {
     return this;
   }
 

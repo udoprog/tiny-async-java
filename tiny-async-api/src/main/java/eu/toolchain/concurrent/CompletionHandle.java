@@ -8,15 +8,6 @@ package eu.toolchain.concurrent;
  */
 public interface CompletionHandle<T> {
   /**
-   * Handle to be called when the underlying future is failed.
-   *
-   * @param cause Exception that caused the underlying future to except.
-   * @throws Exception if the failed future cannot be handled, will <em>not</em> cause the target
-   * future to be failed. Behavior is defined by the implementation of {@link
-   */
-  void failed(Throwable cause);
-
-  /**
    * Handle to be called when the underlying future is completed.
    *
    * @param result The result of the completed future.
@@ -26,9 +17,18 @@ public interface CompletionHandle<T> {
   void completed(T result);
 
   /**
+   * Handle to be called when the underlying future is failed.
+   *
+   * @param cause Exception that caused the underlying future to except.
+   * @throws Exception if the failed future cannot be handled, will <em>not</em> cause the target
+   * future to be failed. Behavior is defined by the implementation of {@link
+   */
+  void failed(Throwable cause);
+
+  /**
    * Handle to be called when the underlying future is cancelled.
    *
-   * @throws Exception if unable to handle the cancelled future, will <em>not</em> cause the target
+   * @throws Exception if unable to thenHandle the cancelled future, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
    */
   void cancelled();

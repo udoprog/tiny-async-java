@@ -79,12 +79,6 @@ public abstract class ImmediateAsyncFutureTestBase {
   }
 
   @Test
-  public void testBind() throws Exception {
-    underTest.bind(other);
-    verify(other, cancelled()).cancel();
-  }
-
-  @Test
   public void testIsDone() throws Exception {
     assertTrue(underTest.isDone());
   }
@@ -177,7 +171,7 @@ public abstract class ImmediateAsyncFutureTestBase {
     final Function<Throwable, From> transform = mock(Function.class);
 
     doReturn(underTest).when(underTest).immediateCatchFailed(transform, cause);
-    assertEquals(underTest, underTest.thenCatchFailed(transform));
+    assertEquals(underTest, underTest.thenApplyFailed(transform));
     verify(underTest, failed()).immediateCatchFailed(transform, cause);
   }
 
@@ -197,7 +191,7 @@ public abstract class ImmediateAsyncFutureTestBase {
     final Supplier<From> transform = mock(Supplier.class);
 
     doReturn(underTest).when(underTest).immediateCatchCancelled(transform);
-    assertEquals(underTest, underTest.thenCatchCancelled(transform));
+    assertEquals(underTest, underTest.thenApplyCancelled(transform));
     verify(underTest, cancelled()).immediateCatchCancelled(transform);
   }
 

@@ -29,14 +29,8 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Compl
   }
 
   @Override
-  public CompletionStage<T> handle(CompletionHandle<? super T> handle) {
+  public CompletionStage<T> thenHandle(CompletionHandle<? super T> handle) {
     caller.execute(handle::cancelled);
-    return this;
-  }
-
-  @Override
-  public CompletionStage<T> bind(CompletionStage<?> other) {
-    caller.execute(other::cancel);
     return this;
   }
 
@@ -53,7 +47,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Compl
   }
 
   @Override
-  public CompletionStage<T> whenCompleted(Consumer<? super T> consumer) {
+  public CompletionStage<T> whenComplete(Consumer<? super T> consumer) {
     return this;
   }
 
@@ -102,13 +96,11 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Compl
     throw new CancellationException();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <U> CompletionStage<U> thenApply(Function<? super T, ? extends U> fn) {
     return new ImmediateCancelled<>(caller);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <U> CompletionStage<U> thenCompose(
       Function<? super T, ? extends CompletionStage<U>> fn
@@ -117,7 +109,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Compl
   }
 
   @Override
-  public CompletionStage<T> thenCatchFailed(Function<? super Throwable, ? extends T> fn) {
+  public CompletionStage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
     return this;
   }
 
@@ -129,7 +121,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Compl
   }
 
   @Override
-  public CompletionStage<T> thenCatchCancelled(Supplier<? extends T> supplier) {
+  public CompletionStage<T> thenApplyCancelled(Supplier<? extends T> supplier) {
     return immediateCatchCancelled(supplier);
   }
 
