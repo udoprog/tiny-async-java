@@ -9,12 +9,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Before;
 import org.junit.Test;
 
-public class DirectFutureCallerTest {
+public class DirectCallerTest {
   private static final Object reference = mock(Object.class);
   private static final RuntimeException e = new RuntimeException();
 
   private AtomicLong internalErrors;
-  private DirectFutureCaller caller;
+  private DirectCaller caller;
 
   private String errorMessage;
 
@@ -25,7 +25,7 @@ public class DirectFutureCallerTest {
 
     errorMessage = null;
 
-    caller = new DirectFutureCaller() {
+    caller = new DirectCaller() {
       @Override
       protected void internalError(String what, Throwable e) {
         internalErrors.incrementAndGet();

@@ -29,15 +29,15 @@ public interface Borrowed<T> extends AutoCloseable {
   /**
    * Fetch the borrowed reference.
    *
-   * @return The borrowed reference.
-   * @throws IllegalStateException if the borrowed reference is not valid.
+   * @return the borrowed reference
+   * @throws IllegalStateException if the borrowed reference is not valid
    */
   T get();
 
   /**
    * Release the borrowed reference.
-   * <p>
-   * A borrowed reference can only be released once. This is required to allow the underlying
+   *
+   * <p>A borrowed reference can only be released once. This is required to allow the underlying
    * framework to free up the borrowed reference when it is no longer used.
    */
   void release();
@@ -45,8 +45,8 @@ public interface Borrowed<T> extends AutoCloseable {
   /**
    * The close method, as defined by {@link AutoCloseable#close()} to allow for try-with-resources
    * statements.
-   * <p>
-   * Override of {@link AutoCloseable#close()} to remove throws signature.
+   *
+   * <p>Override of {@link AutoCloseable#close()} to remove throws signature.
    */
   @Override
   void close();

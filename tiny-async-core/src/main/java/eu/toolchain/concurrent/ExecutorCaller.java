@@ -4,9 +4,9 @@ import java.util.concurrent.ExecutorService;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class ExecutorFutureCaller implements FutureCaller {
+public final class ExecutorCaller implements Caller {
   private final ExecutorService executor;
-  private final FutureCaller caller;
+  private final Caller caller;
 
   @Override
   public void execute(final Runnable runnable) {

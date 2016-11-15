@@ -15,11 +15,11 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"result"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"result"})
 public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage<T> {
-  private final FutureCaller caller;
+  private final Caller caller;
   private final T result;
 
   public ImmediateCompleted(
-      final FutureCaller caller, final T result
+      final Caller caller, final T result
   ) {
     super(caller);
     this.caller = caller;

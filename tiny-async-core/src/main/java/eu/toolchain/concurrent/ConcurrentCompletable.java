@@ -49,7 +49,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
    */
   static final RunnablePair END = new RunnablePair(null, null);
 
-  private final FutureCaller caller;
+  private final Caller caller;
 
   /**
    * Current state of the completable.
@@ -74,7 +74,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
    *
    * @param caller The caller implementation to use.
    */
-  public ConcurrentCompletable(final FutureCaller caller) {
+  public ConcurrentCompletable(final Caller caller) {
     super(caller);
     this.caller = caller;
   }

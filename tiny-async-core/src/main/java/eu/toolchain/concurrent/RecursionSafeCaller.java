@@ -9,9 +9,9 @@ package eu.toolchain.concurrent;
 
 import java.util.concurrent.ExecutorService;
 
-public final class RecursionSafeFutureCaller implements FutureCaller {
+public final class RecursionSafeCaller implements Caller {
   private final ExecutorService executorService;
-  private final FutureCaller caller;
+  private final Caller caller;
   private final long maxRecursionDepth;
 
   private final ThreadLocal<Integer> recursionDepthPerThread = new ThreadLocal<Integer>() {
@@ -20,15 +20,15 @@ public final class RecursionSafeFutureCaller implements FutureCaller {
     }
   };
 
-  public RecursionSafeFutureCaller(
-      ExecutorService executorService, FutureCaller caller, long maxRecursionDepth
+  public RecursionSafeCaller(
+      ExecutorService executorService, Caller caller, long maxRecursionDepth
   ) {
     this.executorService = executorService;
     this.caller = caller;
     this.maxRecursionDepth = maxRecursionDepth;
   }
 
-  public RecursionSafeFutureCaller(ExecutorService executorService, FutureCaller caller) {
+  public RecursionSafeCaller(ExecutorService executorService, Caller caller) {
     this(executorService, caller, 100);
   }
 

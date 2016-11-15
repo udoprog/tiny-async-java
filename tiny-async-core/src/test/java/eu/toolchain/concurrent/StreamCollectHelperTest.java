@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class StreamCollectHelperTest {
-  private FutureCaller caller;
+  private Caller caller;
   private StreamCollector<Object, Object> collector;
   private Completable<Object> target;
 
@@ -23,7 +23,7 @@ public class StreamCollectHelperTest {
   @SuppressWarnings("unchecked")
   @Before
   public void setup() {
-    caller = mock(FutureCaller.class);
+    caller = mock(Caller.class);
     collector = mock(StreamCollector.class);
     target = mock(Completable.class);
 

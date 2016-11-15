@@ -39,7 +39,7 @@ public class EventuallyCollectIT {
 
     internalErrors = new AtomicLong();
 
-    async = CoreAsync.builder().executor(executor).caller(new DirectFutureCaller() {
+    async = CoreAsync.builder().executor(executor).caller(new DirectCaller() {
       @Override
       protected void internalError(String what, Throwable e) {
         internalErrors.incrementAndGet();

@@ -4,9 +4,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public abstract class AbstractImmediate<T> implements Stage<T> {
-  protected FutureCaller caller;
+  protected Caller caller;
 
-  public AbstractImmediate(final FutureCaller caller) {
+  public AbstractImmediate(final Caller caller) {
     this.caller = caller;
   }
 

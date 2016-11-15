@@ -29,15 +29,15 @@ public class RecursionSafeAsyncCallerIT {
   }
 
   public void testBasicRecursionMethod(
-      RecursionSafeFutureCaller caller, ConcurrentLinkedQueue<Integer> testData
+      RecursionSafeCaller caller, ConcurrentLinkedQueue<Integer> testData
   ) {
 
     class RecursionRunnable implements Runnable {
-      RecursionSafeFutureCaller caller;
+      RecursionSafeCaller caller;
       ConcurrentLinkedQueue<Integer> testData;
 
       RecursionRunnable(
-          RecursionSafeFutureCaller caller, ConcurrentLinkedQueue<Integer> testData
+          RecursionSafeCaller caller, ConcurrentLinkedQueue<Integer> testData
       ) {
         this.caller = caller;
         this.testData = testData;
@@ -74,9 +74,9 @@ public class RecursionSafeAsyncCallerIT {
   public void testBasic() throws Exception {
     final long MAX_RECURSION_DEPTH = 2;
     ExecutorService executorServiceReal = Executors.newFixedThreadPool(10);
-    FutureCaller caller2 = Mockito.mock(FutureCaller.class);
-    RecursionSafeFutureCaller recursionCaller =
-        new RecursionSafeFutureCaller(executorServiceReal, caller2, MAX_RECURSION_DEPTH);
+    Caller caller2 = Mockito.mock(Caller.class);
+    RecursionSafeCaller recursionCaller =
+        new RecursionSafeCaller(executorServiceReal, caller2, MAX_RECURSION_DEPTH);
     ConcurrentLinkedQueue<Integer> testData =
         new ConcurrentLinkedQueue<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
 

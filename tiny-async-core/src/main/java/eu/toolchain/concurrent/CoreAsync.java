@@ -33,11 +33,11 @@ public class CoreAsync implements Async {
   /**
    * Default set of helper functions for calling callbacks.
    */
-  private final FutureCaller caller;
+  private final Caller caller;
   private final ClockSource clockSource;
 
   protected CoreAsync(
-      ExecutorService executor, ScheduledExecutorService scheduler, FutureCaller caller,
+      ExecutorService executor, ScheduledExecutorService scheduler, Caller caller,
       ClockSource clockSource
   ) {
     if (caller == null) {
@@ -64,7 +64,7 @@ public class CoreAsync implements Async {
     return executor;
   }
 
-  public FutureCaller caller() {
+  public Caller caller() {
     return caller;
   }
 
@@ -512,7 +512,7 @@ public class CoreAsync implements Async {
   }
 
   public static class Builder {
-    private FutureCaller caller;
+    private Caller caller;
     private boolean threaded;
     private boolean recursionSafe;
     private long maxRecursionDepth = 100;
@@ -562,7 +562,7 @@ public class CoreAsync implements Async {
      * <p>This implies enabling {@link #recursionSafe}.
      *
      * @param maxRecursionDepth The max number of times that a caller may go through {@link
-     * FutureCaller} in a single thread.
+     * Caller} in a single thread.
      * @return this builder
      */
     public Builder maxRecursionDepth(final long maxRecursionDepth) {
@@ -575,13 +575,13 @@ public class CoreAsync implements Async {
      * Specify an asynchronous caller implementation.
      *
      * <p>The 'caller' defines how handles are invoked. The simplest implementations are based of
-     * {@code DirectFutureCaller} , which causes the doCall to be performed directly in the calling
+     * {@code DirectCaller} , which causes the doCall to be performed directly in the calling
      * thread.
      *
      * @param caller caller to configure
      * @return this builder
      */
-    public Builder caller(final FutureCaller caller) {
+    public Builder caller(final Caller caller) {
       if (caller == null) {
         throw new NullPointerException("caller");
       }
@@ -657,7 +657,7 @@ public class CoreAsync implements Async {
     public CoreAsync build() {
       final ExecutorService defaultExecutor = this.executor;
       final ExecutorService callerExecutor = setupCallerExecutor(defaultExecutor);
-      final FutureCaller caller = setupCaller(callerExecutor);
+      final Caller caller = setupCaller(callerExecutor);
 
       return new CoreAsync(defaultExecutor, scheduler, caller, clockSource);
     }
@@ -686,13 +686,13 @@ public class CoreAsync implements Async {
      * @param callerExecutor configured caller executor
      * @return A caller implementation according to the provided configuration.
      */
-    private FutureCaller setupCaller(final ExecutorService callerExecutor) {
-      FutureCaller caller;
+    private Caller setupCaller(final ExecutorService callerExecutor) {
+      Caller caller;
 
       if (this.caller != null) {
         caller = this.caller;
       } else {
-        caller = new PrintStreamFutureCaller(System.err);
+        caller = new PrintStreamCaller(System.err);
       }
 
       if (threaded) {
@@ -700,7 +700,7 @@ public class CoreAsync implements Async {
           throw new IllegalStateException("#threaded enabled, but no caller executor configured");
         }
 
-        caller = new ExecutorFutureCaller(callerExecutor, caller);
+        caller = new ExecutorCaller(callerExecutor, caller);
       }
 
       if (recursionSafe) {
@@ -709,7 +709,7 @@ public class CoreAsync implements Async {
               "#recursionSafe enabled, but no caller executor configured");
         }
 
-        caller = new RecursionSafeFutureCaller(callerExecutor, caller, maxRecursionDepth);
+        caller = new RecursionSafeCaller(callerExecutor, caller, maxRecursionDepth);
       }
 
       return caller;

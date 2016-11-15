@@ -40,7 +40,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @Mock
   private Stage<To> toFuture;
   @Mock
-  private FutureCaller caller;
+  private Caller caller;
   @Mock
   private CompletionHandle<From> done;
   @Mock
@@ -59,7 +59,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   private ExpectedState expected;
 
   protected abstract AbstractImmediate<From> setupFuture(
-      FutureCaller caller, From result, Throwable cause
+      Caller caller, From result, Throwable cause
   );
 
   protected abstract ExpectedState setupState();

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author udoprog
  */
 class StreamCollectHelper<S, T> implements CompletionHandle<S> {
-  private final FutureCaller caller;
+  private final Caller caller;
   private final StreamCollector<S, T> collector;
   private final Completable<? super T> target;
 
@@ -21,7 +21,7 @@ class StreamCollectHelper<S, T> implements CompletionHandle<S> {
   private final AtomicInteger cancelled;
 
   StreamCollectHelper(
-      final FutureCaller caller, final int size, final StreamCollector<S, T> collector,
+      final Caller caller, final int size, final StreamCollector<S, T> collector,
       final Completable<? super T> target
   ) {
     if (size <= 0) {

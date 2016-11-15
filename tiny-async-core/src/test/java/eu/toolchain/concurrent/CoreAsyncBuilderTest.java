@@ -15,12 +15,12 @@ public class CoreAsyncBuilderTest {
   public ExpectedException except = ExpectedException.none();
 
   private ExecutorService executor;
-  private FutureCaller caller;
+  private Caller caller;
 
   @Before
   public void setup() {
     executor = mock(ExecutorService.class);
-    caller = mock(FutureCaller.class);
+    caller = mock(Caller.class);
   }
 
   @Test
@@ -61,7 +61,7 @@ public class CoreAsyncBuilderTest {
   public void testBuilderDefaultDirectCaller() {
     final CoreAsync async = builder().build();
     assertTrue("if not caller configured, using StderrDefaultAsyncCaller",
-        async.caller() instanceof PrintStreamFutureCaller);
+        async.caller() instanceof PrintStreamCaller);
   }
 
   @Test
@@ -78,7 +78,7 @@ public class CoreAsyncBuilderTest {
 
   @Test
   public void setupThreadedCaller() {
-    final FutureCaller caller = mock(FutureCaller.class);
+    final Caller caller = mock(Caller.class);
     builder().callerExecutor(executor).threaded(true).caller(caller).build();
   }
 

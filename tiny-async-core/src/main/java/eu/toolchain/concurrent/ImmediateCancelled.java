@@ -16,9 +16,9 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {})
 public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage<T> {
-  private final FutureCaller caller;
+  private final Caller caller;
 
-  public ImmediateCancelled(final FutureCaller caller) {
+  public ImmediateCancelled(final Caller caller) {
     super(caller);
     this.caller = caller;
   }

@@ -5,12 +5,12 @@ import java.io.PrintStream;
 /**
  * The simplest possible implementation of a concurrent caller.
  */
-public class PrintStreamFutureCaller extends DirectFutureCaller {
-  public static final String CTX = PrintStreamFutureCaller.class.getCanonicalName();
+public class PrintStreamCaller extends DirectCaller {
+  public static final String CTX = PrintStreamCaller.class.getCanonicalName();
 
   private final PrintStream stream;
 
-  public PrintStreamFutureCaller(final PrintStream stream) {
+  public PrintStreamCaller(final PrintStream stream) {
     this.stream = stream;
   }
 

@@ -20,7 +20,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
   /* lock that must be acquired before using {@link callables} */
   private final Object lock = new Object();
 
-  private final FutureCaller caller;
+  private final Caller caller;
   private final Iterator<? extends Callable<? extends Stage<? extends S>>> callables;
   private final StreamCollector<? super S, ? extends T> collector;
   private final Completable<? super T> future;
@@ -31,7 +31,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
   volatile boolean done = false;
 
   public DelayedCollectCoordinator(
-      final FutureCaller caller,
+      final Caller caller,
       final Collection<? extends Callable<? extends Stage<? extends S>>> callables,
       final StreamCollector<S, T> collector, final Completable<? super T> future,
       int parallelism

@@ -28,7 +28,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
   private static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
   private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
-  private final FutureCaller caller;
+  private final Caller caller;
   private final Supplier<? extends Stage<T>> setup;
 
   // the managed reference.
@@ -51,7 +51,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
   final AtomicInteger leases = new AtomicInteger(1);
 
   public static <T> ConcurrentManaged<T> newManaged(
-      final Async async, final FutureCaller caller,
+      final Async async, final Caller caller,
       final Supplier<? extends Stage<T>> setup,
       final Function<? super T, ? extends Stage<Void>> teardown
   ) {
@@ -67,7 +67,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   ConcurrentManaged(
-      final FutureCaller caller, final Supplier<? extends Stage<T>> setup,
+      final Caller caller, final Supplier<? extends Stage<T>> setup,
       final Completable<Void> startFuture, final Completable<Void> zeroLeaseFuture,
       final Completable<T> stopReferenceFuture, final Stage<Void> stopFuture
   ) {

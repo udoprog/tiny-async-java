@@ -1,8 +1,8 @@
 package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.CoreAsync;
-import eu.toolchain.concurrent.DirectFutureCaller;
-import eu.toolchain.concurrent.FutureCaller;
+import eu.toolchain.concurrent.DirectCaller;
+import eu.toolchain.concurrent.Caller;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
@@ -27,7 +27,7 @@ public final class Helpers {
      * Use a caller implementation that causes the invoking thread (direct) to execute
      * handlers. This is relatively
      * sane, but can cause very deep stacks in certain situation. */
-    final FutureCaller caller = new DirectFutureCaller() {
+    final Caller caller = new DirectCaller() {
       /* This will be invoked on unexpected errors, use your logging framework to report them. */
       @Override
       public void internalError(String what, Throwable e) {

@@ -5,7 +5,7 @@ import static eu.toolchain.concurrent.CoreAsync.formatStack;
 /**
  * An abstract implementation of a caller that invokes the handles directly in the calling thread.
  */
-public abstract class DirectFutureCaller implements FutureCaller {
+public abstract class DirectCaller implements Caller {
   @Override
   public void execute(final Runnable runnable) {
     try {

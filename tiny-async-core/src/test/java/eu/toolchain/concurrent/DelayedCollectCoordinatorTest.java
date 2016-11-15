@@ -15,7 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class DelayedCollectCoordinatorTest {
-  private FutureCaller caller;
+  private Caller caller;
   private StreamCollector<Object, Object> collector;
   private Completable<Object> future;
   private Callable<Stage<Object>> callable;
@@ -30,7 +30,7 @@ public class DelayedCollectCoordinatorTest {
   @SuppressWarnings("unchecked")
   @Before
   public void setup() throws Exception {
-    caller = mock(FutureCaller.class);
+    caller = mock(Caller.class);
     collector = mock(StreamCollector.class);
     future = mock(Completable.class);
     callable = mock(Callable.class);

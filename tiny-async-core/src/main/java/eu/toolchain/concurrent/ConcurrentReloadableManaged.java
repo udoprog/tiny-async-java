@@ -6,14 +6,14 @@ import java.util.function.Supplier;
 
 public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   private final Async async;
-  private final FutureCaller caller;
+  private final Caller caller;
   private final Supplier<? extends Stage<T>> setup;
   private final Function<? super T, ? extends Stage<Void>> teardown;
 
   private final AtomicReference<Managed<T>> current;
 
   public static <C> ReloadableManaged<C> newReloadableManaged(
-      final Async async, final FutureCaller caller,
+      final Async async, final Caller caller,
       final Supplier<? extends Stage<C>> setup,
       final Function<? super C, ? extends Stage<Void>> teardown
   ) {
@@ -21,7 +21,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   }
 
   ConcurrentReloadableManaged(
-      final Async async, final FutureCaller caller,
+      final Async async, final Caller caller,
       final Supplier<? extends Stage<T>> setup,
       final Function<? super T, ? extends Stage<Void>> teardown
   ) {

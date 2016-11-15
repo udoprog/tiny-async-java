@@ -16,11 +16,11 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"cause"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"cause"})
 public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T> {
-  private final FutureCaller caller;
+  private final Caller caller;
   private final Throwable cause;
 
   public ImmediateFailed(
-      FutureCaller caller, Throwable cause
+      Caller caller, Throwable cause
   ) {
     super(caller);
     this.caller = caller;

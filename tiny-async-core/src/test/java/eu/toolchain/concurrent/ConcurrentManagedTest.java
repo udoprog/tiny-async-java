@@ -42,7 +42,7 @@ public class ConcurrentManagedTest {
   @Mock
   private Async async;
   @Mock
-  private FutureCaller caller;
+  private Caller caller;
   @Mock
   private Supplier<? extends Stage<Object>> setup;
   @Mock

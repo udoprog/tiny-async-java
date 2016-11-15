@@ -29,7 +29,7 @@ public abstract class AbstractCompletableIT {
   public Timeout timeout = Timeout.millis(500);
 
   @Mock
-  public FutureCaller caller;
+  public Caller caller;
 
   private Completable<Integer> outer;
   private Completable<Integer> inner;
@@ -45,7 +45,7 @@ public abstract class AbstractCompletableIT {
     }).when(caller).execute(any(Runnable.class));
   }
 
-  protected abstract <T> Completable<T> setupFuture(FutureCaller caller);
+  protected abstract <T> Completable<T> setupFuture(Caller caller);
 
   private <T> Completable<T> setupFuture() {
     return setupFuture(caller);

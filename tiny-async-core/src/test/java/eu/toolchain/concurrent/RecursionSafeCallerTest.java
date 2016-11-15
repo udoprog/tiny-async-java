@@ -16,13 +16,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RecursionSafeFutureCallerTest {
+public class RecursionSafeCallerTest {
   private final Object result = new Object();
   private final Throwable cause = new Exception();
 
-  private FutureCaller caller;
+  private Caller caller;
 
-  private RecursionSafeFutureCaller underTest;
+  private RecursionSafeCaller underTest;
 
   @Mock
   private CompletionHandle<Object> done;
@@ -53,8 +53,8 @@ public class RecursionSafeFutureCallerTest {
       }
     }).when(executor).submit(any(Runnable.class));
 
-    caller = mock(FutureCaller.class);
-    underTest = new RecursionSafeFutureCaller(executor, caller);
+    caller = mock(Caller.class);
+    underTest = new RecursionSafeCaller(executor, caller);
   }
 
   @Test

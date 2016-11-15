@@ -11,14 +11,14 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class ExecutorFutureCallerTest {
+public class ExecutorCallerTest {
   private final Object result = new Object();
   private final Throwable cause = new Exception();
 
   private ExecutorService executor;
-  private FutureCaller caller;
+  private Caller caller;
 
-  private ExecutorFutureCaller underTest;
+  private ExecutorCaller underTest;
 
   private StackTraceElement[] stack = new StackTraceElement[0];
 
@@ -36,8 +36,8 @@ public class ExecutorFutureCallerTest {
       }
     }).when(executor).execute(any(Runnable.class));
 
-    caller = mock(FutureCaller.class);
-    underTest = new ExecutorFutureCaller(executor, caller);
+    caller = mock(Caller.class);
+    underTest = new ExecutorCaller(executor, caller);
   }
 
   @Test

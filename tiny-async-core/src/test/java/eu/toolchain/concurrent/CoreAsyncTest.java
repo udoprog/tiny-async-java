@@ -52,9 +52,9 @@ public class CoreAsyncTest {
   @Mock
   private ExecutorService executor;
   @Mock
-  private FutureCaller caller;
+  private Caller caller;
   @Mock
-  private FutureCaller threadedCaller;
+  private Caller threadedCaller;
   @Mock
   private ClockSource clockSource;
   @Mock

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * A clock source that gives the current time in milliseconds.
  */
+@FunctionalInterface
 public interface ClockSource {
   TimeUnit UNIT = TimeUnit.MILLISECONDS;
 

@@ -21,7 +21,7 @@ public class AbstractImmediateTest {
   private static final RuntimeException cause = new RuntimeException();
 
   @Mock
-  private FutureCaller caller;
+  private Caller caller;
   @Mock
   private Function<From, To> fn;
   @Mock

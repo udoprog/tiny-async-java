@@ -29,7 +29,7 @@ public class ConcurrentCompletableTest {
   @Mock
   private From result;
   @Mock
-  private FutureCaller caller;
+  private Caller caller;
   @Mock
   private Runnable runnable;
   @Mock
