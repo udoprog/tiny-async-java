@@ -114,27 +114,27 @@ public interface Stage<T> {
   Throwable cause();
 
   /**
-   * Register a listener that is called on all three types of events for this completable; completed,
+   * Register a listener that is called on all three types of events for the current stage; completed,
    * failed, and cancelled.
    *
    * @param handle handle to register
-   * @return this completable
+   * @return the current stage
    */
   Stage<T> whenDone(CompletionHandle<? super T> handle);
 
   /**
-   * Register a listener to be called when this completable finishes for any reason.
+   * Register a listener to be called when the current stage finishes for any reason.
    *
    * @param runnable function to be fired
-   * @return this completable
+   * @return the current stage
    */
   Stage<T> whenFinished(Runnable runnable);
 
   /**
-   * Register a listener to be called when this completable is completed.
+   * Register a listener to be called when the current stage is completed.
    *
    * @param consumer listener to register
-   * @return this completable
+   * @return the current stage
    */
   Stage<T> whenComplete(Consumer<? super T> consumer);
 
@@ -142,20 +142,20 @@ public interface Stage<T> {
    * Register a listener that is called when a completable is failed.
    *
    * @param consumer listener to register
-   * @return this completable
+   * @return the current stage
    */
   Stage<T> whenFailed(Consumer<? super Throwable> consumer);
 
   /**
-   * Register an listener to be called when this completable is cancelled.
+   * Register an listener to be called when the current stage is cancelled.
    *
    * @param runnable listener to register
-   * @return this completable
+   * @return the current stage
    */
   Stage<T> whenCancelled(Runnable runnable);
 
   /**
-   * Transform the value of this completable into another type using an immediate function.
+   * Transform the value of the current stage into another type using an immediate function.
    *
    * <p>Translates the result of a completed completable as it becomes available:
    *
@@ -213,7 +213,7 @@ public interface Stage<T> {
   Stage<T> thenApplyCancelled(Supplier<? extends T> supplier);
 
   /**
-   * Supply an a completable when this completable is cancelled
+   * Supply an a completable when the current stage is cancelled
    *
    * @param supplier supplier to get completable from
    * @return the composed completable
