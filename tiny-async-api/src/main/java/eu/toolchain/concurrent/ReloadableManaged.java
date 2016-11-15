@@ -9,11 +9,10 @@ package eu.toolchain.concurrent;
 public interface ReloadableManaged<T> extends Managed<T> {
   /**
    * Reload the underlying reference.
-   * <p>
-   * The new reference will be constructed before the old one is shut down.
    *
-   * @param startFirst Start the new managed reference before shutting down the old one.
-   * @return A future that will be completed once the reference has been reloaded.
+   * <p>The new reference will be constructed and started before the old one is shut down.
+   *
+   * @return a future that will be completed once the reference has been reloaded
    */
-  Stage<Void> reload(boolean startFirst);
+  Stage<Void> reload();
 }

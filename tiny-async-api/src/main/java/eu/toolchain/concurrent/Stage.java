@@ -21,7 +21,9 @@ import java.util.function.Supplier;
  *
  * <li><em>failed</em>, the stage has failed to be completed.</li>
  *
- * <li><em>cancelled</em>, the stage has been cancelled.</li></ul>
+ * <li><em>cancelled</em>, the stage has been cancelled.</li>
+ *
+ * </ul>
  *
  * <p>The last three states are characterized as <em>end states</em>, a completable can only
  * transition into one of these, and when in an end-state will never go into another state. If a
