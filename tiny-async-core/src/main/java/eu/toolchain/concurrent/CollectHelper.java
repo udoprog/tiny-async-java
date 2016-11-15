@@ -12,52 +12,48 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Helper class for {@link CoreAsync#collect(Collection, Function)}
- * <p>
- * The helper implements {@code CompletionHandle}, and is intended to be used by binding it as a
- * listener to the futures being collected.
- * <p>
- * This is a lock-free implementation capable of writing the results out of order.
  *
- * @param <S> the source type being collected.
- * @param <T> the target type, the collected sources are being transformed into.
+ * <p>The helper implements {@code CompletionHandle}, and is intended to be used by binding it as a
+ * listener to the futures being collected.
+ *
+ * <p>This is a lock-free implementation capable of writing the results out of order.
+ *
+ * @param <T> the source type being collected
+ * @param <U> the collected value
  */
-public class CollectHelper<S, T> implements CompletionHandle<S> {
+public class CollectHelper<T, U> implements CompletionHandle<T> {
   public static final byte RESOLVED = 0x1;
   public static final byte FAILED = 0x2;
   public static final byte CANCELLED = 0x3;
 
-  final Function<? super Collection<S>, ? extends T> collector;
+  final Function<? super Collection<T>, ? extends U> collector;
   Collection<? extends Stage<?>> sources;
-  final Completable<? super T> target;
-
+  final Completable<? super U> target;
   final int size;
 
   /* The collected results, non-final to allow for setting to null. Allows for random writes
-  since its a pre-emptively
-   * sized array. */ Object[] values;
+   * since its a pre-emptively sized array. */
+  Object[] values;
   byte[] states;
 
   /* maintain position separate since the is a potential race condition between getting the
-  current position and
-   * setting the entry. This is avoided by only relying on countdown to trigger when we are
-   * done. */
+   * current position and setting the entry. This is avoided by only relying on countdown to trigger
+   * when we are done. */
   final AtomicInteger write = new AtomicInteger();
 
-  /* maintain a separate countdown since the write position might be out of order, this causes
-  all threads to
-   * synchronize after the write */
+  /* maintain a separate countdown since the write position might be out of order, this causes all
+   * threads to synchronize after the write */
   final AtomicInteger countdown;
 
-  /* Indicate that collector is finished to avoid the case where the write position wraps
-  around. */
+  /* Indicate that collector is finished to avoid the case where the write position wraps around. */
   final AtomicBoolean finished = new AtomicBoolean();
 
   /* On a single failure, cause all other sources to be cancelled */
   final AtomicBoolean failed = new AtomicBoolean();
 
   public CollectHelper(
-      int size, Function<? super Collection<S>, ? extends T> collector,
-      Collection<? extends Stage<?>> sources, Completable<? super T> target
+      int size, Function<? super Collection<T>, ? extends U> collector,
+      Collection<? extends Stage<?>> sources, Completable<? super U> target
   ) {
     if (size <= 0) {
       throw new IllegalArgumentException("size");
@@ -73,7 +69,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
   }
 
   @Override
-  public void completed(S result) {
+  public void completed(T result) {
     add(RESOLVED, result);
   }
 
@@ -145,7 +141,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
   }
 
   void done(Results r) {
-    final Collection<S> results = r.results;
+    final Collection<T> results = r.results;
     final Collection<Throwable> errors = r.errors;
     final int cancelled = r.cancelled;
 
@@ -159,7 +155,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
       return;
     }
 
-    T result;
+    U result;
 
     try {
       result = collector.apply(results);
@@ -173,7 +169,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
 
   @SuppressWarnings("unchecked")
   Results collect() {
-    final List<S> results = new ArrayList<>();
+    final List<T> results = new ArrayList<>();
     final List<Throwable> errors = new ArrayList<>();
     int cancelled = 0;
 
@@ -182,7 +178,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
 
       switch (type) {
         case RESOLVED:
-          results.add((S) values[i]);
+          results.add((T) values[i]);
           break;
         case FAILED:
           errors.add((Throwable) values[i]);
@@ -204,7 +200,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
 
   @RequiredArgsConstructor
   class Results {
-    private final List<S> results;
+    private final List<T> results;
     private final List<Throwable> errors;
     private final int cancelled;
   }

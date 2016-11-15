@@ -244,8 +244,8 @@ public class CoreAsync implements Async {
   ) {
     final Completable<U> target = completable();
 
-    final CollectStreamHelper<? super T, ? extends U> done =
-        new CollectStreamHelper<>(caller, futures.size(), collector, target);
+    final StreamCollectHelper<? super T, ? extends U> done =
+        new StreamCollectHelper<>(caller, futures.size(), collector, target);
 
     for (final Stage<? extends T> q : futures) {
       q.whenDone(done);
@@ -283,8 +283,8 @@ public class CoreAsync implements Async {
   ) {
     final Completable<U> target = completable();
 
-    final CollectEndHelper<? extends U> done =
-        new CollectEndHelper<>(caller, futures.size(), collector, target);
+    final EndCollectHelper<? extends U> done =
+        new EndCollectHelper<>(caller, futures.size(), collector, target);
 
     for (final Stage<? extends T> q : futures) {
       q.whenDone(done);

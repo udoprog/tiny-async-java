@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Implementation of {@link Async#collectAndDiscard(Collection)}.
+ * Helper for of {@link Async#collectAndDiscard(Collection)}.
  *
  * @author udoprog
  */

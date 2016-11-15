@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CollectStreamHelperTest {
+public class StreamCollectHelperTest {
   private FutureCaller caller;
   private StreamCollector<Object, Object> collector;
   private Completable<Object> target;
@@ -35,13 +35,13 @@ public class CollectStreamHelperTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testZeroSize() {
-    new CollectStreamHelper<Object, Object>(caller, 0, collector, target);
+    new StreamCollectHelper<Object, Object>(caller, 0, collector, target);
   }
 
   @Test
   public void testOneFailed() throws Exception {
-    final CollectStreamHelper<Object, Object> helper =
-        new CollectStreamHelper<Object, Object>(caller, 2, collector, target);
+    final StreamCollectHelper<Object, Object> helper =
+        new StreamCollectHelper<Object, Object>(caller, 2, collector, target);
 
     when(collector.end(1, 1, 0)).thenReturn(transformed);
 
@@ -57,8 +57,8 @@ public class CollectStreamHelperTest {
 
   @Test
   public void testOneCancelled() throws Exception {
-    final CollectStreamHelper<Object, Object> helper =
-        new CollectStreamHelper<Object, Object>(caller, 2, collector, target);
+    final StreamCollectHelper<Object, Object> helper =
+        new StreamCollectHelper<Object, Object>(caller, 2, collector, target);
 
     when(collector.end(1, 0, 1)).thenReturn(transformed);
 
@@ -74,8 +74,8 @@ public class CollectStreamHelperTest {
 
   @Test
   public void testAllResolved() throws Exception {
-    final CollectStreamHelper<Object, Object> helper =
-        new CollectStreamHelper<Object, Object>(caller, 2, collector, target);
+    final StreamCollectHelper<Object, Object> helper =
+        new StreamCollectHelper<Object, Object>(caller, 2, collector, target);
 
     when(collector.end(2, 0, 0)).thenReturn(transformed);
 
@@ -91,8 +91,8 @@ public class CollectStreamHelperTest {
 
   @Test
   public void testEndThrows() throws Exception {
-    final CollectStreamHelper<Object, Object> helper =
-        new CollectStreamHelper<Object, Object>(caller, 1, collector, target);
+    final StreamCollectHelper<Object, Object> helper =
+        new StreamCollectHelper<Object, Object>(caller, 1, collector, target);
 
     when(collector.end(1, 0, 0)).thenThrow(e);
 

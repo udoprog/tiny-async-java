@@ -4,13 +4,13 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Implementation of {@link Async#collect(Collection, StreamCollector)}.
+ * Helper for {@link Async#streamCollect(Collection, StreamCollector)}.
  *
- * @param <S> the source type being collected.
- * @param <T> The type the source type is being collected and transformed into.
+ * @param <S> the source type being collected
+ * @param <T> The type the source type is being collected and transformed into
  * @author udoprog
  */
-public class CollectStreamHelper<S, T> implements CompletionHandle<S> {
+public class StreamCollectHelper<S, T> implements CompletionHandle<S> {
   private final FutureCaller caller;
   private final StreamCollector<S, T> collector;
   private final Completable<? super T> target;
@@ -20,7 +20,7 @@ public class CollectStreamHelper<S, T> implements CompletionHandle<S> {
   private final AtomicInteger failed = new AtomicInteger();
   private final AtomicInteger cancelled = new AtomicInteger();
 
-  public CollectStreamHelper(
+  public StreamCollectHelper(
       final FutureCaller caller, final int size, final StreamCollector<S, T> collector,
       final Completable<? super T> target
   ) {

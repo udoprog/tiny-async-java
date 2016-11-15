@@ -2,7 +2,12 @@ package eu.toolchain.concurrent;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CollectEndHelper<T> implements CompletionHandle<Object> {
+/**
+ * Helper for {@link Async#endCollect(java.util.Collection, EndCollector)}.
+ *
+ * @param <T> the type being collected
+ */
+public class EndCollectHelper<T> implements CompletionHandle<Object> {
   private final FutureCaller caller;
   private final EndCollector<T> collector;
   private final Completable<? super T> target;
@@ -12,7 +17,7 @@ public class CollectEndHelper<T> implements CompletionHandle<Object> {
   private final AtomicInteger failed = new AtomicInteger();
   private final AtomicInteger cancelled = new AtomicInteger();
 
-  public CollectEndHelper(
+  public EndCollectHelper(
       final FutureCaller caller, final int size, final EndCollector<T> collector,
       final Completable<? super T> target
   ) {
