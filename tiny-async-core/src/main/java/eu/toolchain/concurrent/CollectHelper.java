@@ -21,10 +21,10 @@ import lombok.RequiredArgsConstructor;
  * @param <T> the source type being collected
  * @param <U> the collected value
  */
-public class CollectHelper<T, U> implements CompletionHandle<T> {
-  public static final byte RESOLVED = 0x1;
-  public static final byte FAILED = 0x2;
-  public static final byte CANCELLED = 0x3;
+class CollectHelper<T, U> implements CompletionHandle<T> {
+  static final byte RESOLVED = 0x1;
+  static final byte FAILED = 0x2;
+  static final byte CANCELLED = 0x3;
 
   final Function<? super Collection<T>, ? extends U> collector;
   Collection<? extends Stage<?>> sources;
@@ -51,7 +51,7 @@ public class CollectHelper<T, U> implements CompletionHandle<T> {
   /* On a single failure, cause all other sources to be cancelled */
   final AtomicBoolean failed = new AtomicBoolean();
 
-  public CollectHelper(
+  CollectHelper(
       int size, Function<? super Collection<T>, ? extends U> collector,
       Collection<? extends Stage<?>> sources, Completable<? super U> target
   ) {

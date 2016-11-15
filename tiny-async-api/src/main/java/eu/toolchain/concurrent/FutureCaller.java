@@ -36,16 +36,16 @@ public interface FutureCaller {
   /**
    * Indicate that a Managed reference has been leaked.
    *
-   * @param reference The reference that was leaked
-   * @param stack The stacktrace for where it was leaked, can be {@code null} if information is
+   * @param reference the reference that was leaked
+   * @param stack the stacktrace for where it was leaked, can be {@code null} if the information is
    * unavailable
    */
   void referenceLeaked(Object reference, StackTraceElement[] stack);
 
   /**
-   * Execute the given runnable.
+   * Execute the given action.
    *
-   * @param runnable Runnable to execute.
+   * @param runnable action to execute
    */
-  void execute(final Runnable runnable);
+  void execute(Runnable runnable);
 }

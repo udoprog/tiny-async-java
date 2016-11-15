@@ -284,7 +284,7 @@ public class CoreAsync implements Async {
     final Completable<U> target = completable();
 
     final EndCollectHelper<? extends U> done =
-        new EndCollectHelper<>(caller, futures.size(), collector, target);
+        new EndCollectHelper<>(futures.size(), collector, target);
 
     for (final Stage<? extends T> q : futures) {
       q.whenDone(done);

@@ -10,17 +10,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <T> The type the source type is being collected and transformed into
  * @author udoprog
  */
-public class StreamCollectHelper<S, T> implements CompletionHandle<S> {
+class StreamCollectHelper<S, T> implements CompletionHandle<S> {
   private final FutureCaller caller;
   private final StreamCollector<S, T> collector;
   private final Completable<? super T> target;
+
   private final AtomicInteger countdown;
+  private final AtomicInteger successful;
+  private final AtomicInteger failed;
+  private final AtomicInteger cancelled;
 
-  private final AtomicInteger successful = new AtomicInteger();
-  private final AtomicInteger failed = new AtomicInteger();
-  private final AtomicInteger cancelled = new AtomicInteger();
-
-  public StreamCollectHelper(
+  StreamCollectHelper(
       final FutureCaller caller, final int size, final StreamCollector<S, T> collector,
       final Completable<? super T> target
   ) {
@@ -31,7 +31,11 @@ public class StreamCollectHelper<S, T> implements CompletionHandle<S> {
     this.caller = caller;
     this.collector = collector;
     this.target = target;
+
     this.countdown = new AtomicInteger(size);
+    this.successful = new AtomicInteger();
+    this.failed = new AtomicInteger();
+    this.cancelled = new AtomicInteger();
   }
 
   @Override
@@ -57,20 +61,11 @@ public class StreamCollectHelper<S, T> implements CompletionHandle<S> {
 
   private void check() {
     if (countdown.decrementAndGet() == 0) {
-      done();
+      try {
+        target.complete(collector.end(successful.get(), failed.get(), cancelled.get()));
+      } catch (Exception e) {
+        target.fail(e);
+      }
     }
-  }
-
-  private void done() {
-    final T result;
-
-    try {
-      result = collector.end(successful.get(), failed.get(), cancelled.get());
-    } catch (Exception e) {
-      target.fail(e);
-      return;
-    }
-
-    target.complete(result);
   }
 }

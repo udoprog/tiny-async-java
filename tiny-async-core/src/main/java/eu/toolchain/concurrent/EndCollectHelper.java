@@ -7,28 +7,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @param <T> the type being collected
  */
-public class EndCollectHelper<T> implements CompletionHandle<Object> {
-  private final FutureCaller caller;
+class EndCollectHelper<T> implements CompletionHandle<Object> {
   private final EndCollector<T> collector;
   private final Completable<? super T> target;
+
   private final AtomicInteger countdown;
+  private final AtomicInteger successful;
+  private final AtomicInteger failed;
+  private final AtomicInteger cancelled;
 
-  private final AtomicInteger successful = new AtomicInteger();
-  private final AtomicInteger failed = new AtomicInteger();
-  private final AtomicInteger cancelled = new AtomicInteger();
-
-  public EndCollectHelper(
-      final FutureCaller caller, final int size, final EndCollector<T> collector,
-      final Completable<? super T> target
+  EndCollectHelper(
+      final int size, final EndCollector<T> collector, final Completable<? super T> target
   ) {
     if (size <= 0) {
       throw new IllegalArgumentException("size");
     }
 
-    this.caller = caller;
     this.collector = collector;
     this.target = target;
+
     this.countdown = new AtomicInteger(size);
+    this.successful = new AtomicInteger();
+    this.failed = new AtomicInteger();
+    this.cancelled = new AtomicInteger();
   }
 
   @Override
