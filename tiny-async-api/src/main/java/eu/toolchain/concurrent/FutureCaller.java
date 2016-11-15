@@ -3,7 +3,7 @@ package eu.toolchain.concurrent;
 import java.util.function.Consumer;
 
 /**
- * User-defined functions to thenHandle unexpected circumstances.
+ * User-defined functions to whenDone unexpected circumstances.
  *
  * <p>The implementation of these methods will be invoked from the calling thread that interacts with
  * the future.
@@ -15,9 +15,9 @@ import java.util.function.Consumer;
  *
  * <pre>{@code
  * new FutureCaller() {
- *   public <T> void complete(CompletionHandle<T> thenHandle, T result) {
+ *   public <T> void complete(CompletionHandle<T> whenDone, T result) {
  *     try {
- *       thenHandle.completed(result);
+ *       whenDone.completed(result);
  *     } catch(Exception e) {
  *       // log unexpected error
  *     }

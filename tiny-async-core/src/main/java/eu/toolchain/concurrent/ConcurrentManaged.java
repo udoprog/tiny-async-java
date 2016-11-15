@@ -29,18 +29,18 @@ public class ConcurrentManaged<T> implements Managed<T> {
   private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
   private final FutureCaller caller;
-  private final Supplier<? extends CompletionStage<T>> setup;
+  private final Supplier<? extends Stage<T>> setup;
 
   // the managed reference.
   final AtomicReference<T> reference = new AtomicReference<>();
 
   // acts to allow only a single thread to setup the reference.
-  private final CompletableFuture<Void> startFuture;
-  private final CompletableFuture<Void> zeroLeaseFuture;
-  private final CompletableFuture<T> stopReferenceFuture;
+  private final Completable<Void> startFuture;
+  private final Completable<Void> zeroLeaseFuture;
+  private final Completable<T> stopReferenceFuture;
 
-  // composite future that depends on zero-lease, and stop-reference.
-  private final CompletionStage<Void> stopFuture;
+  // composite completable that depends on zero-lease, and stop-reference.
+  private final Stage<Void> stopFuture;
   private final Set<ValidBorrowed> traces;
 
   final AtomicReference<ManagedState> state = new AtomicReference<>(ManagedState.INITIALIZED);
@@ -52,14 +52,14 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
   public static <T> ConcurrentManaged<T> newManaged(
       final Async async, final FutureCaller caller,
-      final Supplier<? extends CompletionStage<T>> setup,
-      final Function<? super T, ? extends CompletionStage<Void>> teardown
+      final Supplier<? extends Stage<T>> setup,
+      final Function<? super T, ? extends Stage<Void>> teardown
   ) {
-    final CompletableFuture<Void> startFuture = async.future();
-    final CompletableFuture<Void> zeroLeaseFuture = async.future();
-    final CompletableFuture<T> stopReferenceFuture = async.future();
+    final Completable<Void> startFuture = async.completable();
+    final Completable<Void> zeroLeaseFuture = async.completable();
+    final Completable<T> stopReferenceFuture = async.completable();
 
-    final CompletionStage<Void> stopFuture =
+    final Stage<Void> stopFuture =
         zeroLeaseFuture.thenCompose(v -> stopReferenceFuture.thenCompose(teardown));
 
     return new ConcurrentManaged<>(caller, setup, startFuture, zeroLeaseFuture, stopReferenceFuture,
@@ -67,9 +67,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   ConcurrentManaged(
-      final FutureCaller caller, final Supplier<? extends CompletionStage<T>> setup,
-      final CompletableFuture<Void> startFuture, final CompletableFuture<Void> zeroLeaseFuture,
-      final CompletableFuture<T> stopReferenceFuture, final CompletionStage<Void> stopFuture
+      final FutureCaller caller, final Supplier<? extends Stage<T>> setup,
+      final Completable<Void> startFuture, final Completable<Void> zeroLeaseFuture,
+      final Completable<T> stopReferenceFuture, final Stage<Void> stopFuture
   ) {
     this.caller = caller;
     this.setup = setup;
@@ -87,8 +87,8 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   @Override
-  public <R> CompletionStage<R> doto(
-      final Function<? super T, ? extends CompletionStage<R>> action
+  public <R> Stage<R> doto(
+      final Function<? super T, ? extends Stage<R>> action
   ) {
     final Borrowed<T> b = borrow();
 
@@ -98,7 +98,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     final T reference = b.get();
 
-    final CompletionStage<R> f;
+    final Stage<R> f;
 
     try {
       f = action.apply(reference);
@@ -138,12 +138,12 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   @Override
-  public CompletionStage<Void> start() {
+  public Stage<Void> start() {
     if (!state.compareAndSet(ManagedState.INITIALIZED, ManagedState.STARTED)) {
       return startFuture;
     }
 
-    final CompletionStage<T> constructor;
+    final Stage<T> constructor;
 
     try {
       constructor = setup.get();
@@ -158,7 +158,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
       reference.set(result);
       return null;
-    }).thenHandle(new CompletionHandle<Void>() {
+    }).whenDone(new CompletionHandle<Void>() {
       @Override
       public void failed(final Throwable cause) {
         startFuture.fail(cause);
@@ -177,7 +177,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   @Override
-  public CompletionStage<Void> stop() {
+  public Stage<Void> stop() {
     if (!state.compareAndSet(ManagedState.STARTED, ManagedState.STOPPED)) {
       return stopFuture;
     }

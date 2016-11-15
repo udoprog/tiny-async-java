@@ -1,7 +1,7 @@
 package eu.toolchain.perftests.jmh;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.CoreAsync;
 import eu.toolchain.concurrent.Async;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ public class CollectFew {
 
   @Benchmark
   public void tiny() throws Exception {
-    final List<CompletionStage<Boolean>> futures = new ArrayList<>();
+    final List<Stage<Boolean>> futures = new ArrayList<>();
 
     for (int i = 0; i < SIZE; i++) {
       futures.add(async.completed(true));

@@ -7,23 +7,23 @@ import java.util.function.Supplier;
 public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   private final Async async;
   private final FutureCaller caller;
-  private final Supplier<? extends CompletionStage<T>> setup;
-  private final Function<? super T, ? extends CompletionStage<Void>> teardown;
+  private final Supplier<? extends Stage<T>> setup;
+  private final Function<? super T, ? extends Stage<Void>> teardown;
 
   private final AtomicReference<Managed<T>> current;
 
   public static <C> ReloadableManaged<C> newReloadableManaged(
       final Async async, final FutureCaller caller,
-      final Supplier<? extends CompletionStage<C>> setup,
-      final Function<? super C, ? extends CompletionStage<Void>> teardown
+      final Supplier<? extends Stage<C>> setup,
+      final Function<? super C, ? extends Stage<Void>> teardown
   ) {
     return new ConcurrentReloadableManaged<>(async, caller, setup, teardown);
   }
 
   ConcurrentReloadableManaged(
       final Async async, final FutureCaller caller,
-      final Supplier<? extends CompletionStage<T>> setup,
-      final Function<? super T, ? extends CompletionStage<Void>> teardown
+      final Supplier<? extends Stage<T>> setup,
+      final Function<? super T, ? extends Stage<Void>> teardown
   ) {
     this.async = async;
     this.caller = caller;
@@ -35,8 +35,8 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   }
 
   @Override
-  public <U> CompletionStage<U> doto(
-      final Function<? super T, ? extends CompletionStage<U>> action
+  public <U> Stage<U> doto(
+      final Function<? super T, ? extends Stage<U>> action
   ) {
     final Borrowed<T> b = borrow();
 
@@ -46,7 +46,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
 
     final T reference = b.get();
 
-    final CompletionStage<U> f;
+    final Stage<U> f;
 
     try {
       f = action.apply(reference);
@@ -94,7 +94,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   }
 
   @Override
-  public CompletionStage<Void> start() {
+  public Stage<Void> start() {
     final Managed<T> delegate = current.get();
 
     if (delegate == null) {
@@ -105,7 +105,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   }
 
   @Override
-  public CompletionStage<Void> stop() {
+  public Stage<Void> stop() {
     final Managed<T> delegate = current.getAndSet(null);
 
     if (delegate == null) {
@@ -116,7 +116,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   }
 
   @Override
-  public CompletionStage<Void> reload(boolean startFirst) {
+  public Stage<Void> reload(boolean startFirst) {
     final Managed<T> c = current.get();
 
     // old is already stopping...
@@ -139,7 +139,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
     return stopThenStart(b, next);
   }
 
-  protected CompletionStage<Void> stopThenStart(final Borrowed<T> b, final Managed<T> next) {
+  protected Stage<Void> stopThenStart(final Borrowed<T> b, final Managed<T> next) {
     while (true) {
       final Managed<T> old = current.get();
 
@@ -161,7 +161,7 @@ public class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
     }
   }
 
-  protected CompletionStage<Void> startThenStop(final Borrowed<T> b, final Managed<T> next) {
+  protected Stage<Void> startThenStop(final Borrowed<T> b, final Managed<T> next) {
     return next.start().thenCompose(result -> {
       while (true) {
         final Managed<T> old = current.get();

@@ -28,8 +28,8 @@ import java.util.function.Function;
  * <pre>{@code
  *   final Managed<T> m = ...;
  *
- *   final CompletionStage<Integer> future = m.doto(new ManagedAction<T, Integer>() {
- *     CompletionStage<Integer> action(final T value) {
+ *   final Stage<Integer> future = m.doto(new ManagedAction<T, Integer>() {
+ *     Stage<Integer> action(final T value) {
  *       // do something with value
  *
  *       return async.completed(42);
@@ -91,7 +91,7 @@ public interface Managed<T> {
    *
    * @return a future associated with the start action
    */
-  CompletionStage<Void> start();
+  Stage<Void> start();
 
   /**
    * Stop the underlying managed reference.
@@ -107,7 +107,7 @@ public interface Managed<T> {
    *
    * @return a future associated with the stop action
    */
-  CompletionStage<Void> stop();
+  Stage<Void> stop();
 
   /**
    * Borrow the underlying reference.
@@ -136,8 +136,8 @@ public interface Managed<T> {
    * @param <U> the type of the return value from the action
    * @return The future returned by the action.
    */
-  <U> CompletionStage<U> doto(
-      Function<? super T, ? extends CompletionStage<U>> action
+  <U> Stage<U> doto(
+      Function<? super T, ? extends Stage<U>> action
   );
 
   /**

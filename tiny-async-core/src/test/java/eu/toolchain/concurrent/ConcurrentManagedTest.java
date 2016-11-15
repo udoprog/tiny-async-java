@@ -44,29 +44,29 @@ public class ConcurrentManagedTest {
   @Mock
   private FutureCaller caller;
   @Mock
-  private Supplier<? extends CompletionStage<Object>> setup;
+  private Supplier<? extends Stage<Object>> setup;
   @Mock
-  private Function<? super Object, ? extends CompletionStage<Void>> teardown;
+  private Function<? super Object, ? extends Stage<Void>> teardown;
   @Mock
   private Borrowed<Object> borrowed;
   @Mock
-  private Function<Object, CompletionStage<Object>> action;
+  private Function<Object, Stage<Object>> action;
   @Mock
-  private CompletableFuture<Void> startFuture;
+  private Completable<Void> startFuture;
   @Mock
-  private CompletableFuture<Void> zeroLeaseFuture;
+  private Completable<Void> zeroLeaseFuture;
   @Mock
-  private CompletableFuture<Object> stopReferenceFuture;
+  private Completable<Object> stopReferenceFuture;
   @Mock
-  private CompletableFuture<Void> stopFuture;
+  private Completable<Void> stopFuture;
   @Mock
-  private CompletionStage<Object> future;
+  private Stage<Object> future;
   @Mock
-  private CompletionStage<Object> f;
+  private Stage<Object> f;
   @Mock
-  private CompletionStage<Void> transformed;
+  private Stage<Void> transformed;
   @Mock
-  private CompletionStage<Void> errored;
+  private Stage<Void> errored;
 
   @Before
   public void setup() {
@@ -77,55 +77,55 @@ public class ConcurrentManagedTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testNewManaged() throws Exception {
-    final CompletableFuture<Object> startFuture = mock(CompletableFuture.class);
-    final CompletableFuture<Object> zeroLeaseFuture = mock(CompletableFuture.class);
-    final CompletableFuture<Object> stopReferenceFuture = mock(CompletableFuture.class);
-    final CompletableFuture<Object> stopFuture = mock(CompletableFuture.class);
+    final Completable<Object> startFuture = mock(Completable.class);
+    final Completable<Object> zeroLeaseFuture = mock(Completable.class);
+    final Completable<Object> stopReferenceFuture = mock(Completable.class);
+    final Completable<Object> stopFuture = mock(Completable.class);
 
-    when(async.future())
+    when(async.completable())
         .thenReturn(startFuture)
         .thenReturn(zeroLeaseFuture)
         .thenReturn(stopReferenceFuture);
 
-    final AtomicReference<Function<Object, CompletionStage<Object>>> transform1 =
+    final AtomicReference<Function<Object, Stage<Object>>> transform1 =
         new AtomicReference<>();
 
-    doAnswer(new Answer<CompletionStage<Object>>() {
+    doAnswer(new Answer<Stage<Object>>() {
       @Override
-      public CompletionStage<Object> answer(InvocationOnMock invocation) throws Throwable {
+      public Stage<Object> answer(InvocationOnMock invocation) throws Throwable {
         transform1.set(invocation.getArgumentAt(0, Function.class));
         return stopFuture;
       }
     })
         .when(zeroLeaseFuture)
-        .thenCompose((Function<Object, CompletionStage<Object>>) any(Function.class));
+        .thenCompose((Function<Object, Stage<Object>>) any(Function.class));
 
-    final AtomicReference<Function<Object, CompletionStage<Object>>> transform2 =
+    final AtomicReference<Function<Object, Stage<Object>>> transform2 =
         new AtomicReference<>();
 
-    doAnswer(new Answer<CompletionStage<Object>>() {
+    doAnswer(new Answer<Stage<Object>>() {
       @Override
-      public CompletionStage<Object> answer(InvocationOnMock invocation) throws Throwable {
+      public Stage<Object> answer(InvocationOnMock invocation) throws Throwable {
         transform2.set(invocation.getArgumentAt(0, Function.class));
         return stopFuture;
       }
     })
         .when(stopReferenceFuture)
-        .thenCompose((Function<Object, CompletionStage<Object>>) any(Function.class));
+        .thenCompose((Function<Object, Stage<Object>>) any(Function.class));
 
     ConcurrentManaged.newManaged(async, caller, setup, teardown);
 
-    verify(async, times(3)).future();
+    verify(async, times(3)).completable();
     verify(zeroLeaseFuture).thenCompose(
-        (Function<Object, CompletionStage<Object>>) any(Function.class));
+        (Function<Object, Stage<Object>>) any(Function.class));
     verify(teardown, never()).apply(reference);
     verify(stopReferenceFuture, never()).thenCompose(
-        (Function<Object, CompletionStage<Object>>) any(Function.class));
+        (Function<Object, Stage<Object>>) any(Function.class));
 
     transform1.get().apply(null);
 
     verify(stopReferenceFuture).thenCompose(
-        (Function<Object, CompletionStage<Object>>) any(Function.class));
+        (Function<Object, Stage<Object>>) any(Function.class));
 
     transform2.get().apply(reference);
 
@@ -232,7 +232,7 @@ public class ConcurrentManagedTest {
     underTest.state.set(initial ? ConcurrentManaged.ManagedState.INITIALIZED
         : ConcurrentManaged.ManagedState.STARTED);
 
-    final CompletionStage<Object> constructor = mock(CompletionStage.class);
+    final Stage<Object> constructor = mock(Stage.class);
 
     doReturn(startFuture).when(async).failed(e);
 
@@ -242,9 +242,9 @@ public class ConcurrentManagedTest {
       doReturn(constructor).when(setup).get();
     }
 
-    doAnswer(new Answer<CompletionStage<Void>>() {
+    doAnswer(new Answer<Stage<Void>>() {
       @Override
-      public CompletionStage<Void> answer(InvocationOnMock invocation) throws Throwable {
+      public Stage<Void> answer(InvocationOnMock invocation) throws Throwable {
         final CompletionHandle<Void> done = invocation.getArgumentAt(0, CompletionHandle.class);
 
         if (cancelled) {
@@ -255,20 +255,20 @@ public class ConcurrentManagedTest {
 
         return startFuture;
       }
-    }).when(transformed).thenHandle(any(CompletionHandle.class));
+    }).when(transformed).whenDone(any(CompletionHandle.class));
 
-    doAnswer(new Answer<CompletionStage<Void>>() {
+    doAnswer(new Answer<Stage<Void>>() {
       @Override
-      public CompletionStage<Void> answer(InvocationOnMock invocation) throws Throwable {
+      public Stage<Void> answer(InvocationOnMock invocation) throws Throwable {
         final CompletionHandle<Void> done = invocation.getArgumentAt(0, CompletionHandle.class);
         done.failed(e);
         return startFuture;
       }
-    }).when(errored).thenHandle(any(CompletionHandle.class));
+    }).when(errored).whenDone(any(CompletionHandle.class));
 
-    doAnswer(new Answer<CompletionStage<Void>>() {
+    doAnswer(new Answer<Stage<Void>>() {
       @Override
-      public CompletionStage<Void> answer(InvocationOnMock invocation) throws Throwable {
+      public Stage<Void> answer(InvocationOnMock invocation) throws Throwable {
         final Function<Object, Void> transform = invocation.getArgumentAt(0, Function.class);
 
         if (cancelled) {
@@ -381,7 +381,7 @@ public class ConcurrentManagedTest {
     verify(zeroLeaseFuture, times(1)).complete(null);
     underTest.retain();
     underTest.release();
-        /* multiple invocations are expected due to the contract of CompletableFuture#complete() */
+        /* multiple invocations are expected due to the contract of Completable#complete() */
     verify(zeroLeaseFuture, times(2)).complete(null);
   }
 

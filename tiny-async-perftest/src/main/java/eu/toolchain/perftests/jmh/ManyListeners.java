@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +41,7 @@ public class ManyListeners {
     for (int i = 0; i < SIZE; i++) {
       final int current = i;
 
-      final CompletionStage<Integer> future = async.call(() -> {
+      final Stage<Integer> future = async.call(() -> {
         latch.await();
         return current;
       });

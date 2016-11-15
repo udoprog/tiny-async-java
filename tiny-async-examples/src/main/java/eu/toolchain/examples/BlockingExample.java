@@ -1,7 +1,7 @@
 package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -11,7 +11,7 @@ public class BlockingExample {
   public static void main(String argv[]) throws InterruptedException, ExecutionException {
     final Async async = Helpers.setup();
 
-    final CompletionStage<Integer> f = async.call(() -> {
+    final Stage<Integer> f = async.call(() -> {
       Thread.sleep(1000);
       return 10;
     });

@@ -26,7 +26,7 @@ public class RetryUntilResolvedIT {
   public void testBasicRetryLogic() throws Exception {
     final AtomicInteger calls = new AtomicInteger();
 
-    final CompletionStage<RetryResult<Object>> f = runRetry(calls, 10000);
+    final Stage<RetryResult<Object>> f = runRetry(calls, 10000);
 
     final RetryResult<Object> result = f.join();
 
@@ -46,7 +46,7 @@ public class RetryUntilResolvedIT {
   public void testTimeout() throws Exception {
     final AtomicInteger calls = new AtomicInteger();
 
-    final CompletionStage<RetryResult<Object>> f = runRetry(calls, 175);
+    final Stage<RetryResult<Object>> f = runRetry(calls, 175);
 
     try {
       f.join();
@@ -68,7 +68,7 @@ public class RetryUntilResolvedIT {
     fail("Retry should fail");
   }
 
-  private CompletionStage<RetryResult<Object>> runRetry(
+  private Stage<RetryResult<Object>> runRetry(
       final AtomicInteger calls, final long timeout
   ) {
     return async.retryUntilCompleted(() -> {

@@ -5,7 +5,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -62,7 +62,7 @@ public class ManyThreadsAddingListeners {
     for (int i = 0; i < size; i++) {
       final int current = i;
 
-      final CompletionStage<Integer> future = pool.async.call(() -> {
+      final Stage<Integer> future = pool.async.call(() -> {
         latch.await();
         return current;
       });

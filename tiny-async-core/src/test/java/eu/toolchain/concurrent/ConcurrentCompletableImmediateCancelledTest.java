@@ -1,12 +1,12 @@
 package eu.toolchain.concurrent;
 
-public class ConcurrentCompletableFutureImmediateCancelledTest
+public class ConcurrentCompletableImmediateCancelledTest
     extends ImmediateAsyncFutureTestBase {
   @Override
   protected AbstractImmediate<From> setupFuture(
       FutureCaller caller, From result, Throwable cause
   ) {
-    final ConcurrentCompletableFuture<From> future = new ConcurrentCompletableFuture<>(caller);
+    final ConcurrentCompletable<From> future = new ConcurrentCompletable<>(caller);
     future.cancel();
     return future;
   }

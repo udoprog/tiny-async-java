@@ -8,13 +8,13 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * A future which has already been completed.
+ * A completable which has already been completed.
  *
- * @param <T> type of the future
+ * @param <T> type of the completable
  */
 @EqualsAndHashCode(of = {"result"}, doNotUseGetters = true, callSuper = false)
 @ToString(of = {"result"})
-public class ImmediateCompleted<T> extends AbstractImmediate<T> implements CompletionStage<T> {
+public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage<T> {
   private final FutureCaller caller;
   private final T result;
 
@@ -32,30 +32,30 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Compl
   }
 
   @Override
-  public CompletionStage<T> thenHandle(CompletionHandle<? super T> handle) {
+  public Stage<T> whenDone(CompletionHandle<? super T> handle) {
     caller.execute(() -> handle.completed(result));
     return this;
   }
 
   @Override
-  public CompletionStage<T> whenFinished(Runnable runnable) {
+  public Stage<T> whenFinished(Runnable runnable) {
     caller.execute(runnable);
     return this;
   }
 
   @Override
-  public CompletionStage<T> whenCancelled(Runnable runnable) {
+  public Stage<T> whenCancelled(Runnable runnable) {
     return this;
   }
 
   @Override
-  public CompletionStage<T> whenComplete(Consumer<? super T> consumer) {
+  public Stage<T> whenComplete(Consumer<? super T> consumer) {
     caller.execute(() -> consumer.accept(result));
     return this;
   }
 
   @Override
-  public CompletionStage<T> whenFailed(Consumer<? super Throwable> consumer) {
+  public Stage<T> whenFailed(Consumer<? super Throwable> consumer) {
     return this;
   }
 
@@ -81,7 +81,7 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Compl
 
   @Override
   public Throwable cause() {
-    throw new IllegalStateException("future is not in a failed state");
+    throw new IllegalStateException("completable is not in a failed state");
   }
 
   @Override
@@ -100,36 +100,36 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Compl
   }
 
   @Override
-  public <R> CompletionStage<R> thenApply(Function<? super T, ? extends R> fn) {
+  public <R> Stage<R> thenApply(Function<? super T, ? extends R> fn) {
     return immediateApply(fn, result);
   }
 
   @Override
-  public <R> CompletionStage<R> thenCompose(
-      Function<? super T, ? extends CompletionStage<R>> fn
+  public <R> Stage<R> thenCompose(
+      Function<? super T, ? extends Stage<R>> fn
   ) {
     return immediateCompose(fn, result);
   }
 
   @Override
-  public CompletionStage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
+  public Stage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
     return this;
   }
 
   @Override
-  public CompletionStage<T> thenComposeFailed(
-      Function<? super Throwable, ? extends CompletionStage<T>> fn
+  public Stage<T> thenComposeFailed(
+      Function<? super Throwable, ? extends Stage<T>> fn
   ) {
     return this;
   }
 
   @Override
-  public CompletionStage<T> thenApplyCancelled(Supplier<? extends T> supplier) {
+  public Stage<T> thenApplyCancelled(Supplier<? extends T> supplier) {
     return this;
   }
 
   @Override
-  public CompletionStage<T> thenComposeCancelled(Supplier<? extends CompletionStage<T>> supplier) {
+  public Stage<T> thenComposeCancelled(Supplier<? extends Stage<T>> supplier) {
     return this;
   }
 }

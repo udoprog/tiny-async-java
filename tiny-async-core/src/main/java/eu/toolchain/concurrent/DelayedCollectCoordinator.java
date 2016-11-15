@@ -21,9 +21,9 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
   private final Object lock = new Object();
 
   private final FutureCaller caller;
-  private final Iterator<? extends Callable<? extends CompletionStage<? extends S>>> callables;
+  private final Iterator<? extends Callable<? extends Stage<? extends S>>> callables;
   private final StreamCollector<? super S, ? extends T> collector;
-  private final CompletableFuture<? super T> future;
+  private final Completable<? super T> future;
   private final int parallelism;
   private final int total;
 
@@ -32,8 +32,8 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
 
   public DelayedCollectCoordinator(
       final FutureCaller caller,
-      final Collection<? extends Callable<? extends CompletionStage<? extends S>>> callables,
-      final StreamCollector<S, T> collector, final CompletableFuture<? super T> future,
+      final Collection<? extends Callable<? extends Stage<? extends S>>> callables,
+      final StreamCollector<S, T> collector, final Completable<? super T> future,
       int parallelism
   ) {
     this.caller = caller;
@@ -90,7 +90,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
   }
 
   private void checkNext() {
-    final Callable<? extends CompletionStage<? extends S>> next;
+    final Callable<? extends Stage<? extends S>> next;
 
     synchronized (lock) {
       // cancel any available callbacks.
@@ -113,8 +113,8 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
     setupNext(next);
   }
 
-  private void setupNext(final Callable<? extends CompletionStage<? extends S>> next) {
-    final CompletionStage<? extends S> f;
+  private void setupNext(final Callable<? extends Stage<? extends S>> next) {
+    final Stage<? extends S> f;
 
     pending.incrementAndGet();
 
@@ -125,7 +125,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
       return;
     }
 
-    f.thenHandle(this);
+    f.whenDone(this);
   }
 
   private void checkEnd() {

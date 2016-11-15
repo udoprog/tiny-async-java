@@ -27,8 +27,8 @@ public class TypeInferenceTest {
 
   @Test
   public void testFunctionInference() {
-    final CompletionStage<A> A = Mockito.mock(CompletionStage.class);
-    final CompletionStage<B> B = Mockito.mock(CompletionStage.class);
+    final Stage<A> A = Mockito.mock(Stage.class);
+    final Stage<B> B = Mockito.mock(Stage.class);
 
     final Function<A, OA> A2A = Mockito.mock(Function.class);
     final Function<A, OB> A2B = Mockito.mock(Function.class);
@@ -38,68 +38,68 @@ public class TypeInferenceTest {
 
     // regular
     {
-      final CompletionStage<OA> f = A.thenApply(A2A);
+      final Stage<OA> f = A.thenApply(A2A);
     }
 
     // cast input B to A
     {
-      final CompletionStage<OA> f = B.thenApply(A2A);
+      final Stage<OA> f = B.thenApply(A2A);
     }
 
     // regular
     {
-      final CompletionStage<OB> f = B.thenApply(B2B);
+      final Stage<OB> f = B.thenApply(B2B);
     }
 
     // regular
     {
-      final CompletionStage<OB> f = A.thenApply(A2B);
+      final Stage<OB> f = A.thenApply(A2B);
     }
 
     // cast input B to A
     {
-      final CompletionStage<OB> f = A.thenApply(A2B);
+      final Stage<OB> f = A.thenApply(A2B);
     }
   }
 
   @Test
   public void testLazyFunctionInference() {
-    final CompletionStage<A> A = Mockito.mock(CompletionStage.class);
-    final CompletionStage<B> B = Mockito.mock(CompletionStage.class);
+    final Stage<A> A = Mockito.mock(Stage.class);
+    final Stage<B> B = Mockito.mock(Stage.class);
 
-    final Function<A, CompletionStage<OA>> A2A = Mockito.mock(Function.class);
-    final Function<A, CompletionStage<OB>> A2B = Mockito.mock(Function.class);
+    final Function<A, Stage<OA>> A2A = Mockito.mock(Function.class);
+    final Function<A, Stage<OB>> A2B = Mockito.mock(Function.class);
 
-    final Function<B, CompletionStage<OB>> B2B = Mockito.mock(Function.class);
-    final Function<B, CompletionStage<OA>> B2A = Mockito.mock(Function.class);
+    final Function<B, Stage<OB>> B2B = Mockito.mock(Function.class);
+    final Function<B, Stage<OA>> B2A = Mockito.mock(Function.class);
 
     // regular
     {
-      final CompletionStage<OA> f = A.thenCompose(A2A);
+      final Stage<OA> f = A.thenCompose(A2A);
     }
     // cast input B to A
     {
-      final CompletionStage<OA> f = B.thenCompose(A2A);
+      final Stage<OA> f = B.thenCompose(A2A);
     }
 
     // regular
     {
-      final CompletionStage<OB> f = B.thenCompose(B2B);
+      final Stage<OB> f = B.thenCompose(B2B);
     }
     // regular
     {
-      final CompletionStage<OB> f = A.thenCompose(A2B);
+      final Stage<OB> f = A.thenCompose(A2B);
     }
     // cast input B to A
     {
-      final CompletionStage<OB> f = B.thenCompose(A2B);
+      final Stage<OB> f = B.thenCompose(A2B);
     }
   }
 
   @Test
   public void testCollectInference() {
-    final List<CompletionStage<A>> A = Mockito.mock(List.class);
-    final List<CompletionStage<B>> B = Mockito.mock(List.class);
+    final List<Stage<A>> A = Mockito.mock(List.class);
+    final List<Stage<B>> B = Mockito.mock(List.class);
 
     final Function<Collection<A>, OA> A2A = Mockito.mock(Function.class);
     final Function<Collection<A>, OB> A2B = Mockito.mock(Function.class);
@@ -109,37 +109,37 @@ public class TypeInferenceTest {
 
     // regular
     {
-      final CompletionStage<Collection<A>> f = async.collect(A);
+      final Stage<Collection<A>> f = async.collect(A);
     }
 
     // cast input B to A
     {
-      final CompletionStage<Collection<A>> f = async.collect(B);
+      final Stage<Collection<A>> f = async.collect(B);
     }
 
     // regular
     {
-      final CompletionStage<OA> f = async.collect(A, A2A);
+      final Stage<OA> f = async.collect(A, A2A);
     }
 
     // cast input B to A
     {
-      final CompletionStage<OA> f = async.collect(B, A2A);
+      final Stage<OA> f = async.collect(B, A2A);
     }
 
     // regular
     {
-      final CompletionStage<OB> f = async.collect(B, B2B);
+      final Stage<OB> f = async.collect(B, B2B);
     }
 
     // regular
     {
-      final CompletionStage<OB> f = async.collect(A, A2B);
+      final Stage<OB> f = async.collect(A, A2B);
     }
 
     // cast input B to A
     {
-      final CompletionStage<OB> f = async.collect(B, A2B);
+      final Stage<OB> f = async.collect(B, A2B);
     }
   }
 
@@ -150,17 +150,17 @@ public class TypeInferenceTest {
 
     // regular
     {
-      final CompletionStage<A> f = async.call(A);
+      final Stage<A> f = async.call(A);
     }
 
     // cast B to A
     {
-      final CompletionStage<A> f = async.<A>call(B);
+      final Stage<A> f = async.<A>call(B);
     }
 
     // regular
     {
-      final CompletionStage<B> f = async.call(B);
+      final Stage<B> f = async.call(B);
     }
   }
 
@@ -169,7 +169,7 @@ public class TypeInferenceTest {
     final Function<Throwable, A> A = Mockito.mock(Function.class);
     final Function<Throwable, B> B = Mockito.mock(Function.class);
 
-    final CompletionStage<A> a = Mockito.mock(CompletionStage.class);
+    final Stage<A> a = Mockito.mock(Stage.class);
 
     {
       a.thenApplyFailed(A);
@@ -181,10 +181,10 @@ public class TypeInferenceTest {
 
   @Test
   public void testLazyError() {
-    final Function<Throwable, CompletionStage<A>> A = Mockito.mock(Function.class);
-    final Function<Throwable, CompletionStage<B>> B = Mockito.mock(Function.class);
+    final Function<Throwable, Stage<A>> A = Mockito.mock(Function.class);
+    final Function<Throwable, Stage<B>> B = Mockito.mock(Function.class);
 
-    final CompletionStage<A> a = Mockito.mock(CompletionStage.class);
+    final Stage<A> a = Mockito.mock(Stage.class);
 
     {
       a.thenComposeFailed(A);
@@ -193,10 +193,10 @@ public class TypeInferenceTest {
 
   @Test
   public void testLazyCancelled() {
-    final Supplier<CompletionStage<A>> A = Mockito.mock(Supplier.class);
-    final Supplier<CompletionStage<B>> B = Mockito.mock(Supplier.class);
+    final Supplier<Stage<A>> A = Mockito.mock(Supplier.class);
+    final Supplier<Stage<B>> B = Mockito.mock(Supplier.class);
 
-    final CompletionStage<A> a = Mockito.mock(CompletionStage.class);
+    final Stage<A> a = Mockito.mock(Stage.class);
 
     {
       a.thenComposeCancelled(A);

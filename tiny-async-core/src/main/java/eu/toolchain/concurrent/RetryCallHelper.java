@@ -20,9 +20,9 @@ import java.util.function.Supplier;
 public class RetryCallHelper<T> implements CompletionHandle<T> {
   private final long start;
   private final ScheduledExecutorService scheduler;
-  private final Callable<? extends CompletionStage<? extends T>> action;
+  private final Callable<? extends Stage<? extends T>> action;
   private final Supplier<RetryDecision> policyInstance;
-  private final CompletableFuture<T> future;
+  private final Completable<T> future;
   private final ClockSource clockSource;
 
   /*
@@ -34,8 +34,8 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
 
   public RetryCallHelper(
       final long start, final ScheduledExecutorService scheduler,
-      final Callable<? extends CompletionStage<? extends T>> callable,
-      final Supplier<RetryDecision> policyInstance, final CompletableFuture<T> future,
+      final Callable<? extends Stage<? extends T>> callable,
+      final Supplier<RetryDecision> policyInstance, final Completable<T> future,
       final ClockSource clockSource
   ) {
     this.start = start;
@@ -87,10 +87,10 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
 
   public void next() {
     if (future.isDone()) {
-      throw new IllegalStateException("Target future is done");
+      throw new IllegalStateException("Target completable is done");
     }
 
-    final CompletionStage<? extends T> result;
+    final Stage<? extends T> result;
 
     try {
       result = action.call();
@@ -111,11 +111,11 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
       return;
     }
 
-    result.thenHandle(this);
+    result.whenDone(this);
   }
 
   /**
-   * Must be called when the target future finishes to clean up any potential scheduled _future_
+   * Must be called when the target completable finishes to clean up any potential scheduled _future_
    * events.
    */
   public void finished() {

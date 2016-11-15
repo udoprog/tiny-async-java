@@ -28,7 +28,7 @@ public interface CompletionHandle<T> {
   /**
    * Handle to be called when the underlying future is cancelled.
    *
-   * @throws Exception if unable to thenHandle the cancelled future, will <em>not</em> cause the target
+   * @throws Exception if unable to whenDone the cancelled future, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
    */
   void cancelled();

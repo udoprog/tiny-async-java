@@ -3,7 +3,7 @@ package eu.toolchain.perftests.jmh;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class ManyThreads {
     final ExecutorService executor = Executors.newWorkStealingPool(THREAD_COUNT);
     final Async async = CoreAsync.builder().executor(executor).build();
 
-    final List<CompletionStage<Integer>> futures = new ArrayList<>();
+    final List<Stage<Integer>> futures = new ArrayList<>();
 
     for (int i = 0; i < SIZE; i++) {
       final int current = i;
@@ -34,7 +34,7 @@ public class ManyThreads {
 
     int sum = 0;
 
-    for (final CompletionStage<Integer> future : futures) {
+    for (final Stage<Integer> future : futures) {
       sum += future.join();
     }
 

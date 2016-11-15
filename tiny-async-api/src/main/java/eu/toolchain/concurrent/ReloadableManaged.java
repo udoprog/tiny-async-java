@@ -15,5 +15,5 @@ public interface ReloadableManaged<T> extends Managed<T> {
    * @param startFirst Start the new managed reference before shutting down the old one.
    * @return A future that will be completed once the reference has been reloaded.
    */
-  CompletionStage<Void> reload(boolean startFirst);
+  Stage<Void> reload(boolean startFirst);
 }

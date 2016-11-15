@@ -20,11 +20,11 @@ public class HighLevelIT {
 
   @Test
   public void testCollectCancelForwarding() {
-    final CompletableFuture<Integer> a = async.future();
-    final CompletableFuture<Integer> b = async.future();
-    final CompletableFuture<Integer> c = async.future();
+    final Completable<Integer> a = async.completable();
+    final Completable<Integer> b = async.completable();
+    final Completable<Integer> c = async.completable();
 
-    final CompletionStage<Void> f = async.collectAndDiscard(Stream.of(a, b, c));
+    final Stage<Void> f = async.collectAndDiscard(Stream.of(a, b, c));
 
     a.complete(42);
     f.cancel();
@@ -36,10 +36,10 @@ public class HighLevelIT {
 
   @Test
   public void testComposeCancelForwarding() {
-    final CompletableFuture<Integer> outer = async.future();
-    final CompletableFuture<Integer> inner = async.future();
+    final Completable<Integer> outer = async.completable();
+    final Completable<Integer> inner = async.completable();
 
-    final CompletionStage<Integer> third = outer.thenCompose(v -> inner);
+    final Stage<Integer> third = outer.thenCompose(v -> inner);
 
     outer.complete(42);
     third.cancel();
@@ -49,8 +49,8 @@ public class HighLevelIT {
 
   @Test
   public void testApply() throws Exception {
-    final CompletableFuture<Integer> a = async.future();
-    final CompletionStage<Integer> b = a.thenApply(v -> v + 10);
+    final Completable<Integer> a = async.completable();
+    final Stage<Integer> b = a.thenApply(v -> v + 10);
 
     a.complete(10);
     assertThat(b.join(), is(20));

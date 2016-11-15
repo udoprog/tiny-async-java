@@ -46,9 +46,9 @@ public class CollectIT {
   // TODO: move out from unit tests.
   @Test(timeout = TIMEOUT)
   public void testEmpty() throws InterruptedException, ExecutionException {
-    final List<CompletionStage<Exception>> futures = new ArrayList<>();
+    final List<Stage<Exception>> futures = new ArrayList<>();
 
-    final CompletionStage<Object> result = async.collect(futures, results -> {
+    final Stage<Object> result = async.collect(futures, results -> {
       Assert.assertEquals(0, results.size());
       return REF;
     });
@@ -59,11 +59,11 @@ public class CollectIT {
   // TODO: move out from unit tests.
   @Test(timeout = TIMEOUT)
   public void testResolved() throws InterruptedException, ExecutionException {
-    final List<CompletionStage<Exception>> futures = new ArrayList<>();
+    final List<Stage<Exception>> futures = new ArrayList<>();
     futures.add(async.completed(A));
     futures.add(async.completed(B));
 
-    final CompletionStage<Object> result = async.collect(futures, results -> {
+    final Stage<Object> result = async.collect(futures, results -> {
       final List<Exception> r = new ArrayList<>(results);
       Assert.assertEquals(2, r.size());
       Assert.assertTrue(r.get(0) != r.get(1));
@@ -78,11 +78,11 @@ public class CollectIT {
   // TODO: move out from unit tests.
   @Test(timeout = TIMEOUT)
   public void testErrors() throws InterruptedException, ExecutionException {
-    final List<CompletionStage<Object>> futures = new ArrayList<>();
+    final List<Stage<Object>> futures = new ArrayList<>();
     futures.add(async.failed(A));
     futures.add(async.failed(B));
 
-    final CompletionStage<Object> result = async.collect(futures, results -> REF);
+    final Stage<Object> result = async.collect(futures, results -> REF);
 
     try {
       result.join();
@@ -107,7 +107,7 @@ public class CollectIT {
     for (int i = 0; i < COUNT; i++) {
       final CountDownLatch latch = new CountDownLatch(1);
 
-      final List<CompletionStage<Integer>> futures = new ArrayList<>();
+      final List<Stage<Integer>> futures = new ArrayList<>();
 
       for (int j = 0; j < BATCH_SIZE; j++) {
         final int p = i * COUNT + j;
@@ -121,7 +121,7 @@ public class CollectIT {
         }));
       }
 
-      final CompletionStage<List<Integer>> future = async.collect(futures, ArrayList::new);
+      final Stage<List<Integer>> future = async.collect(futures, ArrayList::new);
 
       // for the horde!
       latch.countDown();

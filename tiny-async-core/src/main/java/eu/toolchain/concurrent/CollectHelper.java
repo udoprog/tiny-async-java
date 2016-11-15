@@ -27,8 +27,8 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
   public static final byte CANCELLED = 0x3;
 
   final Function<? super Collection<S>, ? extends T> collector;
-  Collection<? extends CompletionStage<?>> sources;
-  final CompletableFuture<? super T> target;
+  Collection<? extends Stage<?>> sources;
+  final Completable<? super T> target;
 
   final int size;
 
@@ -57,7 +57,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
 
   public CollectHelper(
       int size, Function<? super Collection<S>, ? extends T> collector,
-      Collection<? extends CompletionStage<?>> sources, CompletableFuture<? super T> target
+      Collection<? extends Stage<?>> sources, Completable<? super T> target
   ) {
     if (size <= 0) {
       throw new IllegalArgumentException("size");
@@ -94,7 +94,7 @@ public class CollectHelper<S, T> implements CompletionHandle<S> {
       return;
     }
 
-    for (final CompletionStage<?> source : sources) {
+    for (final Stage<?> source : sources) {
       source.cancel();
     }
 

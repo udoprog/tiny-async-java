@@ -62,27 +62,27 @@ public class CoreAsyncTest {
   @Mock
   private StreamCollector<Object, Object> streamCollector;
   @Mock
-  private CompletableFuture<Object> completableFuture;
+  private Completable<Object> completable;
   @Mock
-  private CompletionStage<Object> future;
+  private Stage<Object> future;
   @Mock
   private Callable<Object> callable;
   @Mock
-  private Callable<CompletionStage<Object>> cf;
+  private Callable<Stage<Object>> cf;
   @Mock
-  private Callable<CompletionStage<Object>> cf2;
+  private Callable<Stage<Object>> cf2;
   @Mock
-  private CompletionStage<Object> f1;
+  private Stage<Object> f1;
   @Mock
-  private CompletionStage<Object> f2;
+  private Stage<Object> f2;
   @Mock
-  private Callable<CompletionStage<Object>> c;
+  private Callable<Stage<Object>> c;
   @Mock
-  private Callable<CompletionStage<Object>> c2;
+  private Callable<Stage<Object>> c2;
   @Mock
-  private Collection<Callable<CompletionStage<Object>>> callables;
+  private Collection<Callable<Stage<Object>>> callables;
   @Mock
-  private List<CompletionStage<Object>> futures;
+  private List<Stage<Object>> futures;
 
   private CoreAsync underTest;
 
@@ -133,16 +133,16 @@ public class CoreAsyncTest {
 
   private void verifyCall(int calls, int resolved, int failed, int taskCancel) throws Exception {
     verify(callable, times(calls)).call();
-    verify(completableFuture, times(resolved)).complete(any(Object.class));
-    verify(completableFuture, times(failed)).fail(e);
+    verify(completable, times(resolved)).complete(any(Object.class));
+    verify(completable, times(failed)).fail(e);
     verify(task, times(taskCancel)).cancel(false);
   }
 
   @Test
   public void testCallFutureDone() throws Exception {
     whenExecutorSubmitSetup();
-    when(completableFuture.isDone()).thenReturn(true);
-    underTest.doCall(callable, executor, completableFuture);
+    when(completable.isDone()).thenReturn(true);
+    underTest.doCall(callable, executor, completable);
     verifyCall(0, 0, 0, 0);
   }
 
@@ -151,34 +151,34 @@ public class CoreAsyncTest {
     @SuppressWarnings("unchecked") final Callable<Object> callable = mock(Callable.class);
 
     doReturn(executor).when(underTest).executor();
-    doReturn(completableFuture).when(underTest).future();
-    doReturn(future).when(underTest).doCall(callable, executor, completableFuture);
+    doReturn(completable).when(underTest).completable();
+    doReturn(future).when(underTest).doCall(callable, executor, completable);
 
     assertEquals(future, underTest.call(callable));
 
     verify(underTest).executor();
-    verify(underTest).future();
-    verify(underTest).doCall(callable, executor, completableFuture);
+    verify(underTest).completable();
+    verify(underTest).doCall(callable, executor, completable);
   }
 
   @Test
   public void testCall2() throws Exception {
     @SuppressWarnings("unchecked") final Callable<Object> callable = mock(Callable.class);
 
-    doReturn(completableFuture).when(underTest).future();
-    doReturn(future).when(underTest).doCall(callable, executor, completableFuture);
+    doReturn(completable).when(underTest).completable();
+    doReturn(future).when(underTest).doCall(callable, executor, completable);
 
     assertEquals(future, underTest.call(callable, executor));
 
-    verify(underTest).future();
-    verify(underTest).doCall(callable, executor, completableFuture);
+    verify(underTest).completable();
+    verify(underTest).doCall(callable, executor, completable);
   }
 
   @Test
   public void testCall() throws Exception {
     whenExecutorSubmitSetup();
-    when(completableFuture.isDone()).thenReturn(false);
-    underTest.doCall(callable, executor, completableFuture);
+    when(completable.isDone()).thenReturn(false);
+    underTest.doCall(callable, executor, completable);
     verifyCall(1, 1, 0, 0);
   }
 
@@ -186,8 +186,8 @@ public class CoreAsyncTest {
   public void testCallCallableThrows() throws Exception {
     whenExecutorSubmitSetup();
     when(callable.call()).thenThrow(e);
-    when(completableFuture.isDone()).thenReturn(false);
-    underTest.doCall(callable, executor, completableFuture);
+    when(completable.isDone()).thenReturn(false);
+    underTest.doCall(callable, executor, completable);
     verifyCall(1, 0, 1, 0);
   }
 
@@ -201,7 +201,7 @@ public class CoreAsyncTest {
     }).when(executor).submit(any(Runnable.class));
 
     when(callable.call()).thenThrow(e);
-    when(completableFuture.isDone()).thenReturn(false);
+    when(completable.isDone()).thenReturn(false);
 
     doAnswer(new Answer<Void>() {
       @Override
@@ -210,17 +210,17 @@ public class CoreAsyncTest {
         cancelled.run();
         return null;
       }
-    }).when(completableFuture).whenCancelled(any(Runnable.class));
+    }).when(completable).whenCancelled(any(Runnable.class));
 
-    underTest.doCall(callable, executor, completableFuture);
+    underTest.doCall(callable, executor, completable);
     verifyCall(0, 0, 0, 1);
   }
 
   @Test
   public void testCallSubmitThrows() throws Exception {
     when(executor.submit(any(Runnable.class))).thenThrow(e);
-    when(completableFuture.isDone()).thenReturn(false);
-    underTest.doCall(callable, executor, completableFuture);
+    when(completable.isDone()).thenReturn(false);
+    underTest.doCall(callable, executor, completable);
     verifyCall(0, 0, 1, 0);
   }
 
@@ -291,30 +291,30 @@ public class CoreAsyncTest {
 
   @Test
   public void testDoEventuallyCollectImmediate() throws Exception {
-    final List<Callable<CompletionStage<Object>>> callables = ImmutableList.of(c, c2);
-    final List<CompletionStage<Object>> futures = ImmutableList.of(f1, f2);
+    final List<Callable<Stage<Object>>> callables = ImmutableList.of(c, c2);
+    final List<Stage<Object>> futures = ImmutableList.of(f1, f2);
 
     doReturn(f1).when(c).call();
     doThrow(e).when(c2).call();
     doReturn(f2).when(underTest).failed(e);
-    doReturn(future).when(underTest).collect(futures, streamCollector);
+    doReturn(future).when(underTest).streamCollect(futures, streamCollector);
 
     assertEquals(future, underTest.doEventuallyCollectImmediate(callables, streamCollector));
 
     verify(c).call();
     verify(c2).call();
     verify(underTest).failed(e);
-    verify(underTest).collect(futures, streamCollector);
+    verify(underTest).streamCollect(futures, streamCollector);
   }
 
   @Test
   public void testDoEventuallyCollect() throws Exception {
-    final List<Callable<CompletionStage<Object>>> callables = ImmutableList.of(c, c2);
+    final List<Callable<Stage<Object>>> callables = ImmutableList.of(c, c2);
 
     doReturn(executor).when(underTest).executor();
-    doReturn(completableFuture).when(underTest).future();
+    doReturn(completable).when(underTest).completable();
 
-    assertEquals(completableFuture, underTest.doEventuallyCollect(callables, streamCollector, 10));
+    assertEquals(completable, underTest.doEventuallyCollect(callables, streamCollector, 10));
 
     verify(executor).execute(any(DelayedCollectCoordinator.class));
     verify(underTest).executor();
@@ -379,17 +379,17 @@ public class CoreAsyncTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testDoCollect() throws Exception {
-    final Collection<CompletionStage<Object>> futures = ImmutableList.of(f1, f2);
+    final Collection<Stage<Object>> futures = ImmutableList.of(f1, f2);
 
-    doReturn(completableFuture).when(underTest).future();
-    doNothing().when(underTest).bindSignals(completableFuture, futures);
+    doReturn(completable).when(underTest).completable();
+    doNothing().when(underTest).bindSignals(completable, futures);
 
-    assertEquals(completableFuture, underTest.doCollect(futures, collector));
+    assertEquals(completable, underTest.doCollect(futures, collector));
 
-    verify(underTest).future();
-    verify(underTest).bindSignals(completableFuture, futures);
-    verify(f1).thenHandle(any(CollectHelper.class));
-    verify(f2).thenHandle(any(CollectHelper.class));
+    verify(underTest).completable();
+    verify(underTest).bindSignals(completable, futures);
+    verify(f1).whenDone(any(CollectHelper.class));
+    verify(f2).whenDone(any(CollectHelper.class));
   }
 
   @SuppressWarnings("unchecked")
@@ -417,12 +417,12 @@ public class CoreAsyncTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testCollectStreamEmpty() throws Exception {
-    final Collection<CompletionStage<Object>> futures = mock(Collection.class);
+    final Collection<Stage<Object>> futures = mock(Collection.class);
     doReturn(true).when(futures).isEmpty();
     doReturn(future).when(underTest).doStreamCollectEmpty(streamCollector);
     doReturn(future).when(underTest).doStreamCollect(futures, streamCollector);
 
-    assertEquals(future, underTest.collect(futures, streamCollector));
+    assertEquals(future, underTest.streamCollect(futures, streamCollector));
 
     verify(futures).isEmpty();
     verify(underTest).doStreamCollectEmpty(streamCollector);
@@ -432,12 +432,12 @@ public class CoreAsyncTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testCollectStream() throws Exception {
-    final Collection<CompletionStage<Object>> futures = mock(Collection.class);
+    final Collection<Stage<Object>> futures = mock(Collection.class);
     doReturn(false).when(futures).isEmpty();
     doReturn(future).when(underTest).doStreamCollectEmpty(streamCollector);
     doReturn(future).when(underTest).doStreamCollect(futures, streamCollector);
 
-    assertEquals(future, underTest.collect(futures, streamCollector));
+    assertEquals(future, underTest.streamCollect(futures, streamCollector));
 
     verify(futures).isEmpty();
     verify(underTest, never()).doStreamCollectEmpty(streamCollector);
@@ -447,17 +447,17 @@ public class CoreAsyncTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testDoCollectStream() throws Exception {
-    final Collection<CompletionStage<Object>> futures = ImmutableList.of(f1, f2);
+    final Collection<Stage<Object>> futures = ImmutableList.of(f1, f2);
 
-    doReturn(completableFuture).when(underTest).future();
-    doNothing().when(underTest).bindSignals(completableFuture, futures);
+    doReturn(completable).when(underTest).completable();
+    doNothing().when(underTest).bindSignals(completable, futures);
 
-    assertEquals(completableFuture, underTest.doStreamCollect(futures, streamCollector));
+    assertEquals(completable, underTest.doStreamCollect(futures, streamCollector));
 
-    verify(underTest).future();
-    verify(underTest).bindSignals(completableFuture, futures);
-    verify(f1).thenHandle(any(CollectHelper.class));
-    verify(f2).thenHandle(any(CollectHelper.class));
+    verify(underTest).completable();
+    verify(underTest).bindSignals(completable, futures);
+    verify(f1).whenDone(any(CollectHelper.class));
+    verify(f2).whenDone(any(CollectHelper.class));
   }
 
   @Test
@@ -482,7 +482,7 @@ public class CoreAsyncTest {
 
   @Test
   public void testCollectAndDiscardEmpty() throws Exception {
-    final Collection<CompletionStage<Object>> futures = mock(Collection.class);
+    final Collection<Stage<Object>> futures = mock(Collection.class);
     doReturn(true).when(futures).isEmpty();
     doReturn(future).when(underTest).completed();
     doReturn(future).when(underTest).doCollectAndDiscard(futures);
@@ -496,7 +496,7 @@ public class CoreAsyncTest {
 
   @Test
   public void testCollectAndDiscard() throws Exception {
-    final Collection<CompletionStage<Object>> futures = mock(Collection.class);
+    final Collection<Stage<Object>> futures = mock(Collection.class);
     doReturn(false).when(futures).isEmpty();
     doReturn(future).when(underTest).completed();
     doReturn(future).when(underTest).doCollectAndDiscard(futures);
@@ -511,22 +511,22 @@ public class CoreAsyncTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testDoCollectAndDiscard() throws Exception {
-    final Collection<CompletionStage<Object>> futures = ImmutableList.of(f1, f2);
+    final Collection<Stage<Object>> futures = ImmutableList.of(f1, f2);
 
-    doReturn(completableFuture).when(underTest).future();
-    doNothing().when(underTest).bindSignals(completableFuture, futures);
+    doReturn(completable).when(underTest).completable();
+    doNothing().when(underTest).bindSignals(completable, futures);
 
-    assertEquals(completableFuture, underTest.doCollectAndDiscard(futures));
+    assertEquals(completable, underTest.doCollectAndDiscard(futures));
 
-    verify(underTest).future();
-    verify(underTest).bindSignals(completableFuture, futures);
-    verify(f1).thenHandle(any(CollectAndDiscardHelper.class));
-    verify(f2).thenHandle(any(CollectAndDiscardHelper.class));
+    verify(underTest).completable();
+    verify(underTest).bindSignals(completable, futures);
+    verify(f1).whenDone(any(CollectAndDiscardHelper.class));
+    verify(f2).whenDone(any(CollectAndDiscardHelper.class));
   }
 
   @Test
   public void testFuture() {
-    assertTrue(underTest.future() instanceof ConcurrentCompletableFuture);
+    assertTrue(underTest.completable() instanceof ConcurrentCompletable);
   }
 
   @Test
@@ -553,14 +553,14 @@ public class CoreAsyncTest {
 
   @Test
   public void testManaged() {
-    final Supplier<? extends CompletionStage<Object>> setup = mock(Supplier.class);
-    final Function<? super Object, ? extends CompletionStage<Void>> teardown = mock(Function.class);
+    final Supplier<? extends Stage<Object>> setup = mock(Supplier.class);
+    final Function<? super Object, ? extends Stage<Void>> teardown = mock(Function.class);
     assertTrue(underTest.managed(setup, teardown) instanceof ConcurrentManaged);
   }
 
   @Test
   public void testBindSignals() {
-    final Collection<CompletionStage<Object>> futures = ImmutableList.of(f1, f2);
+    final Collection<Stage<Object>> futures = ImmutableList.of(f1, f2);
 
     doAnswer(new Answer<Void>() {
       @Override

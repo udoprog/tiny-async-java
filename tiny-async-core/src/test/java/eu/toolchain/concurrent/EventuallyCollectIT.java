@@ -61,7 +61,7 @@ public class EventuallyCollectIT {
     int attempt = 0;
 
     while (attempt++ < 10) {
-      final List<Callable<CompletionStage<Long>>> callables = new ArrayList<>();
+      final List<Callable<Stage<Long>>> callables = new ArrayList<>();
       final AtomicInteger pending = new AtomicInteger();
       final AtomicInteger called = new AtomicInteger();
 
@@ -80,7 +80,7 @@ public class EventuallyCollectIT {
         });
       }
 
-      final CompletionStage<Long> res =
+      final Stage<Long> res =
           async.eventuallyCollect(callables, new StreamCollector<Long, Long>() {
             final AtomicLong sum = new AtomicLong();
 
@@ -117,14 +117,14 @@ public class EventuallyCollectIT {
     final AtomicLong expectedInternalErrors = new AtomicLong();
 
     while (attempt++ < 10) {
-      final List<Callable<CompletionStage<Long>>> callables = new ArrayList<>();
+      final List<Callable<Stage<Long>>> callables = new ArrayList<>();
       final AtomicInteger pending = new AtomicInteger();
 
       for (long i = 0; i < COUNT; i++) {
         callables.add(() -> {
           pending.incrementAndGet();
 
-          final CompletionStage<Long> f = async.call(new Callable<Long>() {
+          final Stage<Long> f = async.call(new Callable<Long>() {
             @Override
             public Long call() throws Exception {
               if (r.nextInt(2) == 1) {
@@ -147,7 +147,7 @@ public class EventuallyCollectIT {
         });
       }
 
-      final CompletionStage<Long> res =
+      final Stage<Long> res =
           async.eventuallyCollect(callables, new StreamCollector<Long, Long>() {
             @Override
             public void completed(Long result) {

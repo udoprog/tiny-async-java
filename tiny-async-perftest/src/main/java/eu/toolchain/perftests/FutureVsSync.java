@@ -1,7 +1,7 @@
 package eu.toolchain.perftests;
 
 import com.google.common.base.Stopwatch;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class FutureVsSync {
   };
 
   private static double async() throws Exception {
-    final List<CompletionStage<Double>> outer = new ArrayList<>();
+    final List<Stage<Double>> outer = new ArrayList<>();
 
     for (int i = 0; i < AVAILABLE_PROCESSORS - 1; i++) {
       outer.add(someAsyncCall());
@@ -67,8 +67,8 @@ public class FutureVsSync {
     return async.collect(outer, summer).join();
   }
 
-  private static CompletionStage<Double> someAsyncCall() {
-    final List<CompletionStage<Double>> inner = new ArrayList<>();
+  private static Stage<Double> someAsyncCall() {
+    final List<Stage<Double>> inner = new ArrayList<>();
 
     for (int i = 0; i < 100; i++) {
       inner.add(async.call(FutureVsSync::doSomeWork));

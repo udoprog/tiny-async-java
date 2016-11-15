@@ -17,31 +17,31 @@ import org.junit.Test;
 public class DelayedCollectCoordinatorTest {
   private FutureCaller caller;
   private StreamCollector<Object, Object> collector;
-  private CompletableFuture<Object> future;
-  private Callable<CompletionStage<Object>> callable;
-  private Callable<CompletionStage<Object>> callable2;
-  private Callable<CompletionStage<Object>> callable3;
-  private Callable<CompletionStage<Object>> callable4;
-  private CompletionStage<Object> f;
-  private CompletionStage<Object> f2;
-  private CompletionStage<Object> f3;
-  private CompletionStage<Object> f4;
+  private Completable<Object> future;
+  private Callable<Stage<Object>> callable;
+  private Callable<Stage<Object>> callable2;
+  private Callable<Stage<Object>> callable3;
+  private Callable<Stage<Object>> callable4;
+  private Stage<Object> f;
+  private Stage<Object> f2;
+  private Stage<Object> f3;
+  private Stage<Object> f4;
 
   @SuppressWarnings("unchecked")
   @Before
   public void setup() throws Exception {
     caller = mock(FutureCaller.class);
     collector = mock(StreamCollector.class);
-    future = mock(CompletableFuture.class);
+    future = mock(Completable.class);
     callable = mock(Callable.class);
     callable2 = mock(Callable.class);
     callable3 = mock(Callable.class);
     callable4 = mock(Callable.class);
 
-    f = mock(CompletionStage.class);
-    f2 = mock(CompletionStage.class);
-    f3 = mock(CompletionStage.class);
-    f4 = mock(CompletionStage.class);
+    f = mock(Stage.class);
+    f2 = mock(Stage.class);
+    f3 = mock(Stage.class);
+    f4 = mock(Stage.class);
 
     when(callable.call()).thenReturn(f);
     when(callable2.call()).thenReturn(f2);
@@ -56,7 +56,7 @@ public class DelayedCollectCoordinatorTest {
 
   @Test
   public void testCallFutureDoneMethods() throws Exception {
-    final List<Callable<CompletionStage<Object>>> callables = ImmutableList.of();
+    final List<Callable<Stage<Object>>> callables = ImmutableList.of();
 
     final DelayedCollectCoordinator<Object, Object> coordinator =
         new DelayedCollectCoordinator<Object, Object>(caller, callables, collector, future, 1);
@@ -75,7 +75,7 @@ public class DelayedCollectCoordinatorTest {
 
   @Test
   public void testBasic() throws Exception {
-    final List<Callable<CompletionStage<Object>>> callables = ImmutableList.of(callable, callable2);
+    final List<Callable<Stage<Object>>> callables = ImmutableList.of(callable, callable2);
 
     final DelayedCollectCoordinator<Object, Object> coordinator =
         new DelayedCollectCoordinator<Object, Object>(caller, callables, collector, future, 1);
@@ -98,7 +98,7 @@ public class DelayedCollectCoordinatorTest {
 
   @Test
   public void testCancel() throws Exception {
-    final List<Callable<CompletionStage<Object>>> callables =
+    final List<Callable<Stage<Object>>> callables =
         ImmutableList.of(callable, callable2, callable3, callable4);
 
     final DelayedCollectCoordinator<Object, Object> coordinator =

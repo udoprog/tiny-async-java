@@ -12,12 +12,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author udoprog
  */
 public class CollectAndDiscardHelper implements CompletionHandle<Object> {
-  private final CompletableFuture<Void> target;
+  private final Completable<Void> target;
   private final AtomicInteger countdown;
   private final AtomicInteger cancelled = new AtomicInteger();
   private final ConcurrentLinkedQueue<Throwable> errors = new ConcurrentLinkedQueue<>();
 
-  public CollectAndDiscardHelper(int size, CompletableFuture<Void> target) {
+  public CollectAndDiscardHelper(int size, Completable<Void> target) {
     this.target = target;
     this.countdown = new AtomicInteger(size);
   }

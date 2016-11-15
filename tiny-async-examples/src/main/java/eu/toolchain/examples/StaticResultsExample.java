@@ -1,18 +1,18 @@
 package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import java.util.concurrent.ExecutionException;
 
 /**
  * An example application showcasing static futures.
  */
 public class StaticResultsExample {
-  public static CompletionStage<Integer> failToSetupFuture() {
+  public static Stage<Integer> failToSetupFuture() {
     throw new IllegalStateException("i will never succeed");
   }
 
-  public static CompletionStage<Integer> failingOperation(final Async async) {
+  public static Stage<Integer> failingOperation(final Async async) {
     try {
       return failToSetupFuture();
     } catch (Exception e) {
@@ -20,7 +20,7 @@ public class StaticResultsExample {
     }
   }
 
-  public static CompletionStage<String> cachingOperation(final Async async, boolean useCached) {
+  public static Stage<String> cachingOperation(final Async async, boolean useCached) {
     // no need to perform expensive operation.
     // return a static value.
     if (useCached) {

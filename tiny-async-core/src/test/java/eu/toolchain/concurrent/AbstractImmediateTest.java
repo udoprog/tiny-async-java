@@ -25,15 +25,15 @@ public class AbstractImmediateTest {
   @Mock
   private Function<From, To> fn;
   @Mock
-  private Function<From, CompletionStage<To>> composeFn;
+  private Function<From, Stage<To>> composeFn;
   @Mock
   private Supplier<From> supplier;
   @Mock
-  private Supplier<CompletionStage<From>> composeSupplier;
+  private Supplier<Stage<From>> composeSupplier;
   @Mock
   private Function<Throwable, From> failedFn;
   @Mock
-  private Function<Throwable, CompletionStage<From>> composeFailedFn;
+  private Function<Throwable, Stage<From>> composeFailedFn;
   @Mock
   private From from;
   @Mock

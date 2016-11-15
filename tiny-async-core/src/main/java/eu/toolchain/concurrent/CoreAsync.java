@@ -69,23 +69,23 @@ public class CoreAsync implements Async {
   }
 
   @Override
-  public <C> CompletionStage<C> call(final Callable<? extends C> callable) {
-    return doCall(callable, executor(), this.future());
+  public <C> Stage<C> call(final Callable<? extends C> callable) {
+    return doCall(callable, executor(), this.completable());
   }
 
   @Override
-  public <C> CompletionStage<C> call(
+  public <C> Stage<C> call(
       final Callable<? extends C> callable, final ExecutorService executor
   ) {
-    return doCall(callable, executor, this.future());
+    return doCall(callable, executor, this.completable());
   }
 
-  public <C> CompletionStage<C> doCall(
+  public <C> Stage<C> doCall(
       final Callable<? extends C> callable, final ExecutorService executor,
-      final CompletableFuture<C> future
+      final Completable<C> future
   ) {
     final Runnable runnable = () -> {
-      // future is already done, do not perform potentially expensive operation.
+      // completable is already done, do not perform potentially expensive operation.
       if (future.isDone()) {
         return;
       }
@@ -120,34 +120,34 @@ public class CoreAsync implements Async {
   }
 
   @Override
-  public <T> CompletableFuture<T> future() {
-    return new ConcurrentCompletableFuture<>(caller);
+  public <T> Completable<T> completable() {
+    return new ConcurrentCompletable<>(caller);
   }
 
   @Override
-  public CompletionStage<Void> completed() {
+  public Stage<Void> completed() {
     return completed(null);
   }
 
   @Override
-  public <T> CompletionStage<T> completed(T value) {
+  public <T> Stage<T> completed(T value) {
     return new ImmediateCompleted<>(caller, value);
   }
 
   @Override
-  public <T> CompletionStage<T> failed(Throwable e) {
+  public <T> Stage<T> failed(Throwable e) {
     return new ImmediateFailed<>(caller, e);
   }
 
   @Override
-  public <T> CompletionStage<T> cancelled() {
+  public <T> Stage<T> cancelled() {
     return new ImmediateCancelled<T>(caller);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> CompletionStage<Collection<T>> collect(
-      final Collection<? extends CompletionStage<? extends T>> futures
+  public <T> Stage<Collection<T>> collect(
+      final Collection<? extends Stage<? extends T>> futures
   ) {
     if (futures.isEmpty()) {
       return completed((Collection<T>) EMPTY_RESULTS);
@@ -157,8 +157,8 @@ public class CoreAsync implements Async {
   }
 
   @Override
-  public <C, T> CompletionStage<T> collect(
-      final Collection<? extends CompletionStage<? extends C>> futures,
+  public <C, T> Stage<T> collect(
+      final Collection<? extends Stage<? extends C>> futures,
       final Function<? super Collection<C>, ? extends T> collector
   ) {
     if (futures.isEmpty()) {
@@ -168,17 +168,17 @@ public class CoreAsync implements Async {
     return doCollect(futures, collector);
   }
 
-  protected <C, T> CompletionStage<T> doCollect(
-      final Collection<? extends CompletionStage<? extends C>> futures,
+  protected <C, T> Stage<T> doCollect(
+      final Collection<? extends Stage<? extends C>> futures,
       final Function<? super Collection<C>, ? extends T> collector
   ) {
-    final CompletableFuture<T> target = future();
+    final Completable<T> target = completable();
 
     final CollectHelper<? super C, ? extends T> done =
         new CollectHelper<>(futures.size(), collector, futures, target);
 
-    for (final CompletionStage<? extends C> q : futures) {
-      q.thenHandle(done);
+    for (final Stage<? extends C> q : futures) {
+      q.whenDone(done);
     }
 
     bindSignals(target, futures);
@@ -191,7 +191,7 @@ public class CoreAsync implements Async {
    * @param collector collector to apply
    */
   @SuppressWarnings("unchecked")
-  <C, T> CompletionStage<T> doCollectEmpty(
+  <C, T> Stage<T> doCollectEmpty(
       final Function<? super Collection<C>, ? extends T> collector
   ) {
     try {
@@ -202,9 +202,9 @@ public class CoreAsync implements Async {
   }
 
   @Override
-  public <C, T> CompletionStage<T> collect(
-      final Collection<? extends CompletionStage<? extends C>> futures,
-      final StreamCollector<? super C, ? extends T> collector
+  public <T, U> Stage<U> streamCollect(
+      final Collection<? extends Stage<? extends T>> futures,
+      final StreamCollector<? super T, ? extends U> collector
   ) {
     if (futures.isEmpty()) {
       return doStreamCollectEmpty(collector);
@@ -220,7 +220,7 @@ public class CoreAsync implements Async {
    * @param <T> source type
    * @param <U> target type
    */
-  <T, U> CompletionStage<U> doStreamCollectEmpty(
+  <T, U> Stage<U> doStreamCollectEmpty(
       final StreamCollector<? super T, ? extends U> collector
   ) {
     try {
@@ -238,17 +238,17 @@ public class CoreAsync implements Async {
    * @param <T> source type
    * @param <U> target type
    */
-  <T, U> CompletionStage<U> doStreamCollect(
-      final Collection<? extends CompletionStage<? extends T>> futures,
+  <T, U> Stage<U> doStreamCollect(
+      final Collection<? extends Stage<? extends T>> futures,
       final StreamCollector<? super T, ? extends U> collector
   ) {
-    final CompletableFuture<U> target = future();
+    final Completable<U> target = completable();
 
     final CollectStreamHelper<? super T, ? extends U> done =
         new CollectStreamHelper<>(caller, futures.size(), collector, target);
 
-    for (final CompletionStage<? extends T> q : futures) {
-      q.thenHandle(done);
+    for (final Stage<? extends T> q : futures) {
+      q.whenDone(done);
     }
 
     bindSignals(target, futures);
@@ -256,8 +256,47 @@ public class CoreAsync implements Async {
   }
 
   @Override
-  public <C, T> CompletionStage<T> eventuallyCollect(
-      final Collection<? extends Callable<? extends CompletionStage<? extends C>>> callables,
+  public <T, U> Stage<U> endCollect(
+      final Collection<? extends Stage<? extends T>> futures,
+      final EndCollector<? extends U> collector
+  ) {
+    if (futures.isEmpty()) {
+      return doEndCollectEmpty(collector);
+    }
+
+    return doEndCollect(futures, collector);
+  }
+
+  <T> Stage<T> doEndCollectEmpty(
+      final EndCollector<? extends T> collector
+  ) {
+    try {
+      return this.completed(collector.apply(0, 0, 0));
+    } catch (Exception e) {
+      return failed(e);
+    }
+  }
+
+  <T, U> Stage<U> doEndCollect(
+      final Collection<? extends Stage<? extends T>> futures,
+      final EndCollector<? extends U> collector
+  ) {
+    final Completable<U> target = completable();
+
+    final CollectEndHelper<? extends U> done =
+        new CollectEndHelper<>(caller, futures.size(), collector, target);
+
+    for (final Stage<? extends T> q : futures) {
+      q.whenDone(done);
+    }
+
+    bindSignals(target, futures);
+    return target;
+  }
+
+  @Override
+  public <C, T> Stage<T> eventuallyCollect(
+      final Collection<? extends Callable<? extends Stage<? extends C>>> callables,
       final StreamCollector<? super C, ? extends T> collector, int parallelism
   ) {
     if (callables.isEmpty()) {
@@ -272,7 +311,7 @@ public class CoreAsync implements Async {
     return doEventuallyCollect(callables, collector, parallelism);
   }
 
-  <T, C> CompletionStage<T> doEventuallyCollectEmpty(
+  <T, C> Stage<T> doEventuallyCollectEmpty(
       final StreamCollector<? super C, ? extends T> collector
   ) {
     final T value;
@@ -286,14 +325,14 @@ public class CoreAsync implements Async {
     return completed(value);
   }
 
-  <C, T> CompletionStage<T> doEventuallyCollectImmediate(
-      Collection<? extends Callable<? extends CompletionStage<? extends C>>> callables,
+  <C, T> Stage<T> doEventuallyCollectImmediate(
+      Collection<? extends Callable<? extends Stage<? extends C>>> callables,
       StreamCollector<? super C, ? extends T> collector
   ) {
-    final List<CompletionStage<? extends C>> futures = new ArrayList<>(callables.size());
+    final List<Stage<? extends C>> futures = new ArrayList<>(callables.size());
 
-    for (final Callable<? extends CompletionStage<? extends C>> c : callables) {
-      final CompletionStage<? extends C> future;
+    for (final Callable<? extends Stage<? extends C>> c : callables) {
+      final Stage<? extends C> future;
 
       try {
         future = c.call();
@@ -305,7 +344,7 @@ public class CoreAsync implements Async {
       futures.add(future);
     }
 
-    return collect(futures, collector);
+    return streamCollect(futures, collector);
   }
 
   /**
@@ -316,22 +355,22 @@ public class CoreAsync implements Async {
    * @param parallelism number of tasks to run in parallel
    * @param <T> source type
    * @param <U> target type
-   * @return a future
+   * @return a completable
    */
-  <T, U> CompletionStage<U> doEventuallyCollect(
-      final Collection<? extends Callable<? extends CompletionStage<? extends T>>> tasks,
+  <T, U> Stage<U> doEventuallyCollect(
+      final Collection<? extends Callable<? extends Stage<? extends T>>> tasks,
       final StreamCollector<? super T, ? extends U> collector, int parallelism
   ) {
     final ExecutorService executor = executor();
-    final CompletableFuture<U> future = future();
+    final Completable<U> future = completable();
     executor.execute(
         new DelayedCollectCoordinator<>(caller, tasks, collector, future, parallelism));
     return future;
   }
 
   @Override
-  public CompletionStage<Void> collectAndDiscard(
-      Collection<? extends CompletionStage<?>> futures
+  public Stage<Void> collectAndDiscard(
+      Collection<? extends Stage<?>> futures
   ) {
     if (futures.isEmpty()) {
       return completed();
@@ -344,17 +383,17 @@ public class CoreAsync implements Async {
    * Perform a collect and discard.
    *
    * @param futures futures to discard
-   * @return a future
+   * @return a completable
    */
-  CompletionStage<Void> doCollectAndDiscard(
-      Collection<? extends CompletionStage<?>> futures
+  Stage<Void> doCollectAndDiscard(
+      Collection<? extends Stage<?>> futures
   ) {
-    final CompletableFuture<Void> target = future();
+    final Completable<Void> target = completable();
 
     final CollectAndDiscardHelper done = new CollectAndDiscardHelper(futures.size(), target);
 
-    for (final CompletionStage<?> q : futures) {
-      q.thenHandle(done);
+    for (final Stage<?> q : futures) {
+      q.whenDone(done);
     }
 
     bindSignals(target, futures);
@@ -363,54 +402,53 @@ public class CoreAsync implements Async {
 
   @Override
   public <C> Managed<C> managed(
-      Supplier<? extends CompletionStage<C>> setup,
-      Function<? super C, ? extends CompletionStage<Void>> teardown
+      Supplier<? extends Stage<C>> setup, Function<? super C, ? extends Stage<Void>> teardown
   ) {
     return ConcurrentManaged.newManaged(this, caller(), setup, teardown);
   }
 
   @Override
   public <C> ReloadableManaged<C> reloadableManaged(
-      final Supplier<? extends CompletionStage<C>> setup,
-      final Function<? super C, ? extends CompletionStage<Void>> teardown
+      final Supplier<? extends Stage<C>> setup,
+      final Function<? super C, ? extends Stage<Void>> teardown
   ) {
     return ConcurrentReloadableManaged.newReloadableManaged(this, caller(), setup, teardown);
   }
 
   /**
-   * Bind the given collection of futures to the target future, which if cancelled, or failed will
-   * do the corresponding to their collection of futures.
+   * Bind the given collection of futures to the target completable, which if cancelled, or failed
+   * will do the corresponding to their collection of futures.
    *
-   * @param target The future to cancel, and fail on.
+   * @param target The completable to cancel, and fail on.
    * @param futures The futures to cancel, when {@code target} is cancelled.
    */
   void bindSignals(
-      final CompletionStage<?> target, final Collection<? extends CompletionStage<?>> futures
+      final Stage<?> target, final Collection<? extends Stage<?>> futures
   ) {
     target.whenCancelled(() -> {
-      for (final CompletionStage<?> f : futures) {
+      for (final Stage<?> f : futures) {
         f.cancel();
       }
     });
   }
 
   @Override
-  public <T> CompletionStage<RetryResult<T>> retryUntilCompleted(
-      final Callable<? extends CompletionStage<T>> callable, final RetryPolicy policy
+  public <T> Stage<RetryResult<T>> retryUntilCompleted(
+      final Callable<? extends Stage<T>> callable, final RetryPolicy policy
   ) {
     return retryUntilCompleted(callable, policy, clockSource);
   }
 
   @Override
-  public <T> CompletionStage<RetryResult<T>> retryUntilCompleted(
-      final Callable<? extends CompletionStage<T>> callable, final RetryPolicy policy,
+  public <T> Stage<RetryResult<T>> retryUntilCompleted(
+      final Callable<? extends Stage<T>> callable, final RetryPolicy policy,
       final ClockSource clockSource
   ) {
     if (scheduler == null) {
       throw new IllegalStateException("no scheduler configured");
     }
 
-    final CompletableFuture<T> future = future();
+    final Completable<T> future = completable();
 
     final Supplier<RetryDecision> policyInstance = policy.newInstance(clockSource);
 
@@ -569,7 +607,7 @@ public class CoreAsync implements Async {
     }
 
     /**
-     * Specify a separate executor to use for caller (internal thenHandle) invocation.
+     * Specify a separate executor to use for caller (internal whenDone) invocation.
      *
      * <p>Implies use of threaded caller.
      *
@@ -643,7 +681,7 @@ public class CoreAsync implements Async {
     }
 
     /**
-     * Setup the future caller.
+     * Setup the completable caller.
      *
      * @param callerExecutor configured caller executor
      * @return A caller implementation according to the provided configuration.

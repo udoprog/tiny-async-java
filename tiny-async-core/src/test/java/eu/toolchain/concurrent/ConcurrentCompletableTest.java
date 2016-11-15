@@ -23,7 +23,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ConcurrentCompletableFutureTest {
+public class ConcurrentCompletableTest {
   private static final Exception cause = new Exception();
 
   @Mock
@@ -35,7 +35,7 @@ public class ConcurrentCompletableFutureTest {
   @Mock
   private CompletionHandle<From> done;
   @Mock
-  private CompletionStage<?> other;
+  private Stage<?> other;
   @Mock
   private Runnable cancelled;
   @Mock
@@ -45,15 +45,15 @@ public class ConcurrentCompletableFutureTest {
   @Mock
   private Runnable finished;
   @Mock
-  private ConcurrentCompletableFuture<To> toFuture;
+  private ConcurrentCompletable<To> toFuture;
   @Mock
-  private ConcurrentCompletableFuture<From> fromFuture;
+  private ConcurrentCompletable<From> fromFuture;
 
-  private ConcurrentCompletableFuture<From> future;
+  private ConcurrentCompletable<From> future;
 
   @Before
   public void setup() {
-    future = spy(new ConcurrentCompletableFuture<From>(caller));
+    future = spy(new ConcurrentCompletable<From>(caller));
 
     doAnswer(invocation -> {
       invocation.getArgumentAt(0, Runnable.class).run();
@@ -71,7 +71,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testResolve2() {
-    future.state.set(ConcurrentCompletableFuture.COMPLETED);
+    future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
 
     doNothing().when(future).postComplete();
@@ -89,7 +89,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testFail2() {
-    future.state.set(ConcurrentCompletableFuture.FAILED);
+    future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
 
     doNothing().when(future).postComplete();
@@ -107,8 +107,8 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testCancel2() {
-    future.state.set(ConcurrentCompletableFuture.CANCELLED);
-    future.result = ConcurrentCompletableFuture.CANCEL;
+    future.state.set(ConcurrentCompletable.CANCELLED);
+    future.result = ConcurrentCompletable.CANCEL;
 
     doNothing().when(future).postComplete();
     assertFalse(future.cancel());
@@ -120,7 +120,7 @@ public class ConcurrentCompletableFutureTest {
     doReturn(runnable).when(future).doneRunnable(done);
     doReturn(true).when(future).add(runnable);
 
-    assertEquals(future, future.thenHandle(done));
+    assertEquals(future, future.whenDone(done));
 
     verify(future).doneRunnable(done);
     verify(future).add(runnable);
@@ -132,7 +132,7 @@ public class ConcurrentCompletableFutureTest {
     doReturn(runnable).when(future).doneRunnable(done);
     doReturn(false).when(future).add(runnable);
 
-    assertEquals(future, future.thenHandle(done));
+    assertEquals(future, future.whenDone(done));
 
     verify(future).doneRunnable(done);
     verify(future).add(runnable);
@@ -141,7 +141,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testDoneRunnable1() {
-    future.state.set(ConcurrentCompletableFuture.FAILED);
+    future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
 
     future.doneRunnable(done).run();
@@ -153,8 +153,8 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testDoneRunnable2() {
-    future.state.set(ConcurrentCompletableFuture.CANCELLED);
-    future.result = ConcurrentCompletableFuture.CANCEL;
+    future.state.set(ConcurrentCompletable.CANCELLED);
+    future.result = ConcurrentCompletable.CANCEL;
 
     future.doneRunnable(done).run();
 
@@ -165,7 +165,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testDoneRunnable3() {
-    future.state.set(ConcurrentCompletableFuture.COMPLETED);
+    future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
 
     future.doneRunnable(done).run();
@@ -177,8 +177,8 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testCancelledRunnable1() {
-    future.state.set(ConcurrentCompletableFuture.CANCELLED);
-    future.result = ConcurrentCompletableFuture.CANCEL;
+    future.state.set(ConcurrentCompletable.CANCELLED);
+    future.result = ConcurrentCompletable.CANCEL;
 
     future.cancelledRunnable(cancelled).run();
     verify(cancelled).run();
@@ -186,7 +186,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testCancelledRunnable2() {
-    future.state.set(~ConcurrentCompletableFuture.CANCELLED);
+    future.state.set(~ConcurrentCompletable.CANCELLED);
 
     future.cancelledRunnable(cancelled).run();
     verify(cancelled, never()).run();
@@ -194,7 +194,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testResolvedRunnable1() {
-    future.state.set(ConcurrentCompletableFuture.COMPLETED);
+    future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
 
     future.resolvedRunnable(resolved).run();
@@ -203,7 +203,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testResolvedRunnable2() {
-    future.state.set(ConcurrentCompletableFuture.FAILED);
+    future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
 
     future.resolvedRunnable(resolved).run();
@@ -213,7 +213,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testFailedRunnable1() {
-    future.state.set(ConcurrentCompletableFuture.FAILED);
+    future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
 
     future.failedRunnable(failed).run();
@@ -222,7 +222,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testFailedRunnable2() {
-    future.state.set(ConcurrentCompletableFuture.COMPLETED);
+    future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
 
     future.failedRunnable(failed).run();
@@ -237,27 +237,27 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void testIsResolved() {
-    future.state.set(ConcurrentCompletableFuture.COMPLETED);
+    future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
     assertTrue(future.isCompleted());
   }
 
   @Test
   public void testIsFailed() {
-    future.state.set(ConcurrentCompletableFuture.FAILED);
+    future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
     assertTrue(future.isFailed());
   }
 
   @Test
   public void testIsCancelled() {
-    future.result = ConcurrentCompletableFuture.CANCEL;
+    future.result = ConcurrentCompletable.CANCEL;
     assertTrue(future.isCancelled());
   }
 
   @Test
   public void testJoinNow() throws Exception {
-    future.state.set(ConcurrentCompletableFuture.COMPLETED);
+    future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
     assertEquals(result, future.joinNow());
   }
@@ -281,7 +281,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void thenCompose() {
-    @SuppressWarnings("unchecked") final Function<Object, CompletionStage<Object>> fn =
+    @SuppressWarnings("unchecked") final Function<Object, Stage<Object>> fn =
         mock(Function.class);
 
     doReturn(toFuture).when(future).newFuture();
@@ -304,7 +304,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void thenComposeFailed() {
-    @SuppressWarnings("unchecked") final Function<Throwable, CompletionStage<From>> fn =
+    @SuppressWarnings("unchecked") final Function<Throwable, Stage<From>> fn =
         mock(Function.class);
 
     doReturn(fromFuture).when(future).newFuture();
@@ -327,7 +327,7 @@ public class ConcurrentCompletableFutureTest {
 
   @Test
   public void thenComposeCancelled() {
-    @SuppressWarnings("unchecked") final Supplier<CompletionStage<From>> fn = mock(Supplier.class);
+    @SuppressWarnings("unchecked") final Supplier<Stage<From>> fn = mock(Supplier.class);
 
     doReturn(fromFuture).when(future).newFuture();
     doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));

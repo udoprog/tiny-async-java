@@ -3,7 +3,7 @@ package eu.toolchain.examples;
 import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -124,7 +124,7 @@ public class WhyAsync {
     };
 
     private double async() throws Exception {
-      final List<CompletionStage<Double>> outer = new ArrayList<>();
+      final List<Stage<Double>> outer = new ArrayList<>();
 
       for (int i = 0; i < NUMBER_OF_REQUESTS; i++) {
         outer.add(someAsyncCall());
@@ -133,8 +133,8 @@ public class WhyAsync {
       return async.collect(outer, summer).join();
     }
 
-    private CompletionStage<Double> someAsyncCall() {
-      final List<CompletionStage<Double>> inner = new ArrayList<>();
+    private Stage<Double> someAsyncCall() {
+      final List<Stage<Double>> inner = new ArrayList<>();
 
       for (int i = 0; i < INNER_REQUEST_COUNT; i++) {
         inner.add(async.call(() -> someWork(WORK_ITERATIONS)));

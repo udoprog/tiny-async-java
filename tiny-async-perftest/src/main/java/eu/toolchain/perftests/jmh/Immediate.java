@@ -3,7 +3,7 @@ package eu.toolchain.perftests.jmh;
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.ListenableFuture;
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ public class Immediate {
 
   @Benchmark
   public void tiny() throws Exception {
-    final List<CompletionStage<Boolean>> futures = new ArrayList<>();
+    final List<Stage<Boolean>> futures = new ArrayList<>();
 
     for (int i = 0; i < ITERATIONS; i++) {
       futures.add(async.completed(true).thenApply(result -> !result));

@@ -134,14 +134,14 @@ public class RecursionSafeAsyncCallerIT {
         .recursionSafe(recursionSafe)
         .build();
 
-    final CompletableFuture<Integer> source = async.future();
+    final Completable<Integer> source = async.completable();
 
-    CompletionStage<Integer> tail = source;
+    Stage<Integer> tail = source;
 
     // 100k should blow up the stack comfortably without enabling recursionSafe
     for (int i = 0; i < 100000; i++) {
       tail = tail.thenCompose(value -> {
-        // immediate future
+        // immediate completable
         return async.completed(value + 1);
       });
     }

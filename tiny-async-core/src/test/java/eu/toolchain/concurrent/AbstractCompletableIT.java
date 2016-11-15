@@ -17,7 +17,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public abstract class AbstractCompletableFutureIT {
+public abstract class AbstractCompletableIT {
   public static final int VALUE = 10;
 
   private final RuntimeException cause = new RuntimeException();
@@ -31,8 +31,8 @@ public abstract class AbstractCompletableFutureIT {
   @Mock
   public FutureCaller caller;
 
-  private CompletableFuture<Integer> outer;
-  private CompletableFuture<Integer> inner;
+  private Completable<Integer> outer;
+  private Completable<Integer> inner;
 
   @Before
   public void setUp() {
@@ -45,9 +45,9 @@ public abstract class AbstractCompletableFutureIT {
     }).when(caller).execute(any(Runnable.class));
   }
 
-  protected abstract <T> CompletableFuture<T> setupFuture(FutureCaller caller);
+  protected abstract <T> Completable<T> setupFuture(FutureCaller caller);
 
-  private <T> CompletableFuture<T> setupFuture() {
+  private <T> Completable<T> setupFuture() {
     return setupFuture(caller);
   }
 
@@ -55,8 +55,8 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApply() throws Exception {
-    final CompletableFuture<Integer> a = setupFuture();
-    final CompletionStage<Integer> next = a.thenApply(v -> v + VALUE);
+    final Completable<Integer> a = setupFuture();
+    final Stage<Integer> next = a.thenApply(v -> v + VALUE);
 
     a.complete(VALUE);
     assertThat(next.join(), is(VALUE + VALUE));
@@ -64,7 +64,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyFailOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApply(v -> v + VALUE);
+    final Stage<Integer> next = outer.thenApply(v -> v + VALUE);
 
     expected.expect(ExecutionException.class);
     expected.expectCause(is(cause));
@@ -74,7 +74,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyCancelOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApply(v -> v + VALUE);
+    final Stage<Integer> next = outer.thenApply(v -> v + VALUE);
 
     expected.expect(CancellationException.class);
     outer.cancel();
@@ -83,7 +83,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyCancelNext() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApply(v -> v + VALUE);
+    final Stage<Integer> next = outer.thenApply(v -> v + VALUE);
 
     expected.expect(CancellationException.class);
     next.cancel();
@@ -94,7 +94,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenCompose() throws Exception {
-    final CompletionStage<Integer> next = outer.thenCompose(v -> inner);
+    final Stage<Integer> next = outer.thenCompose(v -> inner);
 
     inner.complete(VALUE);
     outer.complete(VALUE);
@@ -103,7 +103,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenCompose(v -> inner);
+    final Stage<Integer> next = outer.thenCompose(v -> inner);
 
     expected.expect(ExecutionException.class);
     expected.expectCause(is(cause));
@@ -114,7 +114,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailInner() throws Exception {
-    final CompletionStage<Integer> next = outer.thenCompose(v -> inner);
+    final Stage<Integer> next = outer.thenCompose(v -> inner);
 
     expected.expect(ExecutionException.class);
     expected.expectCause(is(cause));
@@ -125,7 +125,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenCompose(v -> inner);
+    final Stage<Integer> next = outer.thenCompose(v -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -135,7 +135,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelNext() throws Exception {
-    final CompletionStage<Integer> next = outer.thenCompose(v -> inner);
+    final Stage<Integer> next = outer.thenCompose(v -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -145,7 +145,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelInner() throws Exception {
-    final CompletionStage<Integer> next = outer.thenCompose(v -> inner);
+    final Stage<Integer> next = outer.thenCompose(v -> inner);
 
     expected.expect(CancellationException.class);
     inner.cancel();
@@ -157,7 +157,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyCancelled() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
 
     outer.complete(VALUE);
     assertThat(next.join(), is(VALUE));
@@ -165,7 +165,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyCancelledFailOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
 
     expected.expect(ExecutionException.class);
     expected.expectCause(is(cause));
@@ -175,7 +175,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyCancelledCancelOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
 
     outer.cancel();
     assertThat(next.join(), is(VALUE));
@@ -183,7 +183,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyCancelledCancelNext() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
 
     expected.expect(CancellationException.class);
     next.cancel();
@@ -194,7 +194,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelled() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeCancelled(() -> inner);
+    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
 
     inner.complete(VALUE);
     outer.complete(VALUE);
@@ -203,7 +203,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelledFailOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeCancelled(() -> inner);
+    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
 
     expected.expect(ExecutionException.class);
     expected.expectCause(is(cause));
@@ -214,7 +214,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelledFailInner() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeCancelled(() -> inner);
+    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
 
     expected.expect(ExecutionException.class);
     expected.expectCause(is(cause));
@@ -225,7 +225,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelledCancelOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeCancelled(() -> inner);
+    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
 
     inner.complete(VALUE);
     outer.cancel();
@@ -234,7 +234,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelledCancelNext() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeCancelled(() -> inner);
+    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -244,7 +244,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeCancelledCancelInner() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeCancelled(() -> inner);
+    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
 
     expected.expect(CancellationException.class);
     inner.cancel();
@@ -256,7 +256,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyFailed() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     outer.complete(VALUE);
     assertThat(next.join(), is(VALUE));
@@ -264,7 +264,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyFailedFailOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     outer.fail(cause);
     assertThat(next.join(), is(VALUE));
@@ -272,7 +272,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenApplyFailedCancelOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     expected.expect(CancellationException.class);
     outer.cancel();
@@ -283,7 +283,7 @@ public abstract class AbstractCompletableFutureIT {
   public void thenApplyFailedCancelNext() throws Exception {
     expected.expect(CancellationException.class);
 
-    final CompletionStage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     next.cancel();
     outer.join();
@@ -293,7 +293,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailed() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
 
     inner.complete(VALUE);
     outer.complete(VALUE);
@@ -302,7 +302,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailedFailOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
 
     inner.complete(VALUE);
     outer.fail(cause);
@@ -311,7 +311,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailedFailInner() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
 
     inner.fail(cause);
     outer.complete(VALUE);
@@ -320,7 +320,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailedCancelOuter() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -330,7 +330,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailedCancelNext() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -340,7 +340,7 @@ public abstract class AbstractCompletableFutureIT {
 
   @Test
   public void thenComposeFailedCancelInner() throws Exception {
-    final CompletionStage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
 
     expected.expect(CancellationException.class);
     inner.cancel();

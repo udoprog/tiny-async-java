@@ -29,17 +29,17 @@ public class CollectHelperTest {
   @Mock
   private Function<Collection<From>, To> collector;
   @Mock
-  private List<CompletionStage<From>> sources;
+  private List<Stage<From>> sources;
   @Mock
-  private CompletableFuture<To> target;
+  private Completable<To> target;
   @Mock
   private From result;
   @Mock
   private Throwable e;
   @Mock
-  private CompletionStage<From> f1;
+  private Stage<From> f1;
   @Mock
-  private CompletionStage<From> f2;
+  private Stage<From> f2;
 
   private CollectHelper<From, To> helper;
 
@@ -84,8 +84,8 @@ public class CollectHelperTest {
 
   @Test
   public void testCheckFailed() {
-    final Iterator<CompletionStage<?>> futures =
-        ImmutableList.<CompletionStage<?>>of(f1, f2).iterator();
+    final Iterator<Stage<?>> futures =
+        ImmutableList.<Stage<?>>of(f1, f2).iterator();
 
     doReturn(futures).when(sources).iterator();
 

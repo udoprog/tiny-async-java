@@ -14,7 +14,7 @@ import org.junit.Test;
 public class CollectStreamHelperTest {
   private FutureCaller caller;
   private StreamCollector<Object, Object> collector;
-  private CompletableFuture<Object> target;
+  private Completable<Object> target;
 
   private final Object transformed = new Object();
   private final Object result = new Object();
@@ -25,7 +25,7 @@ public class CollectStreamHelperTest {
   public void setup() {
     caller = mock(FutureCaller.class);
     collector = mock(StreamCollector.class);
-    target = mock(CompletableFuture.class);
+    target = mock(Completable.class);
 
     doAnswer(invocation -> {
       invocation.getArgumentAt(0, Runnable.class).run();

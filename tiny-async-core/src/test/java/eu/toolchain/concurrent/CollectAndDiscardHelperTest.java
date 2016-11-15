@@ -14,14 +14,14 @@ public class CollectAndDiscardHelperTest {
   private static final Object result = new Object();
   private static final Throwable cause = new Exception();
 
-  private CompletableFuture<Void> target;
+  private Completable<Void> target;
 
   private CollectAndDiscardHelper helper;
 
   @SuppressWarnings("unchecked")
   @Before
   public void setup() {
-    target = mock(CompletableFuture.class);
+    target = mock(Completable.class);
     helper = new CollectAndDiscardHelper(size, target);
   }
 

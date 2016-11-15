@@ -38,7 +38,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @Mock
   private To to;
   @Mock
-  private CompletionStage<To> toFuture;
+  private Stage<To> toFuture;
   @Mock
   private FutureCaller caller;
   @Mock
@@ -52,7 +52,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @Mock
   private Runnable cancelled;
   @Mock
-  private CompletionStage<?> other;
+  private Stage<?> other;
 
   private AbstractImmediate<From> underTest;
 
@@ -158,7 +158,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void thenCompose() throws Exception {
-    final Function<From, CompletionStage<To>> fn = mock(Function.class);
+    final Function<From, Stage<To>> fn = mock(Function.class);
 
     doReturn(toFuture).when(fn).apply(result);
     assertThat(underTest.thenCompose(fn), is(expected(toFuture)));
@@ -178,7 +178,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void thenComposeFailed() throws Exception {
-    final Function<Throwable, CompletionStage<From>> transform = mock(Function.class);
+    final Function<Throwable, Stage<From>> transform = mock(Function.class);
 
     doReturn(underTest).when(underTest).immediateComposeFailed(transform, cause);
     assertEquals(underTest, underTest.thenComposeFailed(transform));
@@ -198,7 +198,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void thenComposeCancelled() throws Exception {
-    final Supplier<CompletionStage<From>> transform = mock(Supplier.class);
+    final Supplier<Stage<From>> transform = mock(Supplier.class);
 
     doReturn(underTest).when(underTest).immediateComposeCancelled(transform);
     assertEquals(underTest, underTest.thenComposeCancelled(transform));
@@ -241,7 +241,7 @@ public abstract class ImmediateAsyncFutureTestBase {
     return never();
   }
 
-  private CompletionStage<To> expected() {
+  private Stage<To> expected() {
     switch (expected) {
       case CANCELLED:
         return new ImmediateCancelled<>(caller);
@@ -254,7 +254,7 @@ public abstract class ImmediateAsyncFutureTestBase {
     }
   }
 
-  private CompletionStage<To> expected(final CompletionStage<To> completed) {
+  private Stage<To> expected(final Stage<To> completed) {
     switch (expected) {
       case CANCELLED:
         return new ImmediateCancelled<>(caller);

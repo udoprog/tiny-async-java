@@ -1,7 +1,7 @@
 package eu.toolchain.examples;
 
-import eu.toolchain.concurrent.CompletableFuture;
-import eu.toolchain.concurrent.CompletionStage;
+import eu.toolchain.concurrent.Completable;
+import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.CoreAsync;
 import java.util.concurrent.ExecutionException;
 
@@ -9,8 +9,8 @@ import java.util.concurrent.ExecutionException;
  * An example application showcasing manually resolving a {@code ResolvableFuture}.
  */
 public class ManualResolvingExample {
-  public static CompletionStage<Integer> somethingReckless(final CoreAsync async) {
-    final CompletableFuture<Integer> future = async.future();
+  public static Stage<Integer> somethingReckless(final CoreAsync async) {
+    final Completable<Integer> future = async.completable();
 
     // access the configured executor.
     async.executor().execute(() -> future.complete(42));
