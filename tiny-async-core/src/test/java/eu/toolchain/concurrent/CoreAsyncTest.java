@@ -88,7 +88,8 @@ public class CoreAsyncTest {
 
   @Before
   public void setup() {
-    underTest = spy(new CoreAsync(executor, null, caller, clockSource));
+    underTest =
+        spy(new CoreAsync(executor, null, caller, clockSource, ManagedOptions.newDefault()));
   }
 
   @Test
@@ -98,26 +99,28 @@ public class CoreAsyncTest {
 
   @Test
   public void testGetDefaultExecutor() {
-    assertEquals(executor, new CoreAsync(executor, null, caller, clockSource).executor());
+    assertEquals(executor,
+        new CoreAsync(executor, null, caller, clockSource, ManagedOptions.newDefault()).executor());
   }
 
   @Test
   public void testGetCaller() {
-    assertEquals(caller, new CoreAsync(null, null, caller, clockSource).caller());
+    assertEquals(caller,
+        new CoreAsync(null, null, caller, clockSource, ManagedOptions.newDefault()).caller());
   }
 
   @Test
   public void testNullCaller() {
     except.expect(NullPointerException.class);
     except.expectMessage("caller");
-    new CoreAsync(null, null, null, clockSource);
+    new CoreAsync(null, null, null, clockSource, ManagedOptions.newDefault());
   }
 
   @Test
   public void testMissingDefaultExecutorThrows() {
     except.expect(IllegalStateException.class);
     except.expectMessage("no default executor");
-    new CoreAsync(null, null, caller, clockSource).executor();
+    new CoreAsync(null, null, caller, clockSource, ManagedOptions.newDefault()).executor();
   }
 
   private void whenExecutorSubmitSetup() {

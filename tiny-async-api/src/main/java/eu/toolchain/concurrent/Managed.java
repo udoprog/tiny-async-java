@@ -23,24 +23,15 @@ import java.util.function.Function;
  *
  * It guarantees that the code is executed in a safe fashion, that will release the reference if it
  * throws an exception. After it has successfully returned a future, the borrowed reference will be
- * relased when this future is completed:
+ * released when this future is completed:
  *
  * <pre>{@code
- *   final Managed<T> m = ...;
+ *   final Managed<Database> m;
  *
- *   final Stage<Integer> future = m.doto(new ManagedAction<T, Integer>() {
- *     Stage<Integer> action(final T value) {
- *       // do something with value
- *
- *       return async.completed(42);
- *     }
+ *   final Stage<Integer> future = m.doto(db -> {
+ *     // do something with database
+ *     return db.count();
  *   });
- *
- *   try (final Borrowed<T> b = m.borrow()) {
- *     final T value = b.get();
- *
- *     // do something with 'value'.
- *   }
  * }</pre>
  *
  * <p>The following is an example using try-with-resource:
@@ -71,6 +62,27 @@ import java.util.function.Function;
  *   }
  * }</pre>
  *
+ * <h4>Reference Leaks</h4>
+ *
+ * <p>Managed references are prime candidates for leaking references. This is caused by application
+ * code not having a 1:1 correspondence between each {@link #borrow()} and
+ * {@link Borrowed#release()} call.
+ *
+ * <p>To aid troubleshooting, {@link Borrowed} references have implemented the
+ * {@link Object#finalize()} that provides instrumentation through
+ * {@link Caller#referenceLeaked(Object, StackTraceElement[])} if the borrowed reference is garbage
+ * collected before it has been released. Stack traces are only captured if the system property
+ * defined by {@link #CAPTURE_STACK} is set to {@code yes}.
+ *
+ * <p>Additionally, tracing for each managed reference can be enabled by setting the system property
+ * defined by {@link #TRACING} to {@code yes}. This causes the managed reference's
+ * {@link Object#toString()} to contain detailed information about every borrowed reference that has
+ * currently been acquired. Like the following example:
+ *
+ * <pre>{@code
+ *
+ * }</pre>
+ *
  * @param <T> type of the managed reference
  * @author udoprog
  */
@@ -83,13 +95,15 @@ public interface Managed<T> {
   /**
    * System property that if set to 'yes', will cause stacks to be captured by borrowed
    * references.
+   *
+   * <p>This will cause managed references to be more memory intensive.
    */
   String CAPTURE_STACK = Managed.class.getCanonicalName() + ".captureStack";
 
   /**
    * Start the managed reference.
    *
-   * @return a future associated with the start action
+   * @return a stage associated with the starting of the managed reference.
    */
   Stage<Void> start();
 
@@ -98,14 +112,14 @@ public interface Managed<T> {
    *
    * <p>If called multiple times will only A stop call will do the following (in order):<ul>
    *
-   * <li>future borrowed references are <em>not</em> valid</li>
+   * <li>subsequent borrowed references are <em>not</em> valid</li>
    *
    * <li>waits for the reference count to become zero, this indicates that no one is
    * <em>using</em> the reference</li>
    *
    * <li>destruct the managed reference</li></ul>
    *
-   * @return a future associated with the stop action
+   * @return s stage associated with the stopping of the managed reference
    */
   Stage<Void> stop();
 

@@ -16,15 +16,6 @@ import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 
 public class ConcurrentManaged<T> implements Managed<T> {
-  private static final boolean TRACING;
-  private static final boolean CAPTURE_STACK;
-
-  // fetch and compare the value of properties that modifies runtime behaviour of this class.
-  static {
-    TRACING = "on".equals(System.getProperty(Managed.TRACING, "off"));
-    CAPTURE_STACK = "on".equals(System.getProperty(Managed.CAPTURE_STACK, "off"));
-  }
-
   private static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
   private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
@@ -41,7 +32,8 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
   // composite completable that depends on zero-lease, and stop-reference.
   private final Stage<Void> stopFuture;
-  private final Set<ValidBorrowed> traces;
+  private final boolean captureStack;
+  final Set<ValidBorrowed> traces;
 
   final AtomicReference<ManagedState> state = new AtomicReference<>(ManagedState.INITIALIZED);
 
@@ -51,7 +43,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
   final AtomicInteger leases = new AtomicInteger(1);
 
   public static <T> ConcurrentManaged<T> newManaged(
-      final Async async, final Caller caller,
+      final Async async, final Caller caller, final ManagedOptions options,
       final Supplier<? extends Stage<T>> setup,
       final Function<? super T, ? extends Stage<Void>> teardown
   ) {
@@ -62,12 +54,12 @@ public class ConcurrentManaged<T> implements Managed<T> {
     final Stage<Void> stopFuture =
         zeroLeaseFuture.thenCompose(v -> stopReferenceFuture.thenCompose(teardown));
 
-    return new ConcurrentManaged<>(caller, setup, startFuture, zeroLeaseFuture, stopReferenceFuture,
-        stopFuture);
+    return new ConcurrentManaged<>(caller, options, setup, startFuture, zeroLeaseFuture,
+        stopReferenceFuture, stopFuture);
   }
 
   ConcurrentManaged(
-      final Caller caller, final Supplier<? extends Stage<T>> setup,
+      final Caller caller, final ManagedOptions options, final Supplier<? extends Stage<T>> setup,
       final Completable<Void> startFuture, final Completable<Void> zeroLeaseFuture,
       final Completable<T> stopReferenceFuture, final Stage<Void> stopFuture
   ) {
@@ -78,8 +70,9 @@ public class ConcurrentManaged<T> implements Managed<T> {
     this.zeroLeaseFuture = zeroLeaseFuture;
     this.stopReferenceFuture = stopReferenceFuture;
     this.stopFuture = stopFuture;
+    this.captureStack = options.isCaptureStack();
 
-    if (TRACING) {
+    if (options.isTracing()) {
       traces = Collections.newSetFromMap(new ConcurrentHashMap<ValidBorrowed, Boolean>());
     } else {
       traces = null;
@@ -151,9 +144,13 @@ public class ConcurrentManaged<T> implements Managed<T> {
       return new ImmediateFailed<>(caller, e);
     }
 
+    if (constructor == null) {
+      throw new NullPointerException("setup returned null as stage");
+    }
+
     return constructor.<Void>thenApply(result -> {
       if (result == null) {
-        throw new IllegalArgumentException("setup reference must no non-null");
+        throw new IllegalArgumentException("setup reference must be non-null");
       }
 
       reference.set(result);
@@ -217,11 +214,8 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     builder.append(String.format("Managed(%s, %s:\n", state, reference));
 
-    int i = 0;
-
     for (final ValidBorrowed b : traces) {
-      builder.append(String.format("#%d\n", i++));
-      builder.append(formatStack(b.stack()) + "\n");
+      builder.append(b.toString());
     }
 
     builder.append(")");
@@ -229,7 +223,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
   }
 
   StackTraceElement[] getStackTrace() {
-    if (!CAPTURE_STACK) {
+    if (!captureStack) {
       return EMPTY_STACK;
     }
 
@@ -267,8 +261,8 @@ public class ConcurrentManaged<T> implements Managed<T> {
    */
   @RequiredArgsConstructor
   class ValidBorrowed implements Borrowed<T> {
-    private final T reference;
-    protected final StackTraceElement[] stack;
+    final T reference;
+    final StackTraceElement[] stack;
 
     final AtomicBoolean released = new AtomicBoolean(false);
 
@@ -316,6 +310,24 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
     StackTraceElement[] stack() {
       return stack;
+    }
+
+    @Override
+    public String toString() {
+      final StringBuilder builder = new StringBuilder();
+
+      builder.append(String.format("Borrowed(%s): ", super.toString()));
+
+      if (stack.length > 0) {
+        builder
+            .append("with stack trace:\n")
+            .append(formatStack(Arrays.stream(stack), "  "))
+            .append("\n");
+      } else {
+        builder.append("<no stack trace>");
+      }
+
+      return builder.toString();
     }
   }
 

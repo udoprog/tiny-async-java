@@ -60,9 +60,11 @@ public class ConcurrentManagedTest {
   @Mock
   private Completable<Void> stopFuture;
   @Mock
-  private Stage<Object> future;
+  private Stage<Object> stage;
   @Mock
-  private Stage<Object> f;
+  private Stage<Object> stage2;
+  @Mock
+  private Stage<Object> stage3;
   @Mock
   private Stage<Void> transformed;
   @Mock
@@ -70,8 +72,11 @@ public class ConcurrentManagedTest {
 
   @Before
   public void setup() {
-    underTest = spy(new ConcurrentManaged<>(caller, setup, startFuture, zeroLeaseFuture,
-        stopReferenceFuture, stopFuture));
+    final ManagedOptions options =
+        ManagedOptions.builder().tracing(true).captureStack(true).build();
+
+    underTest = spy(new ConcurrentManaged<>(caller, options, setup, startFuture,
+        zeroLeaseFuture, stopReferenceFuture, stopFuture));
   }
 
   @SuppressWarnings("unchecked")
@@ -87,8 +92,7 @@ public class ConcurrentManagedTest {
         .thenReturn(zeroLeaseFuture)
         .thenReturn(stopReferenceFuture);
 
-    final AtomicReference<Function<Object, Stage<Object>>> transform1 =
-        new AtomicReference<>();
+    final AtomicReference<Function<Object, Stage<Object>>> transform1 = new AtomicReference<>();
 
     doAnswer(new Answer<Stage<Object>>() {
       @Override
@@ -96,12 +100,9 @@ public class ConcurrentManagedTest {
         transform1.set(invocation.getArgumentAt(0, Function.class));
         return stopFuture;
       }
-    })
-        .when(zeroLeaseFuture)
-        .thenCompose((Function<Object, Stage<Object>>) any(Function.class));
+    }).when(zeroLeaseFuture).thenCompose((Function<Object, Stage<Object>>) any(Function.class));
 
-    final AtomicReference<Function<Object, Stage<Object>>> transform2 =
-        new AtomicReference<>();
+    final AtomicReference<Function<Object, Stage<Object>>> transform2 = new AtomicReference<>();
 
     doAnswer(new Answer<Stage<Object>>() {
       @Override
@@ -109,23 +110,19 @@ public class ConcurrentManagedTest {
         transform2.set(invocation.getArgumentAt(0, Function.class));
         return stopFuture;
       }
-    })
-        .when(stopReferenceFuture)
-        .thenCompose((Function<Object, Stage<Object>>) any(Function.class));
+    }).when(stopReferenceFuture).thenCompose((Function<Object, Stage<Object>>) any(Function.class));
 
-    ConcurrentManaged.newManaged(async, caller, setup, teardown);
+    ConcurrentManaged.newManaged(async, caller, ManagedOptions.newDefault(), setup, teardown);
 
     verify(async, times(3)).completable();
-    verify(zeroLeaseFuture).thenCompose(
-        (Function<Object, Stage<Object>>) any(Function.class));
+    verify(zeroLeaseFuture).thenCompose((Function<Object, Stage<Object>>) any(Function.class));
     verify(teardown, never()).apply(reference);
     verify(stopReferenceFuture, never()).thenCompose(
         (Function<Object, Stage<Object>>) any(Function.class));
 
     transform1.get().apply(null);
 
-    verify(stopReferenceFuture).thenCompose(
-        (Function<Object, Stage<Object>>) any(Function.class));
+    verify(stopReferenceFuture).thenCompose((Function<Object, Stage<Object>>) any(Function.class));
 
     transform2.get().apply(reference);
 
@@ -135,17 +132,17 @@ public class ConcurrentManagedTest {
   private void setupDoto(boolean valid, boolean throwing) throws Exception {
     doReturn(borrowed).when(underTest).borrow();
     doReturn(valid).when(borrowed).isValid();
-    doReturn(future).when(async).cancelled();
-    doReturn(future).when(async).failed(e);
+    doReturn(stage).when(async).cancelled();
+    doReturn(stage).when(async).failed(e);
     doReturn(reference).when(borrowed).get();
 
     if (throwing) {
       doThrow(e).when(action).apply(reference);
     } else {
-      doReturn(f).when(action).apply(reference);
+      doReturn(stage2).when(action).apply(reference);
     }
 
-    doReturn(future).when(f).whenFinished(any(Runnable.class));
+    doReturn(stage).when(stage2).whenFinished(any(Runnable.class));
   }
 
   private void verifyDoto(boolean valid, boolean throwing) throws Exception {
@@ -154,7 +151,7 @@ public class ConcurrentManagedTest {
     verify(borrowed, times(valid ? 1 : 0)).get();
     verify(borrowed, times(throwing ? 1 : 0)).release();
     verify(action, times(valid ? 1 : 0)).apply(reference);
-    verify(f, times(valid && !throwing ? 1 : 0)).whenFinished(any(Runnable.class));
+    verify(stage2, times(valid && !throwing ? 1 : 0)).whenFinished(any(Runnable.class));
   }
 
   @Test
@@ -174,7 +171,7 @@ public class ConcurrentManagedTest {
   @Test
   public void testDoto() throws Exception {
     setupDoto(true, false);
-    assertEquals(future, underTest.doto(action));
+    assertEquals(stage, underTest.doto(action));
     verifyDoto(true, false);
   }
 
@@ -387,7 +384,7 @@ public class ConcurrentManagedTest {
 
   @Test
   public void testToString() {
-    assertEquals("Managed(INITIALIZED, null)", underTest.toString());
+    assertEquals("Managed(INITIALIZED, null:\n)", underTest.toString());
   }
 
   @SuppressWarnings("unchecked")
@@ -452,7 +449,8 @@ public class ConcurrentManagedTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testFinalizeDoNothing() throws Throwable {
-    final ConcurrentManaged.ValidBorrowed valid = spy(underTest.new ValidBorrowed(reference, stack));
+    final ConcurrentManaged.ValidBorrowed valid =
+        spy(underTest.new ValidBorrowed(reference, stack));
 
     valid.released.set(true);
     valid.finalize();
@@ -462,9 +460,35 @@ public class ConcurrentManagedTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testFinalizeReportLeak() throws Throwable {
-    final ConcurrentManaged.ValidBorrowed valid = spy(underTest.new ValidBorrowed(reference, stack));
+    final ConcurrentManaged.ValidBorrowed valid =
+        spy(underTest.new ValidBorrowed(reference, stack));
 
     valid.finalize();
     verify(caller).referenceLeaked(reference, stack);
+  }
+
+  @Test
+  public void testTracing() throws Exception {
+    doReturn(stage).when(setup).get();
+
+    doAnswer(invocation -> {
+      invocation.getArgumentAt(0, Function.class).apply(reference);
+      return stage2;
+    }).when(stage).thenApply(any(Function.class));
+
+    doReturn(stage3).when(stage2).whenDone(any(CompletionHandle.class));
+
+    underTest.start().join();
+
+    final Borrowed<Object> b = underTest.borrow();
+
+    assertTrue(b.isValid());
+    assertEquals(1, underTest.traces.size());
+    assertEquals(b, underTest.traces.iterator().next());
+    assertTrue(underTest.traces.iterator().next().stack().length > 0);
+
+    b.release();
+
+    assertEquals(0, underTest.traces.size());
   }
 }

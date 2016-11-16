@@ -7,29 +7,24 @@ import java.util.function.Supplier;
 class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   private final Async async;
   private final Caller caller;
+  private final ManagedOptions managedOptions;
   private final Supplier<? extends Stage<T>> setup;
   private final Function<? super T, ? extends Stage<Void>> teardown;
 
   private final AtomicReference<ConcurrentManaged<T>> current;
 
-  static <C> ReloadableManaged<C> newReloadableManaged(
-      final Async async, final Caller caller, final Supplier<? extends Stage<C>> setup,
-      final Function<? super C, ? extends Stage<Void>> teardown
-  ) {
-    return new ConcurrentReloadableManaged<>(async, caller, setup, teardown);
-  }
-
   ConcurrentReloadableManaged(
-      final Async async, final Caller caller, final Supplier<? extends Stage<T>> setup,
+      final Async async, final Caller caller, final ManagedOptions managedOptions,
+      final Supplier<? extends Stage<T>> setup,
       final Function<? super T, ? extends Stage<Void>> teardown
   ) {
     this.async = async;
     this.caller = caller;
     this.setup = setup;
     this.teardown = teardown;
+    this.managedOptions = managedOptions;
 
-    this.current =
-        new AtomicReference<>(ConcurrentManaged.newManaged(async, caller, setup, teardown));
+    this.current = new AtomicReference<>(newManaged());
   }
 
   @Override
@@ -123,7 +118,7 @@ class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
       return async.cancelled();
     }
 
-    final ConcurrentManaged<T> next = ConcurrentManaged.newManaged(async, caller, setup, teardown);
+    final ConcurrentManaged<T> next = newManaged();
 
     return next.start().thenCompose(result -> {
       while (true) {
@@ -143,6 +138,15 @@ class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
         return old.stop();
       }
     });
+  }
+
+  /**
+   * Construct a new managed reference.
+   *
+   * @return a new concurrent managed
+   */
+  private ConcurrentManaged<T> newManaged() {
+    return ConcurrentManaged.newManaged(async, caller, managedOptions, setup, teardown);
   }
 
   @Override

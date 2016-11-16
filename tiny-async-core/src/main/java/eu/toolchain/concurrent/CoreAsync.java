@@ -1,16 +1,22 @@
 package eu.toolchain.concurrent;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Entry point to the tiny async framework.
@@ -21,8 +27,8 @@ import java.util.function.Supplier;
  *   final Async async = CoreAsync.builder().build();
  * }</pre>
  */
+@RequiredArgsConstructor
 public class CoreAsync implements Async {
-  private static final String STACK_LINE_FORMAT = "%s.%s (%s:%d)";
   private static final Collection<Object> EMPTY_RESULTS = Collections.emptyList();
 
   /**
@@ -33,22 +39,12 @@ public class CoreAsync implements Async {
   /**
    * Default set of helper functions for calling callbacks.
    */
+  @NonNull
   private final Caller caller;
+  @NonNull
   private final ClockSource clockSource;
-
-  protected CoreAsync(
-      ExecutorService executor, ScheduledExecutorService scheduler, Caller caller,
-      ClockSource clockSource
-  ) {
-    if (caller == null) {
-      throw new NullPointerException("caller");
-    }
-
-    this.executor = executor;
-    this.scheduler = scheduler;
-    this.caller = caller;
-    this.clockSource = clockSource;
-  }
+  @NonNull
+  private final ManagedOptions managedOptions;
 
   /**
    * Fetch the configured primary executor (if any).
@@ -404,7 +400,7 @@ public class CoreAsync implements Async {
   public <C> Managed<C> managed(
       Supplier<? extends Stage<C>> setup, Function<? super C, ? extends Stage<Void>> teardown
   ) {
-    return ConcurrentManaged.newManaged(this, caller(), setup, teardown);
+    return ConcurrentManaged.newManaged(this, caller(), managedOptions, setup, teardown);
   }
 
   @Override
@@ -412,7 +408,7 @@ public class CoreAsync implements Async {
       final Supplier<? extends Stage<C>> setup,
       final Function<? super C, ? extends Stage<Void>> teardown
   ) {
-    return ConcurrentReloadableManaged.newReloadableManaged(this, caller(), setup, teardown);
+    return new ConcurrentReloadableManaged<>(this, caller(), managedOptions, setup, teardown);
   }
 
   /**
@@ -463,32 +459,10 @@ public class CoreAsync implements Async {
     return future.thenApply(result -> new RetryResult<>(result, helper.getErrors()));
   }
 
-  static String formatStack(StackTraceElement[] stack) {
-    if (stack == null || stack.length == 0) {
-      return "unknown";
-    }
-
-    final List<String> entries = new ArrayList<>(stack.length);
-
-    for (final StackTraceElement e : stack) {
-      entries.add(
-          String.format(STACK_LINE_FORMAT, e.getClassName(), e.getMethodName(), e.getFileName(),
-              e.getLineNumber()));
-    }
-
-    final Iterator<String> it = entries.iterator();
-
-    final StringBuilder builder = new StringBuilder();
-
-    while (it.hasNext()) {
-      builder.append(it.next());
-
-      if (it.hasNext()) {
-        builder.append("\n  ");
-      }
-    }
-
-    return builder.toString();
+  static String formatStack(final Stream<StackTraceElement> stack, final String prefix) {
+    final StringJoiner joiner = new StringJoiner("\n" + prefix, prefix, "");
+    stack.map(Object::toString).forEach(joiner::add);
+    return joiner.toString();
   }
 
   static Throwable buildCollectedException(Collection<Throwable> errors) {
@@ -520,6 +494,7 @@ public class CoreAsync implements Async {
     private ExecutorService callerExecutor;
     private ScheduledExecutorService scheduler;
     private ClockSource clockSource = ClockSource.system();
+    private ManagedOptions managedOptions = ManagedOptions.builder().build();
 
     Builder() {
     }
@@ -561,8 +536,8 @@ public class CoreAsync implements Async {
      *
      * <p>This implies enabling {@link #recursionSafe}.
      *
-     * @param maxRecursionDepth The max number of times that a caller may go through {@link
-     * Caller} in a single thread.
+     * @param maxRecursionDepth The max number of times that a caller may go through {@link Caller}
+     * in a single thread.
      * @return this builder
      */
     public Builder maxRecursionDepth(final long maxRecursionDepth) {
@@ -582,9 +557,7 @@ public class CoreAsync implements Async {
      * @return this builder
      */
     public Builder caller(final Caller caller) {
-      if (caller == null) {
-        throw new NullPointerException("caller");
-      }
+      Objects.requireNonNull(caller, "caller");
 
       this.caller = caller;
       return this;
@@ -598,9 +571,7 @@ public class CoreAsync implements Async {
      * @return this builder
      */
     public Builder executor(final ExecutorService executor) {
-      if (executor == null) {
-        throw new NullPointerException("executor");
-      }
+      Objects.requireNonNull(executor, "executor");
 
       this.executor = executor;
       return this;
@@ -615,9 +586,7 @@ public class CoreAsync implements Async {
      * @return this builder
      */
     public Builder callerExecutor(final ExecutorService callerExecutor) {
-      if (callerExecutor == null) {
-        throw new NullPointerException("callerExecutor");
-      }
+      Objects.requireNonNull(callerExecutor, "callerExecutor");
 
       this.threaded = true;
       this.callerExecutor = callerExecutor;
@@ -646,11 +615,16 @@ public class CoreAsync implements Async {
      * @see Async#retryUntilCompleted(java.util.concurrent.Callable, RetryPolicy)
      */
     public Builder clockSource(final ClockSource clockSource) {
-      if (clockSource == null) {
-        throw new NullPointerException("clockSource");
-      }
+      Objects.requireNonNull(clockSource, "clockSource");
 
       this.clockSource = clockSource;
+      return this;
+    }
+
+    public Builder managedOptions(final ManagedOptions managedOptions) {
+      Objects.requireNonNull(managedOptions, "managedOptions");
+
+      this.managedOptions = managedOptions;
       return this;
     }
 
@@ -659,7 +633,7 @@ public class CoreAsync implements Async {
       final ExecutorService callerExecutor = setupCallerExecutor(defaultExecutor);
       final Caller caller = setupCaller(callerExecutor);
 
-      return new CoreAsync(defaultExecutor, scheduler, caller, clockSource);
+      return new CoreAsync(defaultExecutor, scheduler, caller, clockSource, managedOptions);
     }
 
     /**

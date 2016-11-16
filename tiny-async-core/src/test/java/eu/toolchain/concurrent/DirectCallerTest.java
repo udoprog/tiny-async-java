@@ -48,15 +48,15 @@ public class DirectCallerTest {
     final StackTraceElement[] empty = new StackTraceElement[0];
     caller.referenceLeaked(reference, empty);
     assertEquals(1, internalErrors.get());
-    assertEquals("reference foo leaked @ unknown", errorMessage);
+    assertEquals("reference foo leaked at: <unknown>", errorMessage);
   }
 
   @Test
   public void testLeakedManagedReferenceUnknownStack() {
-    final StackTraceElement[] unknown = null;
+    final StackTraceElement[] unknown = new StackTraceElement[0];
     caller.referenceLeaked(reference, unknown);
     assertEquals(1, internalErrors.get());
-    assertEquals("reference foo leaked @ unknown", errorMessage);
+    assertEquals("reference foo leaked at: <unknown>", errorMessage);
   }
 
   @Test
@@ -67,7 +67,7 @@ public class DirectCallerTest {
     caller.referenceLeaked(reference, populated);
     assertEquals(1, internalErrors.get());
     assertEquals(
-        "reference foo leaked @ SomeClass.method (file:0)\n  SomeOtherClass.method " + "(file:0)",
+        "reference foo leaked at:\n  SomeClass.method(file:0)\n  SomeOtherClass.method" + "(file:0)",
         errorMessage);
   }
 }
