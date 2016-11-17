@@ -117,24 +117,24 @@ public class ConcurrentCompletableTest {
 
   @Test
   public void testHandle() {
-    doReturn(runnable).when(future).doneRunnable(done);
+    doReturn(runnable).when(future).handleRunnable(done);
     doReturn(true).when(future).add(runnable);
 
     assertEquals(future, future.handle(done));
 
-    verify(future).doneRunnable(done);
+    verify(future).handleRunnable(done);
     verify(future).add(runnable);
     verify(runnable, never()).run();
   }
 
   @Test
   public void testHandleDirect() {
-    doReturn(runnable).when(future).doneRunnable(done);
+    doReturn(runnable).when(future).handleRunnable(done);
     doReturn(false).when(future).add(runnable);
 
     assertEquals(future, future.handle(done));
 
-    verify(future).doneRunnable(done);
+    verify(future).handleRunnable(done);
     verify(future).add(runnable);
     verify(runnable).run();
   }
@@ -144,7 +144,7 @@ public class ConcurrentCompletableTest {
     future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
 
-    future.doneRunnable(done).run();
+    future.handleRunnable(done).run();
 
     verify(done, never()).completed(result);
     verify(done, never()).cancelled();
@@ -156,7 +156,7 @@ public class ConcurrentCompletableTest {
     future.state.set(ConcurrentCompletable.CANCELLED);
     future.result = ConcurrentCompletable.CANCEL;
 
-    future.doneRunnable(done).run();
+    future.handleRunnable(done).run();
 
     verify(done, never()).completed(result);
     verify(done).cancelled();
@@ -168,7 +168,7 @@ public class ConcurrentCompletableTest {
     future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
 
-    future.doneRunnable(done).run();
+    future.handleRunnable(done).run();
 
     verify(done).completed(result);
     verify(done, never()).cancelled();
@@ -197,7 +197,7 @@ public class ConcurrentCompletableTest {
     future.state.set(ConcurrentCompletable.COMPLETED);
     future.result = result;
 
-    future.resolvedRunnable(resolved).run();
+    future.completedRunnable(resolved).run();
     verify(resolved).accept(result);
   }
 
@@ -206,7 +206,7 @@ public class ConcurrentCompletableTest {
     future.state.set(ConcurrentCompletable.FAILED);
     future.result = cause;
 
-    future.resolvedRunnable(resolved).run();
+    future.completedRunnable(resolved).run();
 
     verify(resolved, never()).accept(result);
   }
