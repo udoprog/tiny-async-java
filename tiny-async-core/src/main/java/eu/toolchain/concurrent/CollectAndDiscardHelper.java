@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author udoprog
  */
-class CollectAndDiscardHelper implements CompletionHandle<Object> {
+class CollectAndDiscardHelper implements Handle<Object> {
   private final Completable<Void> target;
   private final AtomicInteger countdown;
   private final AtomicInteger cancelled = new AtomicInteger();

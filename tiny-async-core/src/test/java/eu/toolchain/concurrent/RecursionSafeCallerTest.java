@@ -25,7 +25,7 @@ public class RecursionSafeCallerTest {
   private RecursionSafeCaller underTest;
 
   @Mock
-  private CompletionHandle<Object> done;
+  private Handle<Object> done;
   @Mock
   private Runnable cancelled;
   @Mock

@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Helper class for {@link CoreAsync#collect(Collection, Function)}
  *
- * <p>The helper implements {@code CompletionHandle}, and is intended to be used by binding it as a
+ * <p>The helper implements {@code Handle}, and is intended to be used by binding it as a
  * listener to the futures being collected.
  *
  * <p>This is a lock-free implementation capable of writing the results out of order.
@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
  * @param <T> the source type being collected
  * @param <U> the collected value
  */
-class CollectHelper<T, U> implements CompletionHandle<T> {
+class CollectHelper<T, U> implements Handle<T> {
   static final byte RESOLVED = 0x1;
   static final byte FAILED = 0x2;
   static final byte CANCELLED = 0x3;

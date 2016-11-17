@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @param <T> the type being collected
  */
-class EndCollectHelper<T> implements CompletionHandle<Object> {
+class EndCollectHelper<T> implements Handle<Object> {
   private final EndCollector<T> collector;
   private final Completable<? super T> target;
 

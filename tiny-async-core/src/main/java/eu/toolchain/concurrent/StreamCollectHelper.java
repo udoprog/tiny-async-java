@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <T> The type the source type is being collected and transformed into
  * @author udoprog
  */
-class StreamCollectHelper<S, T> implements CompletionHandle<S> {
+class StreamCollectHelper<S, T> implements Handle<S> {
   private final Caller caller;
   private final StreamCollector<S, T> collector;
   private final Completable<? super T> target;

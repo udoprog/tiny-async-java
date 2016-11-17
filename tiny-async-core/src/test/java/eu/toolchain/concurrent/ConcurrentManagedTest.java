@@ -242,7 +242,7 @@ public class ConcurrentManagedTest {
     doAnswer(new Answer<Stage<Void>>() {
       @Override
       public Stage<Void> answer(InvocationOnMock invocation) throws Throwable {
-        final CompletionHandle<Void> done = invocation.getArgumentAt(0, CompletionHandle.class);
+        final Handle<Void> done = invocation.getArgumentAt(0, Handle.class);
 
         if (cancelled) {
           done.cancelled();
@@ -252,16 +252,16 @@ public class ConcurrentManagedTest {
 
         return startFuture;
       }
-    }).when(transformed).whenDone(any(CompletionHandle.class));
+    }).when(transformed).handle(any(Handle.class));
 
     doAnswer(new Answer<Stage<Void>>() {
       @Override
       public Stage<Void> answer(InvocationOnMock invocation) throws Throwable {
-        final CompletionHandle<Void> done = invocation.getArgumentAt(0, CompletionHandle.class);
+        final Handle<Void> done = invocation.getArgumentAt(0, Handle.class);
         done.failed(e);
         return startFuture;
       }
-    }).when(errored).whenDone(any(CompletionHandle.class));
+    }).when(errored).handle(any(Handle.class));
 
     doAnswer(new Answer<Stage<Void>>() {
       @Override
@@ -476,7 +476,7 @@ public class ConcurrentManagedTest {
       return stage2;
     }).when(stage).thenApply(any(Function.class));
 
-    doReturn(stage3).when(stage2).whenDone(any(CompletionHandle.class));
+    doReturn(stage3).when(stage2).handle(any(Handle.class));
 
     underTest.start().join();
 

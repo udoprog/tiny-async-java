@@ -1,7 +1,6 @@
 package eu.toolchain.concurrent;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -174,7 +173,7 @@ public class CoreAsync implements Async {
         new CollectHelper<>(futures.size(), collector, futures, target);
 
     for (final Stage<? extends C> q : futures) {
-      q.whenDone(done);
+      q.handle(done);
     }
 
     bindSignals(target, futures);
@@ -244,7 +243,7 @@ public class CoreAsync implements Async {
         new StreamCollectHelper<>(caller, futures.size(), collector, target);
 
     for (final Stage<? extends T> q : futures) {
-      q.whenDone(done);
+      q.handle(done);
     }
 
     bindSignals(target, futures);
@@ -283,7 +282,7 @@ public class CoreAsync implements Async {
         new EndCollectHelper<>(futures.size(), collector, target);
 
     for (final Stage<? extends T> q : futures) {
-      q.whenDone(done);
+      q.handle(done);
     }
 
     bindSignals(target, futures);
@@ -389,7 +388,7 @@ public class CoreAsync implements Async {
     final CollectAndDiscardHelper done = new CollectAndDiscardHelper(futures.size(), target);
 
     for (final Stage<?> q : futures) {
-      q.whenDone(done);
+      q.handle(done);
     }
 
     bindSignals(target, futures);
@@ -578,7 +577,7 @@ public class CoreAsync implements Async {
     }
 
     /**
-     * Specify a separate executor to use for caller (internal whenDone) invocation.
+     * Specify a separate executor to use for caller (internal handle) invocation.
      *
      * <p>Implies use of threaded caller.
      *

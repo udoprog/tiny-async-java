@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  *
  * @param <T> result type of the retried operation
  */
-public class RetryCallHelper<T> implements CompletionHandle<T> {
+public class RetryCallHelper<T> implements Handle<T> {
   private final long start;
   private final ScheduledExecutorService scheduler;
   private final Callable<? extends Stage<? extends T>> action;
@@ -111,7 +111,7 @@ public class RetryCallHelper<T> implements CompletionHandle<T> {
       return;
     }
 
-    result.whenDone(this);
+    result.handle(this);
   }
 
   /**

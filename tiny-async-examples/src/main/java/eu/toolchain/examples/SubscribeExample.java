@@ -1,7 +1,7 @@
 package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.CompletionHandle;
+import eu.toolchain.concurrent.Handle;
 import eu.toolchain.concurrent.Stage;
 import java.util.concurrent.ExecutionException;
 
@@ -17,7 +17,7 @@ public class SubscribeExample {
       return 10;
     });
 
-    f.whenDone(new CompletionHandle<Integer>() {
+    f.handle(new Handle<Integer>() {
       @Override
       public void completed(Integer result) {
         System.out.println("result: " + result);

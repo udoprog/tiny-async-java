@@ -122,7 +122,11 @@ public interface Stage<T> {
    * @param handle handle to register
    * @return the current stage
    */
-  Stage<T> whenDone(CompletionHandle<? super T> handle);
+  Stage<T> handle(Handle<? super T> handle);
+
+  <U> Stage<U> applyHandle(ApplyHandle<? super T, ? extends U> handle);
+
+  <U> Stage<U> composeHandle(ApplyHandle<? super T, ? extends Stage<U>> handle);
 
   /**
    * Register a listener to be called when the current stage finishes for any reason.
@@ -202,9 +206,7 @@ public interface Stage<T> {
    * @param fn the transformation to use
    * @return the composed completable
    */
-  Stage<T> thenComposeFailed(
-      Function<? super Throwable, ? extends Stage<T>> fn
-  );
+  Stage<T> thenComposeFailed(Function<? super Throwable, ? extends Stage<T>> fn);
 
   /**
    * Transform something cancelled into something useful.
@@ -221,4 +223,21 @@ public interface Stage<T> {
    * @return the composed completable
    */
   Stage<T> thenComposeCancelled(Supplier<? extends Stage<T>> supplier);
+
+  /**
+   * Complete the current stage, then fail with the given error.
+   *
+   * @param cause error to fail with
+   * @param <U> target type
+   * @return a stage that will be failed
+   */
+  <U> Stage<U> thenFail(Throwable cause);
+
+  /**
+   * Complete the current stage, then cancel.
+   *
+   * @param <U> target type
+   * @return a stage that will be cancelled
+   */
+  <U> Stage<U> thenCancel();
 }

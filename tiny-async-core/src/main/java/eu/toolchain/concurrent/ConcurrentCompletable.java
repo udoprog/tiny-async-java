@@ -16,22 +16,22 @@ import lombok.AllArgsConstructor;
  * A thread-safe implementation of Completable.
  * <p>
  * The callback uses the calling thread to execute result listeners, see {@link #complete(Object)},
- * and {@link #whenDone(eu.toolchain.concurrent.CompletionHandle)} for details.
+ * and {@link #handle(Handle)} for details.
  *
  * @param <T> type of the completable
  * @author udoprog
  */
 public class ConcurrentCompletable<T> extends AbstractImmediate<T>
-    implements CompletionHandle<T>, Completable<T> {
+    implements Handle<T>, Completable<T> {
   /**
    * the max number of spins allowed before {@link Thread#yield()}
    */
   static final int MAX_SPINS = 4;
 
   /**
-   * Possible states of the completable.
-   * A state being set <em>does not</em> indicate that the completable is no longer running, but must
-   * always be checked in concert with a {@code result != null}.
+   * Possible states of the completable. A state being set <em>does not</em> indicate that the
+   * completable is no longer running, but must always be checked in concert with a {@code result !=
+   * null}.
    */
   static final int PENDING = 0;
   static final int COMPLETED = 1;
@@ -66,11 +66,10 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   final AtomicReference<RunnablePair> callbacks = new AtomicReference<>();
 
   /**
-   * Setup a concurrent completable that uses a custom caller implementation. <p> The provided caller
-   * implementation will be called from the calling thread of
-   * {@link #whenDone(eu.toolchain.concurrent.CompletionHandle)},
-   * or other public methods interacting with this completable. <p> It is therefore suggested to provide
-   * an implementation that supports delegating tasks to a separate thread pool.
+   * Setup a concurrent completable that uses a custom caller implementation. <p> The provided
+   * caller implementation will be called from the calling thread of {@link #handle(Handle)}, or
+   * other public methods interacting with this completable. <p> It is therefore suggested to
+   * provide an implementation that supports delegating tasks to a separate thread pool.
    *
    * @param caller The caller implementation to use.
    */
@@ -132,7 +131,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @Override
-  public Stage<T> whenDone(final CompletionHandle<? super T> handle) {
+  public Stage<T> handle(final Handle<? super T> handle) {
     final Runnable runnable = doneRunnable(handle);
 
     if (add(runnable)) {
@@ -141,6 +140,140 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
     caller.execute(runnable);
     return this;
+  }
+
+  @Override
+  public <U> Stage<U> applyHandle(final ApplyHandle<? super T, ? extends U> handle) {
+    final Object r = result;
+
+    if (r != null) {
+      switch (state.get()) {
+        case CANCELLED:
+          try {
+            return new ImmediateCompleted<>(caller, handle.cancelled());
+          } catch (final Exception e) {
+            return new ImmediateFailed<>(caller, e);
+          }
+        case FAILED:
+          final Throwable t = (Throwable) r;
+
+          try {
+            return new ImmediateCompleted<>(caller, handle.failed(t));
+          } catch (final Exception e) {
+            e.addSuppressed(t);
+            return new ImmediateFailed<>(caller, e);
+          }
+        default:
+          try {
+            return new ImmediateCompleted<>(caller, handle.completed(result(r)));
+          } catch (final Exception e) {
+            return new ImmediateFailed<>(caller, e);
+          }
+      }
+    }
+
+    final Completable<U> target = newStage();
+
+    whenFinished(() -> {
+      switch (state.get()) {
+        case CANCELLED:
+          try {
+            target.complete(handle.cancelled());
+          } catch (final Exception e) {
+            target.fail(e);
+          }
+
+          break;
+        case FAILED:
+          final Throwable t = (Throwable) result;
+
+          try {
+            target.complete(handle.failed(t));
+          } catch (final Exception e) {
+            e.addSuppressed(t);
+            target.fail(e);
+          }
+
+          break;
+        default:
+          try {
+            target.complete(result(result));
+          } catch (final Exception e) {
+            target.fail(e);
+          }
+
+          break;
+      }
+    });
+
+    return target.whenCancelled(this::cancel);
+  }
+
+  @Override
+  public <U> Stage<U> composeHandle(final ApplyHandle<? super T, ? extends Stage<U>> handle) {
+    final Object r = result;
+
+    if (r != null) {
+      switch (state.get()) {
+        case CANCELLED:
+          try {
+            return handle.cancelled();
+          } catch (final Exception e) {
+            return new ImmediateFailed<>(caller, e);
+          }
+        case FAILED:
+          final Throwable t = (Throwable) r;
+
+          try {
+            return handle.failed(t);
+          } catch (final Exception e) {
+            e.addSuppressed(t);
+            return new ImmediateFailed<>(caller, e);
+          }
+        default:
+          try {
+            return handle.completed(result(r));
+          } catch (final Exception e) {
+            return new ImmediateFailed<>(caller, e);
+          }
+      }
+    }
+
+    final ConcurrentCompletable<U> target = newStage();
+
+    whenFinished(() -> {
+      switch (state.get()) {
+        case CANCELLED:
+          try {
+            handle.cancelled().handle(target);
+          } catch (final Exception e) {
+            target.fail(e);
+          }
+
+          break;
+        case FAILED:
+          final Throwable t = (Throwable) result;
+
+          try {
+            handle.failed(t).handle(target);
+          } catch (final Exception e) {
+            e.addSuppressed(t);
+            target.fail(e);
+          }
+
+          break;
+        default:
+          try {
+            handle.completed(result(result)).handle(target);
+          } catch (final Exception e) {
+            target.fail(e);
+          }
+
+          break;
+      }
+    });
+
+    return target.whenCancelled(this::cancel);
   }
 
   @Override
@@ -270,7 +403,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final Completable<U> target = newFuture();
+    final Completable<U> target = newStage();
 
     whenFinished(() -> {
       switch (state.get()) {
@@ -310,13 +443,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<U> target = newFuture();
+    final ConcurrentCompletable<U> target = newStage();
 
     whenFinished(() -> {
       switch (state.get()) {
         case COMPLETED:
           try {
-            target.whenCancelled(fn.apply(result(result)).whenDone(target)::cancel);
+            target.whenCancelled(fn.apply(result(result)).handle(target)::cancel);
           } catch (final Exception e) {
             target.fail(e);
           }
@@ -347,7 +480,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final Completable<T> target = newFuture();
+    final Completable<T> target = newStage();
 
     whenFinished(() -> {
       switch (state.get()) {
@@ -384,7 +517,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final ConcurrentCompletable<T> target = newFuture();
+    final ConcurrentCompletable<T> target = newStage();
 
     whenFinished(() -> {
       switch (state.get()) {
@@ -393,7 +526,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
           break;
         case FAILED:
           try {
-            target.whenCancelled(fn.apply((Throwable) result).whenDone(target)::cancel);
+            target.whenCancelled(fn.apply((Throwable) result).handle(target)::cancel);
           } catch (final Exception e) {
             target.fail(e);
           }
@@ -417,7 +550,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final Completable<T> target = newFuture();
+    final Completable<T> target = newStage();
 
     whenFinished(() -> {
       switch (state.get()) {
@@ -454,7 +587,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final ConcurrentCompletable<T> target = newFuture();
+    final ConcurrentCompletable<T> target = newStage();
 
     whenFinished(() -> {
       switch (state.get()) {
@@ -466,7 +599,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
           break;
         default:
           try {
-            target.whenCancelled(supplier.get().whenDone(target)::cancel);
+            target.whenCancelled(supplier.get().handle(target)::cancel);
           } catch (final Exception e) {
             target.fail(e);
           }
@@ -477,7 +610,53 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     return target.whenCancelled(this::cancel);
   }
 
-  <U> ConcurrentCompletable<U> newFuture() {
+  @Override
+  public <U> Stage<U> thenFail(final Throwable cause) {
+    final Object r = result;
+
+    if (r != null) {
+      switch (state.get()) {
+        case FAILED:
+          final ExecutionException c = new ExecutionException(cause);
+          c.addSuppressed((Throwable) r);
+          return new ImmediateFailed<>(caller, c);
+        default:
+          return new ImmediateFailed<>(caller, cause);
+      }
+    }
+
+    final ConcurrentCompletable<U> target = newStage();
+
+    whenFinished(() -> {
+      switch (state.get()) {
+        case FAILED:
+          final ExecutionException c = new ExecutionException(cause);
+          c.addSuppressed((Throwable) result);
+          target.fail(cause);
+          break;
+        default:
+          target.fail(cause);
+          break;
+      }
+    });
+
+    return target.whenCancelled(this::cancel);
+  }
+
+  @Override
+  public <U> Stage<U> thenCancel() {
+    final Object r = result;
+
+    if (r != null) {
+      return new ImmediateCancelled<>(caller);
+    }
+
+    final ConcurrentCompletable<U> target = newStage();
+    whenFinished(target::cancel);
+    return target.whenCancelled(this::cancel);
+  }
+
+  <U> ConcurrentCompletable<U> newStage() {
     return new ConcurrentCompletable<>(caller);
   }
 
@@ -562,7 +741,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
   }
 
-  Runnable doneRunnable(final CompletionHandle<? super T> done) {
+  Runnable doneRunnable(final Handle<? super T> done) {
     return () -> {
       switch (state.get()) {
         case FAILED:

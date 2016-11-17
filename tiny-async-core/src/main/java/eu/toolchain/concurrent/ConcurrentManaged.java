@@ -155,7 +155,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
 
       reference.set(result);
       return null;
-    }).whenDone(new CompletionHandle<Void>() {
+    }).handle(new Handle<Void>() {
       @Override
       public void failed(final Throwable cause) {
         startFuture.fail(cause);

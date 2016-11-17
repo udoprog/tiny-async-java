@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <S> The source type being collected.
  * @param <T> The target type the source type is being collected into.
  */
-public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Runnable {
+public class DelayedCollectCoordinator<S, T> implements Handle<S>, Runnable {
   private final AtomicInteger pending = new AtomicInteger();
 
   private final AtomicInteger cancelled = new AtomicInteger();
@@ -125,7 +125,7 @@ public class DelayedCollectCoordinator<S, T> implements CompletionHandle<S>, Run
       return;
     }
 
-    f.whenDone(this);
+    f.handle(this);
   }
 
   private void checkEnd() {

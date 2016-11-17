@@ -42,7 +42,7 @@ public abstract class ImmediateAsyncFutureTestBase {
   @Mock
   private Caller caller;
   @Mock
-  private CompletionHandle<From> done;
+  private Handle<From> done;
   @Mock
   private Consumer<From> resolved;
   @Mock

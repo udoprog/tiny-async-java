@@ -6,7 +6,7 @@ package eu.toolchain.concurrent;
  * @param <T> type of the future to listen on.
  * @author udoprog
  */
-public interface CompletionHandle<T> {
+public interface Handle<T> {
   /**
    * Handle to be called when the underlying future is completed.
    *
@@ -28,7 +28,7 @@ public interface CompletionHandle<T> {
   /**
    * Handle to be called when the underlying future is cancelled.
    *
-   * @throws Exception if unable to whenDone the cancelled future, will <em>not</em> cause the target
+   * @throws Exception if unable to handle the cancelled future, will <em>not</em> cause the target
    * future to be failed. Behavior is defined by the implementation of {@link
    */
   void cancelled();
