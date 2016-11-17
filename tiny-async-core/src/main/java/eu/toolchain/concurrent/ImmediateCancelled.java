@@ -1,6 +1,7 @@
 package eu.toolchain.concurrent;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -151,6 +152,36 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   }
 
   @Override
+  public Stage<T> withCloser(
+      final Supplier<? extends Stage<Void>> complete,
+      final Supplier<? extends Stage<Void>> notComplete
+  ) {
+    final Stage<Void> next;
+
+    try {
+      next = notComplete.get();
+    } catch (final Exception e) {
+      return new ImmediateFailed<>(caller, e);
+    }
+
+    return next.thenCancel();
+  }
+
+  @Override
+  public Stage<T> withComplete(
+      final Supplier<? extends Stage<Void>> supplier
+  ) {
+    return this;
+  }
+
+  @Override
+  public Stage<T> withNotComplete(
+      final Supplier<? extends Stage<Void>> supplier
+  ) {
+    return supplier.get().thenCancel();
+  }
+
+  @Override
   public <U> Stage<U> thenFail(final Throwable cause) {
     return new ImmediateFailed<>(caller, cause);
   }
@@ -158,5 +189,10 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   @Override
   public <U> Stage<U> thenCancel() {
     return new ImmediateCancelled<>(caller);
+  }
+
+  @Override
+  public <U> Stage<U> thenComplete(final U result) {
+    return new ImmediateCompleted<>(caller, result);
   }
 }

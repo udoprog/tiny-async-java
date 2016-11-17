@@ -159,6 +159,38 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   }
 
   @Override
+  public Stage<T> withCloser(
+      final Supplier<? extends Stage<Void>> complete,
+      final Supplier<? extends Stage<Void>> notComplete
+  ) {
+    final Stage<Void> next;
+
+    try {
+      next = notComplete.get();
+    } catch (final Exception e) {
+      final ExecutionException ee = new ExecutionException(e);
+      ee.addSuppressed(cause);
+      return new ImmediateFailed<>(caller, ee);
+    }
+
+    return next.thenFail(cause);
+  }
+
+  @Override
+  public Stage<T> withComplete(
+      final Supplier<? extends Stage<Void>> supplier
+  ) {
+    return this;
+  }
+
+  @Override
+  public Stage<T> withNotComplete(
+      final Supplier<? extends Stage<Void>> supplier
+  ) {
+    return supplier.get().thenFail(cause);
+  }
+
+  @Override
   public <U> Stage<U> thenFail(final Throwable cause) {
     final ExecutionException c = new ExecutionException(cause);
     c.addSuppressed(this.cause);
@@ -168,5 +200,10 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   @Override
   public <U> Stage<U> thenCancel() {
     return new ImmediateCancelled<>(caller);
+  }
+
+  @Override
+  public <U> Stage<U> thenComplete(final U result) {
+    return new ImmediateCompleted<>(caller, result);
   }
 }

@@ -225,6 +225,31 @@ public interface Stage<T> {
   Stage<T> thenComposeCancelled(Supplier<? extends Stage<T>> supplier);
 
   /**
+   * Run one of the provided stages when this stage ends up in a given state.
+   *
+   * <p>This is typically used to implement catch-then-rethrow style operations, like the following
+   * example:
+   *
+   * <pre>{@code
+   *   final Stage<T> oper().thenCompose(result -> {
+   *     return oper2(result).withCloser(result::commit, result::rollback);
+   *   });
+   * }</pre>
+   *
+   * @param complete stage to run when this stage ends in a complete state
+   * @param notComplete stage to run when this stage ends in a non-complete state, if the state is
+   * failed, any exception thrown in this block will suppress the original exception
+   * @return a new stage that depends on the supplied stage
+   */
+  Stage<T> withCloser(
+      Supplier<? extends Stage<Void>> complete, Supplier<? extends Stage<Void>> notComplete
+  );
+
+  Stage<T> withComplete(final Supplier<? extends Stage<Void>> supplier);
+
+  Stage<T> withNotComplete(final Supplier<? extends Stage<Void>> supplier);
+
+  /**
    * Complete the current stage, then fail with the given error.
    *
    * @param cause error to fail with
@@ -240,4 +265,6 @@ public interface Stage<T> {
    * @return a stage that will be cancelled
    */
   <U> Stage<U> thenCancel();
+
+  <U> Stage<U> thenComplete(U result);
 }
