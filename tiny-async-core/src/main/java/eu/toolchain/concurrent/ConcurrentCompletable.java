@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 /**
  * A thread-safe implementation of Completable.
@@ -143,140 +144,6 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @Override
-  public <U> Stage<U> applyHandle(final ApplyHandle<? super T, ? extends U> handle) {
-    final Object r = result;
-
-    if (r != null) {
-      switch (state.get()) {
-        case COMPLETED:
-          try {
-            return new ImmediateCompleted<>(caller, handle.completed(result(r)));
-          } catch (final Exception e) {
-            return new ImmediateFailed<>(caller, e);
-          }
-        case FAILED:
-          final Throwable t = throwable(r);
-
-          try {
-            return new ImmediateCompleted<>(caller, handle.failed(t));
-          } catch (final Exception e) {
-            e.addSuppressed(t);
-            return new ImmediateFailed<>(caller, e);
-          }
-        default:
-          try {
-            return new ImmediateCompleted<>(caller, handle.cancelled());
-          } catch (final Exception e) {
-            return new ImmediateFailed<>(caller, e);
-          }
-      }
-    }
-
-    final Completable<U> target = newStage();
-
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          try {
-            target.complete(result(result));
-          } catch (final Exception e) {
-            target.fail(e);
-          }
-
-          break;
-        case FAILED:
-          final Throwable t = throwable(result);
-
-          try {
-            target.complete(handle.failed(t));
-          } catch (final Exception e) {
-            e.addSuppressed(t);
-            target.fail(e);
-          }
-
-          break;
-        default:
-          try {
-            target.complete(handle.cancelled());
-          } catch (final Exception e) {
-            target.fail(e);
-          }
-
-          break;
-      }
-    });
-
-    return target.whenCancelled(this::cancel);
-  }
-
-  @Override
-  public <U> Stage<U> composeHandle(final ApplyHandle<? super T, ? extends Stage<U>> handle) {
-    final Object r = result;
-
-    if (r != null) {
-      switch (state.get()) {
-        case COMPLETED:
-          try {
-            return handle.completed(result(r));
-          } catch (final Exception e) {
-            return new ImmediateFailed<>(caller, e);
-          }
-        case FAILED:
-          final Throwable t = throwable(r);
-
-          try {
-            return handle.failed(t);
-          } catch (final Exception e) {
-            e.addSuppressed(t);
-            return new ImmediateFailed<>(caller, e);
-          }
-        default:
-          try {
-            return handle.cancelled();
-          } catch (final Exception e) {
-            return new ImmediateFailed<>(caller, e);
-          }
-      }
-    }
-
-    final ConcurrentCompletable<U> target = newStage();
-
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          try {
-            handle.completed(result(result)).handle(target);
-          } catch (final Exception e) {
-            target.fail(e);
-          }
-
-          break;
-        case FAILED:
-          final Throwable t = throwable(result);
-
-          try {
-            handle.failed(t).handle(target);
-          } catch (final Exception e) {
-            e.addSuppressed(t);
-            target.fail(e);
-          }
-
-          break;
-        default:
-          try {
-            handle.cancelled().handle(target);
-          } catch (final Exception e) {
-            target.fail(e);
-          }
-
-          break;
-      }
-    });
-
-    return target.whenCancelled(this::cancel);
-  }
-
-  @Override
   public Stage<T> whenCancelled(final Runnable cancelled) {
     final Runnable runnable = cancelledRunnable(cancelled);
 
@@ -289,7 +156,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @Override
-  public Stage<T> whenFinished(final Runnable finishable) {
+  public Stage<T> whenDone(final Runnable finishable) {
     if (add(finishable)) {
       return this;
     }
@@ -403,33 +270,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final Completable<U> target = newStage();
-
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          try {
-            target.complete(fn.apply(result(result)));
-          } catch (Exception e) {
-            target.fail(e);
-          }
-          break;
-        case FAILED:
-          target.fail(throwable(result));
-          break;
-        default:
-          target.cancel();
-          break;
-      }
-    });
-
+    final ConcurrentCompletable<U> target = newStage();
+    whenDone(new ThenApply<>(target, fn));
     return target.whenCancelled(this::cancel);
   }
 
   @Override
-  public <U> Stage<U> thenCompose(
-      final Function<? super T, ? extends Stage<U>> fn
-  ) {
+  public <U> Stage<U> thenCompose(final Function<? super T, ? extends Stage<U>> fn) {
     final Object r = result;
 
     if (r != null) {
@@ -444,28 +291,12 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<U> target = newStage();
-
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          doHandle(() -> fn.apply(result(result)), target);
-          break;
-        case FAILED:
-          target.fail(throwable(result));
-          break;
-        default:
-          target.cancel();
-          break;
-      }
-    });
-
+    whenDone(new ThenCompose<>(target, fn));
     return target.whenCancelled(this::cancel);
   }
 
   @Override
-  public Stage<T> thenApplyFailed(
-      final Function<? super Throwable, ? extends T> fn
-  ) {
+  public Stage<T> thenApplyFailed(final Function<? super Throwable, ? extends T> fn) {
     final Object r = result;
 
     if (r != null) {
@@ -476,33 +307,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final Completable<T> target = newStage();
-
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          target.complete(result(result));
-          break;
-        case FAILED:
-          try {
-            target.complete(fn.apply(throwable(result)));
-          } catch (Exception e) {
-            target.fail(e);
-          }
-          break;
-        default:
-          target.cancel();
-          break;
-      }
-    });
-
+    final ConcurrentCompletable<T> target = newStage();
+    whenDone(new ThenApplyFailed(target, fn));
     return target.whenCancelled(this::cancel);
   }
 
   @Override
-  public Stage<T> thenComposeFailed(
-      Function<? super Throwable, ? extends Stage<T>> fn
-  ) {
+  public Stage<T> thenComposeFailed(final Function<? super Throwable, ? extends Stage<T>> fn) {
     final Object r = result;
 
     if (r != null) {
@@ -514,21 +325,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = newStage();
-
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          target.complete(result(result));
-          break;
-        case FAILED:
-          doHandle(() -> fn.apply(throwable(result)), target);
-          break;
-        default:
-          target.cancel();
-          break;
-      }
-    });
-
+    whenDone(new ThenComposeFailed(target, fn));
     return target.whenCancelled(this::cancel);
   }
 
@@ -542,24 +339,8 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final Completable<T> target = newStage();
-    whenFinished(() -> {
-      switch (state.get()) {
-        case COMPLETED:
-          target.complete(result(result));
-          break;
-        case FAILED:
-          target.fail(throwable(result));
-          break;
-        default:
-          try {
-            target.complete(supplier.get());
-          } catch (final Exception e) {
-            target.fail(e);
-          }
-          break;
-      }
-    });
+    final ConcurrentCompletable<T> target = newStage();
+    whenDone(new ThenApplyCancelled(target, supplier));
     return target.whenCancelled(this::cancel);
   }
 
@@ -578,19 +359,71 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = newStage();
-    whenFinished(() -> {
+    whenDone(new ThenComposeCancelled(target, supplier));
+    return target.whenCancelled(this::cancel);
+  }
+
+  @Override
+  public Stage<T> withCloser(
+      final Supplier<? extends Stage<Void>> complete,
+      final Supplier<? extends Stage<Void>> notComplete
+  ) {
+    final Object r = result;
+
+    if (r != null) {
       switch (state.get()) {
         case COMPLETED:
-          target.complete(result(result));
-          break;
+          return immediateWithCloserCompleted(result(result), complete, notComplete);
         case FAILED:
-          target.fail(throwable(result));
-          break;
+          return immediateWithCloserFailed(throwable(result), notComplete);
         default:
-          doHandle(supplier, target);
-          break;
+          return immediateWithCloserCancelled(notComplete);
       }
-    });
+    }
+
+    final ConcurrentCompletable<T> target = newStage();
+    whenDone(new WithCloser(target, complete, notComplete));
+    return target.whenCancelled(this::cancel);
+  }
+
+  public Stage<T> withComplete(final Supplier<? extends Stage<Void>> complete) {
+    final Object r = result;
+
+    if (r != null) {
+      switch (state.get()) {
+        case COMPLETED:
+          return immediateWithCompleteCompleted(result(result), complete);
+        case FAILED:
+          return new ImmediateFailed<>(caller, throwable(result));
+        default:
+          return new ImmediateCancelled<>(caller);
+      }
+    }
+
+    final ConcurrentCompletable<T> target = newStage();
+    whenDone(new WithComplete(target, complete));
+    return target.whenCancelled(this::cancel);
+  }
+
+  @Override
+  public Stage<T> withNotComplete(
+      final Supplier<? extends Stage<Void>> notComplete
+  ) {
+    final Object r = result;
+
+    if (r != null) {
+      switch (state.get()) {
+        case COMPLETED:
+          return new ImmediateCompleted<>(caller, result(result));
+        case FAILED:
+          return immediateWithNotCompleteFailed(throwable(result), notComplete);
+        default:
+          return immediateWithNotCompleteCancelled(notComplete);
+      }
+    }
+
+    final ConcurrentCompletable<T> target = newStage();
+    whenDone(new WithNotComplete(target, notComplete));
     return target.whenCancelled(this::cancel);
   }
 
@@ -610,19 +443,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<U> target = newStage();
-    whenFinished(() -> {
-      switch (state.get()) {
-        case FAILED:
-          final ExecutionException c = new ExecutionException(cause);
-          c.addSuppressed(throwable(result));
-          target.fail(cause);
-          break;
-        default:
-          target.fail(cause);
-          break;
-      }
-    });
+    whenDone(new ThenFail<>(target, cause));
     return target.whenCancelled(this::cancel);
+  }
+
+  @Override
+  public <U> Stage<U> thenComplete(final U result) {
+    return thenApply(v -> result);
   }
 
   @Override
@@ -634,7 +461,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<U> target = newStage();
-    whenFinished(target::cancel);
+    whenDone(target::cancel);
     return target.whenCancelled(this::cancel);
   }
 
@@ -780,11 +607,10 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
    * <p>Takes {@link #NULL} into account.
    *
    * @param r the result object
-   * @param <T> type of the result
    * @return result
    */
   @SuppressWarnings("unchecked")
-  static <T> T result(final Object r) {
+  T result(final Object r) {
     return (T) (r == NULL ? null : r);
   }
 
@@ -854,6 +680,289 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
         }
 
         LockSupport.park(this);
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenApply<U> implements Runnable {
+    private final ConcurrentCompletable<U> target;
+    private final Function<? super T, ? extends U> fn;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          final U r;
+
+          try {
+            r = fn.apply(result(result));
+          } catch (Exception e) {
+            target.fail(e);
+            return;
+          }
+
+          target.complete(r);
+          break;
+        case FAILED:
+          target.fail(throwable(result));
+          break;
+        default:
+          target.cancel();
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenCompose<U> implements Runnable {
+    private final ConcurrentCompletable<U> target;
+    private final Function<? super T, ? extends Stage<U>> fn;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          doHandle(() -> fn.apply(result(result)), target);
+          break;
+        case FAILED:
+          target.fail(throwable(result));
+          break;
+        default:
+          target.cancel();
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenApplyFailed implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Function<? super Throwable, ? extends T> fn;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          target.complete(result(result));
+          break;
+        case FAILED:
+          try {
+            target.complete(fn.apply(throwable(result)));
+          } catch (Exception e) {
+            target.fail(e);
+          }
+          break;
+        default:
+          target.cancel();
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenComposeFailed implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Function<? super Throwable, ? extends Stage<T>> fn;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          target.complete(result(result));
+          break;
+        case FAILED:
+          doHandle(() -> fn.apply(throwable(result)), target);
+          break;
+        default:
+          target.cancel();
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenApplyCancelled implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Supplier<? extends T> supplier;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          target.complete(result(result));
+          break;
+        case FAILED:
+          target.fail(throwable(result));
+          break;
+        default:
+          final T result;
+
+          try {
+            result = supplier.get();
+          } catch (final Exception e) {
+            target.fail(e);
+            break;
+          }
+
+          target.complete(result);
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenComposeCancelled implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Supplier<? extends Stage<T>> supplier;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          target.complete(result(result));
+          break;
+        case FAILED:
+          target.fail(throwable(result));
+          break;
+        default:
+          doHandle(supplier, target);
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class WithCloser implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Supplier<? extends Stage<Void>> complete;
+    private final Supplier<? extends Stage<Void>> notComplete;
+
+    @Override
+    public void run() {
+      final Stage<Void> next;
+
+      switch (state.get()) {
+        case COMPLETED:
+          try {
+            next = complete.get();
+          } catch (final Exception e) {
+            notComplete.get().whenDone(() -> target.fail(e));
+            return;
+          }
+
+          next.thenApply(v -> result(result)).handle(target);
+          break;
+        case FAILED:
+          try {
+            next = notComplete.get();
+          } catch (final Exception e) {
+            final ExecutionException ee = new ExecutionException(e);
+            ee.addSuppressed(throwable(result));
+            target.fail(ee);
+            return;
+          }
+
+          next.<T>thenFail(throwable(result)).handle(target);
+          break;
+        default:
+          try {
+            next = notComplete.get();
+          } catch (final Exception e) {
+            target.fail(e);
+            return;
+          }
+
+          next.<T>thenCancel().handle(target);
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class WithComplete implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Supplier<? extends Stage<Void>> complete;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          final Stage<Void> next;
+
+          try {
+            next = complete.get();
+          } catch (final Exception e) {
+            target.fail(e);
+            return;
+          }
+
+          next.thenApply(v -> result(result)).handle(target);
+          break;
+        case FAILED:
+          target.fail(throwable(result));
+          break;
+        default:
+          target.cancel();
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class WithNotComplete implements Runnable {
+    private final ConcurrentCompletable<T> target;
+    private final Supplier<? extends Stage<Void>> notComplete;
+
+    @Override
+    public void run() {
+      final Stage<Void> next;
+      switch (state.get()) {
+        case COMPLETED:
+          target.complete(result(result));
+          break;
+        case FAILED:
+          try {
+            next = notComplete.get();
+          } catch (final Exception e) {
+            final ExecutionException ee = new ExecutionException(e);
+            ee.addSuppressed(throwable(result));
+            target.fail(ee);
+            return;
+          }
+
+          next.<T>thenFail(throwable(result)).handle(target);
+          break;
+        default:
+          try {
+            next = notComplete.get();
+          } catch (final Exception e) {
+            target.fail(e);
+            return;
+          }
+
+          next.<T>thenCancel().handle(target);
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class ThenFail<U> implements Runnable {
+    private final ConcurrentCompletable<U> target;
+    private final Throwable cause;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case FAILED:
+          final ExecutionException c = new ExecutionException(cause);
+          c.addSuppressed(throwable(result));
+          target.fail(cause);
+          break;
+        default:
+          target.fail(cause);
+          break;
       }
     }
   }

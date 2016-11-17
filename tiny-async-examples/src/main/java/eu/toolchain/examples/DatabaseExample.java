@@ -1,6 +1,5 @@
 package eu.toolchain.examples;
 
-import eu.toolchain.concurrent.ApplyHandle;
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Stage;
 import java.util.ArrayList;
@@ -19,27 +18,23 @@ public class DatabaseExample {
     final Database database = new Database(async);
 
     final Stage<Void> w1 = database.beginTransaction().thenCompose(tx -> {
-      return tx.write("a", 42).composeHandle(tx);
+      return tx.write("a", 42).withCloser(tx::commit, tx::rollback);
     });
 
     final Stage<Void> w2 = database.beginTransaction().thenCompose(tx -> {
       final List<Stage<Void>> writes = new ArrayList<>();
-
-      try {
-        writes.add(tx.write("a", 14));
-        writes.add(tx.write("b", 13));
-      } catch (final Exception e) {
-        return tx.rollback().thenFail(e);
-      }
-
-      return async.collectAndDiscard(writes).composeHandle(tx);
+      writes.add(tx.write("a", 14));
+      writes.add(tx.write("b", -1));
+      writes.add(tx.write("c", -2));
+      writes.add(tx.write("d", -3));
+      return async.collectAndDiscard(writes).withCloser(tx::commit, tx::rollback);
     });
 
     w1.join();
 
     try {
       w2.join();
-    } catch(final Exception e) {
+    } catch (final Exception e) {
       System.out.println("Error: " + e.getMessage());
       e.printStackTrace(System.out);
     }
@@ -58,13 +53,13 @@ public class DatabaseExample {
       return async.completed(new Transaction());
     }
 
-    public class Transaction implements ApplyHandle<Void, Stage<Void>> {
+    public class Transaction {
       final List<Runnable> writes = new ArrayList<>();
 
       public Stage<Void> write(final String id, final int value) {
         return async.call(() -> {
-          if (value == 13) {
-            throw new RuntimeException("unlucky number...");
+          if (value <= 0) {
+            throw new RuntimeException("unlucky number " + value + "...");
           }
 
           writes.add(() -> {
@@ -76,41 +71,20 @@ public class DatabaseExample {
       }
 
       public Stage<Void> commit() {
-        commits.incrementAndGet();
-
-        return async.call(() -> {
+        return async.<Void>call(() -> {
           synchronized (store) {
             writes.forEach(Runnable::run);
           }
 
           return null;
-        });
+        }).whenComplete(v -> commits.incrementAndGet());
       }
 
       public Stage<Void> rollback() {
-        rollbacks.incrementAndGet();
-
-        return async.call(() -> {
+        return async.<Void>call(() -> {
           writes.clear();
           return null;
-        });
-      }
-
-      @Override
-      public Stage<Void> completed(final Void result) {
-        return commit();
-      }
-
-      @Override
-      public Stage<Void> failed(final Throwable cause) {
-        // rollback on failure, but still propagate the error
-        return rollback().thenFail(cause);
-      }
-
-      @Override
-      public Stage<Void> cancelled() {
-        // rollback on cancelled, but still propagate the cancelled
-        return rollback().thenCancel();
+        }).whenComplete(v -> rollbacks.incrementAndGet());
       }
     }
   }

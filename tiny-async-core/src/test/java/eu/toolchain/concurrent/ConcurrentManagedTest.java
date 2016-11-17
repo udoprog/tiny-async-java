@@ -142,7 +142,7 @@ public class ConcurrentManagedTest {
       doReturn(stage2).when(action).apply(reference);
     }
 
-    doReturn(stage).when(stage2).whenFinished(any(Runnable.class));
+    doReturn(stage).when(stage2).whenDone(any(Runnable.class));
   }
 
   private void verifyDoto(boolean valid, boolean throwing) throws Exception {
@@ -151,7 +151,7 @@ public class ConcurrentManagedTest {
     verify(borrowed, times(valid ? 1 : 0)).get();
     verify(borrowed, times(throwing ? 1 : 0)).release();
     verify(action, times(valid ? 1 : 0)).apply(reference);
-    verify(stage2, times(valid && !throwing ? 1 : 0)).whenFinished(any(Runnable.class));
+    verify(stage2, times(valid && !throwing ? 1 : 0)).whenDone(any(Runnable.class));
   }
 
   @Test

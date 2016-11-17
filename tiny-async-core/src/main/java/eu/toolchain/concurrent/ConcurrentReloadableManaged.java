@@ -48,7 +48,7 @@ class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
       return async.failed(e);
     }
 
-    return f.whenFinished(b::release);
+    return f.whenDone(b::release);
   }
 
   @Override

@@ -100,7 +100,7 @@ public class ConcurrentManaged<T> implements Managed<T> {
       return new ImmediateFailed<>(caller, e);
     }
 
-    return f.whenFinished(b::release);
+    return f.whenDone(b::release);
   }
 
   @Override

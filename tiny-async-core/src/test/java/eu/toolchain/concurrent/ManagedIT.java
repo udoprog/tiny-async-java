@@ -54,7 +54,7 @@ public class ManagedIT {
     final AtomicInteger finished = new AtomicInteger();
 
     try (final Borrowed<Object> b = managed.borrow()) {
-      managed.stop().whenFinished(finished::incrementAndGet);
+      managed.stop().whenDone(finished::incrementAndGet);
 
       Assert.assertTrue("should timeout", doesStopTimeout());
       Assert.assertEquals(0, finished.get());
@@ -79,7 +79,7 @@ public class ManagedIT {
     try (final Borrowed<Object> b = managed.borrow()) {
       Assert.assertEquals(false, b.isValid());
 
-      managed.stop().whenFinished(finished::incrementAndGet);
+      managed.stop().whenDone(finished::incrementAndGet);
 
       Assert.assertFalse("should not timeout", doesStopTimeout());
       Assert.assertEquals(1, finished.get());

@@ -39,29 +39,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   }
 
   @Override
-  public <U> Stage<U> applyHandle(final ApplyHandle<? super T, ? extends U> handle) {
-    try {
-      return new ImmediateCompleted<>(caller, handle.failed(cause));
-    } catch (final Exception e) {
-      e.addSuppressed(cause);
-      return new ImmediateFailed<>(caller, e);
-    }
-  }
-
-  @Override
-  public <U> Stage<U> composeHandle(
-      final ApplyHandle<? super T, ? extends Stage<U>> handle
-  ) {
-    try {
-      return handle.failed(cause);
-    } catch (final Exception e) {
-      e.addSuppressed(cause);
-      return new ImmediateFailed<>(caller, e);
-    }
-  }
-
-  @Override
-  public Stage<T> whenFinished(Runnable runnable) {
+  public Stage<T> whenDone(Runnable runnable) {
     caller.execute(runnable);
     return this;
   }
@@ -159,6 +137,28 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   }
 
   @Override
+  public Stage<T> withCloser(
+      final Supplier<? extends Stage<Void>> complete,
+      final Supplier<? extends Stage<Void>> notComplete
+  ) {
+    return immediateWithCloserFailed(cause, notComplete);
+  }
+
+  @Override
+  public Stage<T> withComplete(
+      final Supplier<? extends Stage<Void>> supplier
+  ) {
+    return this;
+  }
+
+  @Override
+  public Stage<T> withNotComplete(
+      final Supplier<? extends Stage<Void>> supplier
+  ) {
+    return immediateWithNotCompleteFailed(cause, supplier);
+  }
+
+  @Override
   public <U> Stage<U> thenFail(final Throwable cause) {
     final ExecutionException c = new ExecutionException(cause);
     c.addSuppressed(this.cause);
@@ -168,5 +168,10 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   @Override
   public <U> Stage<U> thenCancel() {
     return new ImmediateCancelled<>(caller);
+  }
+
+  @Override
+  public <U> Stage<U> thenComplete(final U result) {
+    return new ImmediateCompleted<>(caller, result);
   }
 }

@@ -452,7 +452,7 @@ public class CoreAsync implements Async {
     final RetryCallHelper<T> helper =
         new RetryCallHelper<>(start, scheduler, callable, policyInstance, future, clockSource);
 
-    future.whenFinished(helper::finished);
+    future.whenDone(helper::finished);
 
     helper.next();
     return future.thenApply(result -> new RetryResult<>(result, helper.getErrors()));

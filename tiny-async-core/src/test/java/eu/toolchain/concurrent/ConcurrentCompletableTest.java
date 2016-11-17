@@ -265,7 +265,7 @@ public class ConcurrentCompletableTest {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private void verifyTransform() {
     verify(future).newStage();
-    verify(future).whenFinished(any(Runnable.class));
+    verify(future).whenDone(any(Runnable.class));
   }
 
   @Test
