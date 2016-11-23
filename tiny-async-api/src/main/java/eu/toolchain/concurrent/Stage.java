@@ -191,34 +191,25 @@ public interface Stage<T> {
   /**
    * Apply a failed stage.
    *
+   * <p>This acts like a <em>try-catch</em>, where the provided function is the catch operation.
+   *
    * @param fn the transformation to use
    * @return the applied stage
    */
-  Stage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn);
+  Stage<T> thenApplyCaught(Function<? super Throwable, ? extends T> fn);
 
   /**
    * Compose a failed stage.
    *
+   * <p>This acts like a <em>try-catch</em>, where the composed stage is the catch operation.
+   *
+   * <p>If the intent is to re-throw after running the catch operation, use
+   * {@link #withNotComplete(java.util.function.Supplier)}
+   *
    * @param fn the transformation to use
    * @return the composed stage
    */
-  Stage<T> thenComposeFailed(Function<? super Throwable, ? extends Stage<T>> fn);
-
-  /**
-   * Transform something cancelled into something useful.
-   *
-   * @param supplier supplier to get value from
-   * @return the applied stage
-   */
-  Stage<T> thenApplyCancelled(Supplier<? extends T> supplier);
-
-  /**
-   * Supply an a stage when the current stage is cancelled
-   *
-   * @param supplier supplier to get stage from
-   * @return the composed stage
-   */
-  Stage<T> thenComposeCancelled(Supplier<? extends Stage<T>> supplier);
+  Stage<T> thenComposeCaught(Function<? super Throwable, ? extends Stage<T>> fn);
 
   /**
    * Run one of the provided stages when this stage ends up in a given state.
@@ -227,8 +218,8 @@ public interface Stage<T> {
    * example:
    *
    * <pre>{@code
-   *   final Stage<T> oper().thenCompose(result -> {
-   *     return oper2(result).withCloser(result::commit, result::rollback);
+   *   beginTransaction().thenCompose(tx -> {
+   *     return oper2(tx).withCloser(tx::commit, tx::rollback);
    *   });
    * }</pre>
    *
@@ -247,7 +238,7 @@ public interface Stage<T> {
    * @param supplier supplier of the stage to run
    * @return a stage that depends on the current stage and the supplied stage
    */
-  Stage<T> withComplete(final Supplier<? extends Stage<Void>> supplier);
+  Stage<T> withComplete(Supplier<? extends Stage<Void>> supplier);
 
   /**
    * Run the provided stage when the current stage ends, but does not complete.
@@ -255,7 +246,7 @@ public interface Stage<T> {
    * @param supplier supplier of the stage to run
    * @return a stage that depends on the current stage and the supplied stage
    */
-  Stage<T> withNotComplete(final Supplier<? extends Stage<Void>> supplier);
+  Stage<T> withNotComplete(Supplier<? extends Stage<Void>> supplier);
 
   /**
    * Build a stage is failed, but waits until the current stage completes.

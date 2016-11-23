@@ -51,65 +51,65 @@ public class AbstractImmediateTest {
   @Test
   public void immediateApply() throws Exception {
     doReturn(to).when(fn).apply(from);
-    assertThat(base.immediateApply(fn, from), is(new ImmediateCompleted<>(caller, to)));
+    assertThat(base.thenApplyCompleted(fn, from), is(new ImmediateCompleted<>(caller, to)));
   }
 
   @Test
   public void immediateApplyThrows() throws Exception {
     doThrow(cause).when(fn).apply(from);
-    assertThat(base.immediateApply(fn, from), is(new ImmediateFailed<>(caller, cause)));
+    assertThat(base.thenApplyCompleted(fn, from), is(new ImmediateFailed<>(caller, cause)));
   }
 
   @Test
   public void immediateCompose() throws Exception {
     final ImmediateCompleted<To> future = new ImmediateCompleted<>(caller, to);
     doReturn(future).when(composeFn).apply(from);
-    assertThat(base.immediateCompose(composeFn, from), is(future));
+    assertThat(base.thenComposeCompleted(composeFn, from), is(future));
   }
 
   @Test
   public void immediateComposeThrows() throws Exception {
     doThrow(cause).when(composeFn).apply(from);
-    assertThat(base.immediateCompose(composeFn, from), is(new ImmediateFailed<>(caller, cause)));
+    assertThat(base.thenComposeCompleted(composeFn, from), is(new ImmediateFailed<>(caller, cause)));
   }
 
   @Test
   public void immediateCancelled() throws Exception {
     doReturn(from).when(supplier).get();
-    assertThat(base.immediateCatchCancelled(supplier), is(new ImmediateCompleted<>(caller, from)));
+    assertThat(base.thenSupplyCancelledCancelled(supplier), is(new ImmediateCompleted<>(caller, from)));
   }
 
   @Test
   public void immediateCancelledThrows() throws Exception {
     doThrow(cause).when(supplier).get();
-    assertThat(base.immediateCatchCancelled(supplier), is(new ImmediateFailed<>(caller, cause)));
+    assertThat(base.thenSupplyCancelledCancelled(supplier), is(new ImmediateFailed<>(caller, cause)));
   }
 
   @Test
   public void immediateComposeCancelled() throws Exception {
     final ImmediateCompleted<To> future = new ImmediateCompleted<>(caller, to);
     doReturn(future).when(composeSupplier).get();
-    assertThat(base.immediateComposeCancelled(composeSupplier), is(future));
+    assertThat(base.thenComposeCancelledCancelled(composeSupplier), is(future));
   }
 
   @Test
   public void immediateComposeCancelledThrows() throws Exception {
     doThrow(cause).when(composeSupplier).get();
-    assertThat(base.immediateComposeCancelled(composeSupplier),
+    assertThat(base.thenComposeCancelledCancelled(composeSupplier),
         is(new ImmediateFailed<>(caller, cause)));
   }
 
   @Test
   public void immediateFailed() throws Exception {
     doReturn(from).when(failedFn).apply(cause);
-    assertThat(base.immediateCatchFailed(failedFn, cause),
+    assertThat(base.thenApplyCaughtFailed(failedFn, cause),
         is(new ImmediateCompleted<>(caller, from)));
   }
 
   @Test
   public void immediateFailedThrows() throws Exception {
     doThrow(other).when(failedFn).apply(cause);
-    assertThat(base.immediateCatchFailed(failedFn, cause),
+    assertThat(base.thenApplyCaughtFailed(failedFn, cause),
         is(new ImmediateFailed<>(caller, other)));
   }
 
@@ -117,13 +117,13 @@ public class AbstractImmediateTest {
   public void immediateComposeFailed() throws Exception {
     final ImmediateCompleted<From> future = new ImmediateCompleted<>(caller, from);
     doReturn(future).when(composeFailedFn).apply(cause);
-    assertThat(base.immediateComposeFailed(composeFailedFn, cause), is(future));
+    assertThat(base.thenComposeFailedFailed(composeFailedFn, cause), is(future));
   }
 
   @Test
   public void immediateComposeFailedThrows() throws Exception {
     doThrow(other).when(composeFailedFn).apply(cause);
-    assertThat(base.immediateComposeFailed(composeFailedFn, cause),
+    assertThat(base.thenComposeFailedFailed(composeFailedFn, cause),
         is(new ImmediateFailed<>(caller, other)));
   }
 

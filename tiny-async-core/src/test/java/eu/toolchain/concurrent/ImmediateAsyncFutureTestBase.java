@@ -19,7 +19,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -170,9 +169,9 @@ public abstract class ImmediateAsyncFutureTestBase {
   public void thenCatchFailed() throws Exception {
     final Function<Throwable, From> transform = mock(Function.class);
 
-    doReturn(underTest).when(underTest).immediateCatchFailed(transform, cause);
-    assertEquals(underTest, underTest.thenApplyFailed(transform));
-    verify(underTest, failed()).immediateCatchFailed(transform, cause);
+    doReturn(underTest).when(underTest).thenApplyCaughtFailed(transform, cause);
+    assertEquals(underTest, underTest.thenApplyCaught(transform));
+    verify(underTest, failed()).thenApplyCaughtFailed(transform, cause);
   }
 
   @SuppressWarnings("unchecked")
@@ -180,29 +179,9 @@ public abstract class ImmediateAsyncFutureTestBase {
   public void thenComposeFailed() throws Exception {
     final Function<Throwable, Stage<From>> transform = mock(Function.class);
 
-    doReturn(underTest).when(underTest).immediateComposeFailed(transform, cause);
-    assertEquals(underTest, underTest.thenComposeFailed(transform));
-    verify(underTest, failed()).immediateComposeFailed(transform, cause);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void thenCatchCancelled() throws Exception {
-    final Supplier<From> transform = mock(Supplier.class);
-
-    doReturn(underTest).when(underTest).immediateCatchCancelled(transform);
-    assertEquals(underTest, underTest.thenApplyCancelled(transform));
-    verify(underTest, cancelled()).immediateCatchCancelled(transform);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void thenComposeCancelled() throws Exception {
-    final Supplier<Stage<From>> transform = mock(Supplier.class);
-
-    doReturn(underTest).when(underTest).immediateComposeCancelled(transform);
-    assertEquals(underTest, underTest.thenComposeCancelled(transform));
-    verify(underTest, cancelled()).immediateComposeCancelled(transform);
+    doReturn(underTest).when(underTest).thenComposeFailedFailed(transform, cause);
+    assertEquals(underTest, underTest.thenComposeCaught(transform));
+    verify(underTest, failed()).thenComposeFailedFailed(transform, cause);
   }
 
   private boolean isResolved() {

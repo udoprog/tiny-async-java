@@ -101,35 +101,25 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage
 
   @Override
   public <R> Stage<R> thenApply(Function<? super T, ? extends R> fn) {
-    return immediateApply(fn, result);
+    return thenApplyCompleted(fn, result);
   }
 
   @Override
   public <R> Stage<R> thenCompose(
       Function<? super T, ? extends Stage<R>> fn
   ) {
-    return immediateCompose(fn, result);
+    return thenComposeCompleted(fn, result);
   }
 
   @Override
-  public Stage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
+  public Stage<T> thenApplyCaught(Function<? super Throwable, ? extends T> fn) {
     return this;
   }
 
   @Override
-  public Stage<T> thenComposeFailed(
+  public Stage<T> thenComposeCaught(
       Function<? super Throwable, ? extends Stage<T>> fn
   ) {
-    return this;
-  }
-
-  @Override
-  public Stage<T> thenApplyCancelled(Supplier<? extends T> supplier) {
-    return this;
-  }
-
-  @Override
-  public Stage<T> thenComposeCancelled(Supplier<? extends Stage<T>> supplier) {
     return this;
   }
 
@@ -138,14 +128,14 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage
       final Supplier<? extends Stage<Void>> complete,
       final Supplier<? extends Stage<Void>> notComplete
   ) {
-    return immediateWithCloserCompleted(result, complete, notComplete);
+    return withCloserCompleted(result, complete, notComplete);
   }
 
   @Override
   public Stage<T> withComplete(
       final Supplier<? extends Stage<Void>> supplier
   ) {
-    return immediateWithCompleteCompleted(result, supplier);
+    return withCompleteCompleted(result, supplier);
   }
 
   @Override

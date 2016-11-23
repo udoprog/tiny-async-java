@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -172,10 +171,10 @@ public class TypeInferenceTest {
     final Stage<A> a = Mockito.mock(Stage.class);
 
     {
-      a.thenApplyFailed(A);
+      a.thenApplyCaught(A);
     }
     {
-      a.thenApplyFailed(B);
+      a.thenApplyCaught(B);
     }
   }
 
@@ -187,19 +186,7 @@ public class TypeInferenceTest {
     final Stage<A> a = Mockito.mock(Stage.class);
 
     {
-      a.thenComposeFailed(A);
-    }
-  }
-
-  @Test
-  public void testLazyCancelled() {
-    final Supplier<Stage<A>> A = Mockito.mock(Supplier.class);
-    final Supplier<Stage<B>> B = Mockito.mock(Supplier.class);
-
-    final Stage<A> a = Mockito.mock(Stage.class);
-
-    {
-      a.thenComposeCancelled(A);
+      a.thenComposeCaught(A);
     }
   }
 

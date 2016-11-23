@@ -153,110 +153,9 @@ public abstract class AbstractCompletableIT {
     next.join();
   }
   
-  /* thenApplyCancelled */
-
-  @Test
-  public void thenApplyCancelled() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
-
-    outer.complete(VALUE);
-    assertThat(next.join(), is(VALUE));
-  }
-
-  @Test
-  public void thenApplyCancelledFailOuter() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
-
-    expected.expect(ExecutionException.class);
-    expected.expectCause(is(cause));
-    outer.fail(cause);
-    next.join();
-  }
-
-  @Test
-  public void thenApplyCancelledCancelOuter() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
-
-    outer.cancel();
-    assertThat(next.join(), is(VALUE));
-  }
-
-  @Test
-  public void thenApplyCancelledCancelNext() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCancelled(() -> VALUE);
-
-    expected.expect(CancellationException.class);
-    next.cancel();
-    outer.join();
-  }
-
-  /* thenComposeCancelled */
-
-  @Test
-  public void thenComposeCancelled() throws Exception {
-    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
-
-    inner.complete(VALUE);
-    outer.complete(VALUE);
-    assertThat(next.join(), is(VALUE));
-  }
-
-  @Test
-  public void thenComposeCancelledFailOuter() throws Exception {
-    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
-
-    expected.expect(ExecutionException.class);
-    expected.expectCause(is(cause));
-    inner.complete(VALUE);
-    outer.fail(cause);
-    next.join();
-  }
-
-  @Test
-  public void thenComposeCancelledFailInner() throws Exception {
-    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
-
-    expected.expect(ExecutionException.class);
-    expected.expectCause(is(cause));
-    inner.fail(cause);
-    outer.cancel();
-    next.join();
-  }
-
-  @Test
-  public void thenComposeCancelledCancelOuter() throws Exception {
-    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
-
-    inner.complete(VALUE);
-    outer.cancel();
-    assertThat(next.join(), is(VALUE));
-  }
-
-  @Test
-  public void thenComposeCancelledCancelNext() throws Exception {
-    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
-
-    expected.expect(CancellationException.class);
-    inner.complete(VALUE);
-    next.cancel();
-    next.join();
-  }
-
-  @Test
-  public void thenComposeCancelledCancelInner() throws Exception {
-    final Stage<Integer> next = outer.thenComposeCancelled(() -> inner);
-
-    expected.expect(CancellationException.class);
-    inner.cancel();
-    outer.cancel();
-    next.join();
-  }
-  
-  /* thenApplyFailed */
-
   @Test
   public void thenApplyFailed() throws Exception {
-    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
 
     outer.complete(VALUE);
     assertThat(next.join(), is(VALUE));
@@ -264,7 +163,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenApplyFailedFailOuter() throws Exception {
-    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
 
     outer.fail(cause);
     assertThat(next.join(), is(VALUE));
@@ -272,7 +171,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenApplyFailedCancelOuter() throws Exception {
-    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
 
     expected.expect(CancellationException.class);
     outer.cancel();
@@ -283,17 +182,15 @@ public abstract class AbstractCompletableIT {
   public void thenApplyFailedCancelNext() throws Exception {
     expected.expect(CancellationException.class);
 
-    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
 
     next.cancel();
     outer.join();
   }
 
-  /* thenComposeFailed */
-
   @Test
   public void thenComposeFailed() throws Exception {
-    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeCaught(t -> inner);
 
     inner.complete(VALUE);
     outer.complete(VALUE);
@@ -302,7 +199,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenComposeFailedFailOuter() throws Exception {
-    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeCaught(t -> inner);
 
     inner.complete(VALUE);
     outer.fail(cause);
@@ -311,7 +208,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenComposeFailedFailInner() throws Exception {
-    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeCaught(t -> inner);
 
     inner.fail(cause);
     outer.complete(VALUE);
@@ -320,7 +217,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenComposeFailedCancelOuter() throws Exception {
-    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeCaught(t -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -330,7 +227,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenComposeFailedCancelNext() throws Exception {
-    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeCaught(t -> inner);
 
     expected.expect(CancellationException.class);
     inner.complete(VALUE);
@@ -340,7 +237,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenComposeFailedCancelInner() throws Exception {
-    final Stage<Integer> next = outer.thenComposeFailed(t -> inner);
+    final Stage<Integer> next = outer.thenComposeCaught(t -> inner);
 
     expected.expect(CancellationException.class);
     inner.cancel();
