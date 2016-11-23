@@ -264,7 +264,7 @@ public class ConcurrentCompletableTest {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private void verifyTransform() {
-    verify(future).newStage();
+    verify(future).nextStage();
     verify(future).whenDone(any(Runnable.class));
   }
 
@@ -272,8 +272,7 @@ public class ConcurrentCompletableTest {
   public void thenApply() {
     @SuppressWarnings("unchecked") final Function<Object, Object> fn = mock(Function.class);
 
-    doReturn(toFuture).when(future).newStage();
-    doReturn(toFuture).when(toFuture).whenCancelled(any(Runnable.class));
+    doReturn(toFuture).when(future).nextStage();
 
     assertEquals(toFuture, future.thenApply(fn));
     verifyTransform();
@@ -284,8 +283,7 @@ public class ConcurrentCompletableTest {
     @SuppressWarnings("unchecked") final Function<Object, Stage<Object>> fn =
         mock(Function.class);
 
-    doReturn(toFuture).when(future).newStage();
-    doReturn(toFuture).when(toFuture).whenCancelled(any(Runnable.class));
+    doReturn(toFuture).when(future).nextStage();
 
     assertEquals(toFuture, future.thenCompose(fn));
     verifyTransform();
@@ -295,8 +293,7 @@ public class ConcurrentCompletableTest {
   public void thenCatchFailed() {
     @SuppressWarnings("unchecked") final Function<Throwable, From> fn = mock(Function.class);
 
-    doReturn(fromFuture).when(future).newStage();
-    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
+    doReturn(fromFuture).when(future).nextStage();
 
     assertEquals(fromFuture, future.thenApplyFailed(fn));
     verifyTransform();
@@ -307,8 +304,7 @@ public class ConcurrentCompletableTest {
     @SuppressWarnings("unchecked") final Function<Throwable, Stage<From>> fn =
         mock(Function.class);
 
-    doReturn(fromFuture).when(future).newStage();
-    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
+    doReturn(fromFuture).when(future).nextStage();
 
     assertEquals(fromFuture, future.thenComposeFailed(fn));
     verifyTransform();
@@ -318,8 +314,7 @@ public class ConcurrentCompletableTest {
   public void thenCatchCancelled() {
     @SuppressWarnings("unchecked") final Supplier<From> fn = mock(Supplier.class);
 
-    doReturn(fromFuture).when(future).newStage();
-    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
+    doReturn(fromFuture).when(future).nextStage();
 
     assertEquals(fromFuture, future.thenApplyCancelled(fn));
     verifyTransform();
@@ -329,8 +324,7 @@ public class ConcurrentCompletableTest {
   public void thenComposeCancelled() {
     @SuppressWarnings("unchecked") final Supplier<Stage<From>> fn = mock(Supplier.class);
 
-    doReturn(fromFuture).when(future).newStage();
-    doReturn(fromFuture).when(fromFuture).whenCancelled(any(Runnable.class));
+    doReturn(fromFuture).when(future).nextStage();
 
     assertEquals(fromFuture, future.thenComposeCancelled(fn));
     verifyTransform();

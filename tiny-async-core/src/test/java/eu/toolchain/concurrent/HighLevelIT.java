@@ -48,6 +48,16 @@ public class HighLevelIT {
   }
 
   @Test
+  public void testApplyCancelForwarding() {
+    final Completable<Integer> outer = async.completable();
+    final Stage<Integer> second = outer.thenApply(v -> v + 1);
+
+    second.cancel();
+
+    assertTrue(outer.isCancelled());
+  }
+
+  @Test
   public void testApply() throws Exception {
     final Completable<Integer> a = async.completable();
     final Stage<Integer> b = a.thenApply(v -> v + 10);

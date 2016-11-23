@@ -64,7 +64,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   /**
    * a linked list of callbacks to execute
    */
-  final AtomicReference<RunnablePair> callbacks = new AtomicReference<>();
+  final AtomicReference<RunnablePair> callbacks;
 
   /**
    * Setup a concurrent completable that uses a custom caller implementation. <p> The provided
@@ -77,6 +77,19 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   public ConcurrentCompletable(final Caller caller) {
     super(caller);
     this.caller = caller;
+    this.callbacks = new AtomicReference<>();
+  }
+
+  /**
+   * Constructor that provides an initial callback.
+   *
+   * @param caller caller implementation to use
+   * @param runnable initial callback
+   */
+  ConcurrentCompletable(final Caller caller, final Runnable runnable) {
+    super(caller);
+    this.caller = caller;
+    this.callbacks = new AtomicReference<>(new RunnablePair(runnable, null));
   }
 
   @Override
@@ -270,9 +283,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<U> target = newStage();
+    final ConcurrentCompletable<U> target = nextStage();
     whenDone(new ThenApply<>(target, fn));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -290,9 +303,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<U> target = newStage();
+    final ConcurrentCompletable<U> target = nextStage();
     whenDone(new ThenCompose<>(target, fn));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -307,9 +320,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new ThenApplyFailed(target, fn));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -324,9 +337,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new ThenComposeFailed(target, fn));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -339,9 +352,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new ThenApplyCancelled(target, supplier));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -358,9 +371,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return this;
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new ThenComposeCancelled(target, supplier));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -381,9 +394,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new WithCloser(target, complete, notComplete));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   public Stage<T> withComplete(final Supplier<? extends Stage<Void>> complete) {
@@ -400,9 +413,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new WithComplete(target, complete));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -422,9 +435,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<T> target = newStage();
+    final ConcurrentCompletable<T> target = nextStage();
     whenDone(new WithNotComplete(target, notComplete));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -442,9 +455,9 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       }
     }
 
-    final ConcurrentCompletable<U> target = newStage();
+    final ConcurrentCompletable<U> target = nextStage();
     whenDone(new ThenFail<>(target, cause));
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
   @Override
@@ -460,13 +473,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
       return new ImmediateCancelled<>(caller);
     }
 
-    final ConcurrentCompletable<U> target = newStage();
+    final ConcurrentCompletable<U> target = nextStage();
     whenDone(target::cancel);
-    return target.whenCancelled(this::cancel);
+    return target;
   }
 
-  <U> ConcurrentCompletable<U> newStage() {
-    return new ConcurrentCompletable<>(caller);
+  <U> ConcurrentCompletable<U> nextStage() {
+    return new ConcurrentCompletable<>(caller, this::cancel);
   }
 
   void postComplete() {
