@@ -1,6 +1,7 @@
 package eu.toolchain.examples;
 
 import com.google.common.base.Stopwatch;
+import eu.toolchain.examples.helpers.ChartUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -2,6 +2,7 @@ package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Stage;
+import eu.toolchain.examples.helpers.Helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -9,7 +10,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * An example application showcasing using a {@code StreamCollector}.
  */
-public class StreamCollectorExample {
+public class StreamCollect {
   public static void main(String[] argv) throws InterruptedException, ExecutionException {
     final Async async = Helpers.setup();
 

@@ -1,4 +1,4 @@
-package eu.toolchain.examples;
+package eu.toolchain.examples.helpers;
 
 import com.google.common.collect.ImmutableList;
 import java.awt.BasicStroke;

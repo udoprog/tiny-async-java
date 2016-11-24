@@ -2,12 +2,13 @@ package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Stage;
+import eu.toolchain.examples.helpers.Helpers;
 import java.util.concurrent.ExecutionException;
 
 /**
  * An example application showcasing static futures.
  */
-public class StaticResultsExample {
+public class ImmediateResults {
   public static Stage<Integer> failToSetupFuture() {
     throw new IllegalStateException("i will never succeed");
   }

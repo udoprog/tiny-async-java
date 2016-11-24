@@ -2,6 +2,7 @@ package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Stage;
+import eu.toolchain.examples.helpers.Helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -12,7 +13,7 @@ import java.util.concurrent.ExecutionException;
  * Will answer: what the sum is of all numbers from 1, to 100 (exclusive) in the most inneficient
  * manner conceived.
  */
-public class CollectorExample {
+public class Collect {
   public static void main(String[] argv) throws InterruptedException, ExecutionException {
     final Async async = Helpers.setup();
 

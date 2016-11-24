@@ -1,5 +1,6 @@
 package eu.toolchain.concurrent;
 
+import java.text.MessageFormat;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -122,8 +123,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
 
   @Override
   public Stage<T> withCloser(
-      final Supplier<? extends Stage<Void>> complete,
-      final Supplier<? extends Stage<Void>> other
+      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
   ) {
     return withCloserCancelled(other);
   }
@@ -155,5 +155,10 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   @Override
   public <U> Stage<U> thenComplete(final U result) {
     return new ImmediateCompleted<>(caller, result);
+  }
+
+  @Override
+  public String toString() {
+    return MessageFormat.format("{0}({1})", getClass().getSimpleName(), Stage.CANCELLED);
   }
 }

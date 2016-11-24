@@ -3,12 +3,13 @@ package eu.toolchain.examples;
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Handle;
 import eu.toolchain.concurrent.Stage;
+import eu.toolchain.examples.helpers.Helpers;
 import java.util.concurrent.ExecutionException;
 
 /**
  * An example application that showcases subscription of events on an {@code Stage}.
  */
-public class SubscribeExample {
+public class Listen {
   public static void main(String argv[]) throws InterruptedException, ExecutionException {
     final Async async = Helpers.setup();
 

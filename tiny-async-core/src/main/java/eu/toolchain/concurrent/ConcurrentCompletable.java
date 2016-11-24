@@ -1,5 +1,6 @@
 package eu.toolchain.concurrent;
 
+import java.text.MessageFormat;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -344,8 +345,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   @Override
   public Stage<T> withCloser(
-      final Supplier<? extends Stage<Void>> complete,
-      final Supplier<? extends Stage<Void>> other
+      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
   ) {
     final Object r = result;
 
@@ -564,6 +564,26 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
         consumer.accept(throwable(result));
       }
     };
+  }
+
+  @Override
+  public String toString() {
+    final String name = getClass().getSimpleName();
+
+    if (this.result == null) {
+      return MessageFormat.format("{0}({1})", name, Stage.PENDING);
+    }
+
+    switch (state.get()) {
+      case COMPLETED:
+        return MessageFormat.format("{0}({1}: result={2})", name, Stage.COMPLETED,
+            result(this.result));
+      case FAILED:
+        return MessageFormat.format("{0}({1}: cause={2})", name, Stage.FAILED,
+            throwable(this.result));
+      default:
+        return MessageFormat.format("{0}({1})", name, Stage.CANCELLED);
+    }
   }
 
   /**

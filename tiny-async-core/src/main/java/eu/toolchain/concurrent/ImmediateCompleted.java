@@ -1,5 +1,6 @@
 package eu.toolchain.concurrent;
 
+import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -158,5 +159,11 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage
   @Override
   public <U> Stage<U> thenComplete(final U result) {
     return new ImmediateCompleted<>(caller, result);
+  }
+
+  @Override
+  public String toString() {
+    return MessageFormat.format("{0}({1}: result={2})", getClass().getSimpleName(), Stage.COMPLETED,
+        result);
   }
 }

@@ -2,12 +2,13 @@ package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Stage;
+import eu.toolchain.examples.helpers.Helpers;
 import java.util.function.Function;
 
 /**
  * An example application showcasing transforms.
  */
-public class TransformExample {
+public class Transform {
   public static void main(String[] argv) throws Exception {
     final Async async = Helpers.setup();
 

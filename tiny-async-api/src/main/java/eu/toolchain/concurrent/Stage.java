@@ -51,6 +51,11 @@ import java.util.function.Supplier;
  * @see Completable
  */
 public interface Stage<T> {
+  String PENDING = "PENDING";
+  String COMPLETED = "COMPLETED";
+  String FAILED = "FAILED";
+  String CANCELLED = "CANCELLED";
+
   /**
    * Cancel the current stage.
    *

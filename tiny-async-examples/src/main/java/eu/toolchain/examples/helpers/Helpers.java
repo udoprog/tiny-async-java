@@ -1,4 +1,4 @@
-package eu.toolchain.examples;
+package eu.toolchain.examples.helpers;
 
 import eu.toolchain.concurrent.CoreAsync;
 import eu.toolchain.concurrent.DirectCaller;

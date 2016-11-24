@@ -2,6 +2,7 @@ package eu.toolchain.examples;
 
 import eu.toolchain.concurrent.Async;
 import eu.toolchain.concurrent.Stage;
+import eu.toolchain.examples.helpers.Helpers;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
