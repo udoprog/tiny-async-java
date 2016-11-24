@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * A completable which has already been cancelled.
+ * A stage which has already been cancelled.
  *
  * @param <T> type of the completable
  */
@@ -123,9 +123,9 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   @Override
   public Stage<T> withCloser(
       final Supplier<? extends Stage<Void>> complete,
-      final Supplier<? extends Stage<Void>> notComplete
+      final Supplier<? extends Stage<Void>> other
   ) {
-    return withCloserCancelled(notComplete);
+    return withCloserCancelled(other);
   }
 
   @Override
@@ -136,7 +136,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   }
 
   @Override
-  public Stage<T> withNotComplete(
+  public Stage<T> withOther(
       final Supplier<? extends Stage<Void>> supplier
   ) {
     return withNotCompleteCancelled(supplier);

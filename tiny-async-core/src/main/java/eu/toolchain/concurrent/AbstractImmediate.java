@@ -14,11 +14,15 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
   <U> Stage<U> thenApplyCompleted(
       final Function<? super T, ? extends U> fn, final T result
   ) {
+    final U value;
+
     try {
-      return new ImmediateCompleted<>(caller, fn.apply(result));
+      value = fn.apply(result);
     } catch (final Exception e) {
       return new ImmediateFailed<>(caller, e);
     }
+
+    return new ImmediateCompleted<>(caller, value);
   }
 
   <U> Stage<U> thenComposeCompleted(
@@ -34,12 +38,16 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
   Stage<T> thenApplyCaughtFailed(
       final Function<? super Throwable, ? extends T> fn, final Throwable cause
   ) {
+    final T value;
+
     try {
-      return new ImmediateCompleted<>(caller, fn.apply(cause));
+      value = fn.apply(cause);
     } catch (final Exception e) {
       e.addSuppressed(cause);
       return new ImmediateFailed<>(caller, e);
     }
+
+    return new ImmediateCompleted<>(caller, value);
   }
 
   Stage<T> thenComposeFailedFailed(
@@ -48,8 +56,9 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
     try {
       return fn.apply(cause);
     } catch (final Exception e) {
-      e.addSuppressed(cause);
-      return new ImmediateFailed<>(caller, e);
+      final ExecutionException ee = new ExecutionException(e);
+      ee.addSuppressed(e);
+      return new ImmediateFailed<>(caller, ee);
     }
   }
 
@@ -111,7 +120,7 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
       return notComplete.get().thenFail(e);
     }
 
-    return next.thenComplete(result).withNotComplete(notComplete);
+    return next.thenComplete(result).withOther(notComplete);
   }
 
   Stage<T> withCompleteCompleted(

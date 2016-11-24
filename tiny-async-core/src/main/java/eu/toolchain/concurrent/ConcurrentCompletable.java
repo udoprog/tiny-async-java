@@ -345,26 +345,27 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   @Override
   public Stage<T> withCloser(
       final Supplier<? extends Stage<Void>> complete,
-      final Supplier<? extends Stage<Void>> notComplete
+      final Supplier<? extends Stage<Void>> other
   ) {
     final Object r = result;
 
     if (r != null) {
       switch (state.get()) {
         case COMPLETED:
-          return withCloserCompleted(result(result), complete, notComplete);
+          return withCloserCompleted(result(result), complete, other);
         case FAILED:
-          return withCloserFailed(throwable(result), notComplete);
+          return withCloserFailed(throwable(result), other);
         default:
-          return withCloserCancelled(notComplete);
+          return withCloserCancelled(other);
       }
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new WithCloser(target, complete, notComplete));
+    whenDone(new WithCloser(target, complete, other));
     return target;
   }
 
+  @Override
   public Stage<T> withComplete(final Supplier<? extends Stage<Void>> supplier) {
     final Object r = result;
 
@@ -385,7 +386,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @Override
-  public Stage<T> withNotComplete(
+  public Stage<T> withOther(
       final Supplier<? extends Stage<Void>> supplier
   ) {
     final Object r = result;

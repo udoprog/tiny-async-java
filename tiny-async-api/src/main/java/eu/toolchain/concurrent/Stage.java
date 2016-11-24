@@ -30,6 +30,23 @@ import java.util.function.Supplier;
  * stage is in and end state it is considered <em>done</em>, as is indicated by the
  * {@link #isDone()} method.
  *
+ * <p>Naming conventions of methods are the following:<ul>
+ *
+ * <li>{@code is*}, methods that query if the stage has reached a certain state.</li>
+ *
+ * <li>{@code when*}, method that will be called once the stage reaches a certain state, but
+ * otherwise has no effect on the stage. The returned stage does not have to wait for the operation
+ * provided to end.</li>
+ *
+ * <li>{@code then*}, method that will be called once the stage reaches a certain state, and
+ * modifies the stage when that state has been reached</li>
+ *
+ * <li>{@code with*}, method that will be called once the stage reaches a certain state, but does
+ * modify the stage. But, the resulting stage must wait for the operation provided to the method
+ * to end.</li>
+ *
+ * </ul>
+ *
  * @param <T> the type being provided by the stage
  * @author udoprog
  * @see Completable
@@ -204,49 +221,12 @@ public interface Stage<T> {
    * <p>This acts like a <em>try-catch</em>, where the composed stage is the catch operation.
    *
    * <p>If the intent is to re-throw after running the catch operation, use
-   * {@link #withNotComplete(java.util.function.Supplier)}
+   * {@link #withOther(java.util.function.Supplier)}
    *
    * @param fn the transformation to use
    * @return the composed stage
    */
   Stage<T> thenComposeCaught(Function<? super Throwable, ? extends Stage<T>> fn);
-
-  /**
-   * Run one of the provided stages when this stage ends up in a given state.
-   *
-   * <p>This is typically used to implement catch-then-rethrow style operations, like the following
-   * example:
-   *
-   * <pre>{@code
-   *   beginTransaction().thenCompose(tx -> {
-   *     return oper2(tx).withCloser(tx::commit, tx::rollback);
-   *   });
-   * }</pre>
-   *
-   * @param complete stage to run when this stage ends in a complete state
-   * @param notComplete stage to run when this stage ends in a non-complete state, if the state is
-   * failed, any exception thrown in this block will suppress the original exception
-   * @return a new stage that depends on the supplied stage
-   */
-  Stage<T> withCloser(
-      Supplier<? extends Stage<Void>> complete, Supplier<? extends Stage<Void>> notComplete
-  );
-
-  /**
-   * Run the provided stage when the current stage has completed.
-   *
-   * @param supplier supplier of the stage to run
-   * @return a stage that depends on the current stage and the supplied stage
-   */
-  Stage<T> withComplete(Supplier<? extends Stage<Void>> supplier);
-
-  /**
-   * Run the provided stage when the current stage ends, but does not complete.
-   *
-   * @param supplier supplier of the stage to run
-   * @return a stage that depends on the current stage and the supplied stage
-   */
-  Stage<T> withNotComplete(Supplier<? extends Stage<Void>> supplier);
 
   /**
    * Build a stage is failed, but waits until the current stage completes.
@@ -273,4 +253,41 @@ public interface Stage<T> {
    * @return a stage that will be completed
    */
   <U> Stage<U> thenComplete(U result);
+
+  /**
+   * Run one of the provided stages when this stage ends up in a given state.
+   *
+   * <p>This is typically used to implement catch-then-rethrow style operations, like the following
+   * example:
+   *
+   * <pre>{@code
+   *   beginTransaction().thenCompose(tx -> {
+   *     return oper2(tx).withCloser(tx::commit, tx::rollback);
+   *   });
+   * }</pre>
+   *
+   * @param complete stage to run when this stage ends in a complete state
+   * @param other stage to run when this stage ends in a non-complete state, if the state is
+   * failed, any exception thrown in this block will suppress the original exception
+   * @return a new stage that depends on the supplied stage
+   */
+  Stage<T> withCloser(
+      Supplier<? extends Stage<Void>> complete, Supplier<? extends Stage<Void>> other
+  );
+
+  /**
+   * Run the provided stage when the current stage has completed.
+   *
+   * @param supplier supplier of the stage to run
+   * @return a stage that depends on the current stage and the supplied stage
+   */
+  Stage<T> withComplete(Supplier<? extends Stage<Void>> supplier);
+
+  /**
+   * Run the provided stage when the current stage ends, but does not complete.
+   *
+   * @param supplier supplier of the stage to run
+   * @return a stage that depends on the current stage and the supplied stage
+   */
+  Stage<T> withOther(Supplier<? extends Stage<Void>> supplier);
 }

@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * A completable which has already been completed.
+ * A stage which has already been completed.
  *
  * @param <T> type of the completable
  */
@@ -126,9 +126,9 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage
   @Override
   public Stage<T> withCloser(
       final Supplier<? extends Stage<Void>> complete,
-      final Supplier<? extends Stage<Void>> notComplete
+      final Supplier<? extends Stage<Void>> other
   ) {
-    return withCloserCompleted(result, complete, notComplete);
+    return withCloserCompleted(result, complete, other);
   }
 
   @Override
@@ -139,7 +139,7 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage
   }
 
   @Override
-  public Stage<T> withNotComplete(
+  public Stage<T> withOther(
       final Supplier<? extends Stage<Void>> supplier
   ) {
     return this;
