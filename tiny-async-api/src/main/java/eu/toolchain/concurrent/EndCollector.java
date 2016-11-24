@@ -3,7 +3,7 @@ package eu.toolchain.concurrent;
 /**
  * A simplified collector that only cares about the end state of its children.
  *
- * @param <T> the type returned by the collector
+ * @param <T> type returned by the collector
  */
 @FunctionalInterface
 public interface EndCollector<T> {

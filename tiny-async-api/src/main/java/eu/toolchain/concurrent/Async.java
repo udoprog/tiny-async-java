@@ -17,8 +17,6 @@ import java.util.stream.Stream;
  *
  * <p>It makes the contract between the framework and your application decoupled, which has several
  * benefits for your application's code (see README for details).
- *
- * @author udoprog
  */
 public interface Async {
   /**

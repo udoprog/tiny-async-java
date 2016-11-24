@@ -2,6 +2,7 @@ package eu.toolchain.concurrent;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -38,6 +39,8 @@ public class AbstractImmediateTest {
   private From from;
   @Mock
   private To to;
+  @Mock
+  private ImmediateFailed<From> ee;
 
   private AbstractImmediate<From> base;
 
@@ -46,6 +49,7 @@ public class AbstractImmediateTest {
   public void setup() {
     base = mock(AbstractImmediate.class, Mockito.CALLS_REAL_METHODS);
     base.caller = caller;
+    doReturn(ee).when(base).executionExceptionFailed(any(Throwable.class), any(Throwable.class));
   }
 
   @Test
@@ -70,19 +74,22 @@ public class AbstractImmediateTest {
   @Test
   public void immediateComposeThrows() throws Exception {
     doThrow(cause).when(composeFn).apply(from);
-    assertThat(base.thenComposeCompleted(composeFn, from), is(new ImmediateFailed<>(caller, cause)));
+    assertThat(base.thenComposeCompleted(composeFn, from),
+        is(new ImmediateFailed<>(caller, cause)));
   }
 
   @Test
   public void immediateCancelled() throws Exception {
     doReturn(from).when(supplier).get();
-    assertThat(base.thenSupplyCancelledCancelled(supplier), is(new ImmediateCompleted<>(caller, from)));
+    assertThat(base.thenSupplyCancelledCancelled(supplier),
+        is(new ImmediateCompleted<>(caller, from)));
   }
 
   @Test
   public void immediateCancelledThrows() throws Exception {
     doThrow(cause).when(supplier).get();
-    assertThat(base.thenSupplyCancelledCancelled(supplier), is(new ImmediateFailed<>(caller, cause)));
+    assertThat(base.thenSupplyCancelledCancelled(supplier),
+        is(new ImmediateFailed<>(caller, cause)));
   }
 
   @Test
@@ -109,8 +116,7 @@ public class AbstractImmediateTest {
   @Test
   public void immediateFailedThrows() throws Exception {
     doThrow(other).when(failedFn).apply(cause);
-    assertThat(base.thenApplyCaughtFailed(failedFn, cause),
-        is(new ImmediateFailed<>(caller, other)));
+    assertThat(base.thenApplyCaughtFailed(failedFn, cause), is(ee));
   }
 
   @Test
@@ -123,8 +129,7 @@ public class AbstractImmediateTest {
   @Test
   public void immediateComposeFailedThrows() throws Exception {
     doThrow(other).when(composeFailedFn).apply(cause);
-    assertThat(base.thenComposeFailedFailed(composeFailedFn, cause),
-        is(new ImmediateFailed<>(caller, other)));
+    assertThat(base.thenComposeFailedFailed(composeFailedFn, cause), is(ee));
   }
 
   public interface From {

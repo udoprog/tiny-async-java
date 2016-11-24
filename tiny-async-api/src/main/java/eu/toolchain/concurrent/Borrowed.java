@@ -13,8 +13,7 @@ package eu.toolchain.concurrent;
  * reference when it is no longer used. Use of convenience methods like {@link
  * Managed#doto(java.util.function.Function)} are encouraged to accomplish this.
  *
- * @param <T> The type of the borrowed reference.
- * @author udoprog
+ * @param <T> type of the borrowed reference
  */
 public interface Borrowed<T> extends AutoCloseable {
   /**

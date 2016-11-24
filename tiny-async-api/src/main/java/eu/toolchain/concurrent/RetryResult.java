@@ -8,7 +8,7 @@ import java.util.List;
  * <p>This class also carries any potential errors that were generated for prior requests {@link
  * #getErrors()}.
  *
- * @param <T> The type of the result.
+ * @param <T> type of the result
  */
 public class RetryResult<T> {
   final T result;

@@ -43,8 +43,7 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
     try {
       value = fn.apply(cause);
     } catch (final Exception e) {
-      e.addSuppressed(cause);
-      return new ImmediateFailed<>(caller, e);
+      return executionExceptionFailed(e, cause);
     }
 
     return new ImmediateCompleted<>(caller, value);
@@ -56,9 +55,7 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
     try {
       return fn.apply(cause);
     } catch (final Exception e) {
-      final ExecutionException ee = new ExecutionException(e);
-      ee.addSuppressed(e);
-      return new ImmediateFailed<>(caller, ee);
+      return executionExceptionFailed(e, cause);
     }
   }
 
@@ -93,19 +90,17 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
   }
 
   Stage<T> withCloserFailed(
-      final Throwable throwable, final Supplier<? extends Stage<Void>> notComplete
+      final Throwable cause, final Supplier<? extends Stage<Void>> notComplete
   ) {
     final Stage<Void> next;
 
     try {
       next = notComplete.get();
     } catch (final Exception e) {
-      final ExecutionException ee = new ExecutionException(e);
-      ee.addSuppressed(throwable);
-      return new ImmediateFailed<>(caller, ee);
+      return executionExceptionFailed(e, cause);
     }
 
-    return next.thenFail(throwable);
+    return next.thenFail(cause);
   }
 
   Stage<T> withCloserCompleted(
@@ -138,19 +133,17 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
   }
 
   Stage<T> withNotCompleteFailed(
-      final Throwable throwable, final Supplier<? extends Stage<Void>> notComplete
+      final Throwable cause, final Supplier<? extends Stage<Void>> notComplete
   ) {
     final Stage<Void> next;
 
     try {
       next = notComplete.get();
     } catch (final Exception e) {
-      final ExecutionException ee = new ExecutionException(e);
-      ee.addSuppressed(throwable);
-      return new ImmediateFailed<>(caller, ee);
+      return executionExceptionFailed(e, cause);
     }
 
-    return next.thenFail(throwable);
+    return next.thenFail(cause);
   }
 
   Stage<T> withNotCompleteCancelled(final Supplier<? extends Stage<Void>> supplier) {
@@ -163,5 +156,11 @@ public abstract class AbstractImmediate<T> implements Stage<T> {
     }
 
     return next.thenCancel();
+  }
+
+  Stage<T> executionExceptionFailed(final Throwable e, final Throwable cause) {
+    final ExecutionException ee = new ExecutionException(e);
+    ee.addSuppressed(cause);
+    return new ImmediateFailed<>(caller, ee);
   }
 }

@@ -62,8 +62,6 @@ import java.util.function.Function;
  *   }
  * }</pre>
  *
- * <h4>Reference Leaks</h4>
- *
  * <p>Managed references are prime candidates for leaking references. This is caused by application
  * code not having a 1:1 correspondence between each {@link #borrow()} and
  * {@link Borrowed#release()} call.

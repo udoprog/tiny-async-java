@@ -3,8 +3,7 @@ package eu.toolchain.concurrent;
 /**
  * Managed lightweight, reference-counted objects that can be reloaded.
  *
- * @param <T> The type of the object being managed.
- * @author udoprog
+ * @param <T> type of the object being managed
  */
 public interface ReloadableManaged<T> extends Managed<T> {
   /**

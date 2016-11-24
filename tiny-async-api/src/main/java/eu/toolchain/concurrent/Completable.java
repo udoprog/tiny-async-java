@@ -7,7 +7,6 @@ package eu.toolchain.concurrent;
  * completion of the underlying computation.
  *
  * @param <T> type of the value being completed
- * @author udoprog
  * @see Stage
  */
 public interface Completable<T> extends Stage<T> {

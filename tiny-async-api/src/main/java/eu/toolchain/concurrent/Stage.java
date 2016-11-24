@@ -48,7 +48,6 @@ import java.util.function.Supplier;
  * </ul>
  *
  * @param <T> the type being provided by the stage
- * @author udoprog
  * @see Completable
  */
 public interface Stage<T> {

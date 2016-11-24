@@ -7,9 +7,8 @@ package eu.toolchain.concurrent;
  * {@link #end(int, int, int)} will not be called will not be called, and all other futures
  * associated with the collector will be cancelled.
  *
- * @param <T> the source type
- * @param <U> the target type
- * @author udoprog
+ * @param <T> source type
+ * @param <U> target type
  */
 public interface StreamCollector<T, U> {
   /**

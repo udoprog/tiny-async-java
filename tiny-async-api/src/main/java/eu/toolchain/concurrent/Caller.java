@@ -1,7 +1,7 @@
 package eu.toolchain.concurrent;
 
 /**
- * User-defined methods for handling actions and report errors.
+ * User-defined methods for calling user-defined actions and report errors.
  *
  * <p>Any time a future needs to invoke user-specified code the call is wrapped in
  * {@link #execute(Runnable)}. This allows the user to implement policies and safe guard for how
@@ -12,8 +12,6 @@ package eu.toolchain.concurrent;
  *
  * <p>The core of the framework provides some base classes for easily accomplishing this, most
  * notable is {@code DirectCaller}.
- *
- * @author udoprog
  */
 public interface Caller {
   /**
