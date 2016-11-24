@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+remote=public
+repo=udoprog/tiny-async-java
+version=$(xmllint --xpath "//*[local-name()='project']/*[local-name()='version']/text()" pom.xml)
+# strip SNAPSHOT
+version=${version%%-*}
+apidocs=output/apidocs
+
+target="$apidocs/$version"
+
+if [[ ! -d output ]]; then
+    mkdir output
+fi
+
+if [[ ! -d output/.git ]]; then
+    pushd output
+        git init
+        git remote add $remote git@github.com:$repo
+    popd
+fi
+
+pushd output
+    git fetch -a $remote gh-pages
+    git checkout gh-pages
+    git reset --hard $remote/gh-pages
+popd
+
+mvn package -D maven.test.skip=true javadoc:javadoc
+mvn javadoc:aggregate
+
+rm -rf $target
+mkdir -p $apidocs
+
+cp -av target/site/apidocs $target
+
+if [[ $1 == '-latest' ]]; then
+    ln -fs $version output/apidocs/latest
+fi
+
+pushd output
+    git add -A
+    git commit -m "[gh-pages] release $(date --rfc-3339=seconds)"
+    git push $remote gh-pages
+popd
