@@ -19,16 +19,16 @@ import java.util.function.Function;
  * {@link #doto(Function)}, the try-with-resources pattern on a {@link Borrowed} reference, and the
  * {@link Borrowed#release()} method.
  *
- * <p>This pattern is useful if you have a block of code returning a future.
+ * <p>This pattern is useful if you have a block of code returning a stage.
  *
  * It guarantees that the code is executed in a safe fashion, that will release the reference if it
- * throws an exception. After it has successfully returned a future, the borrowed reference will be
- * released when this future is completed:
+ * throws an exception. After it has successfully returned a stage, the borrowed reference will be
+ * released when this stage is completed:
  *
  * <pre>{@code
  *   final Managed<Database> m;
  *
- *   final Stage<Integer> future = m.doto(db -> {
+ *   final Stage<Integer> stage = m.doto(db -> {
  *     // do something with database
  *     return db.count();
  *   });
@@ -134,7 +134,7 @@ public interface Managed<T> {
   /**
    * Borrow a reference and execute the given action.
    *
-   * <p>The reference will be released when the action's future is finished:<pre>
+   * <p>The reference will be released when the action's stage is finished:<pre>
    * {@code
    *   final Managed<Database> m = ...;
    *
@@ -146,7 +146,7 @@ public interface Managed<T> {
    *
    * @param action The action to perform on the borrowed reference.
    * @param <U> the type of the return value from the action
-   * @return The future returned by the action.
+   * @return the stage returned by the action
    */
   <U> Stage<U> doto(
       Function<? super T, ? extends Stage<U>> action
@@ -156,10 +156,10 @@ public interface Managed<T> {
    * If managed reference is started, but not stopping or stopped.
    *
    * <p><em>Should only be used for diagnostical purposes.</em> Code using references should utilize
-   * futures returned by methods like {@link #start()} and {@link #stop()} to know when there
+   * stages returned by methods like {@link #start()} and {@link #stop()} to know when there
    * reference is ready.
    *
-   * @return {@code true} if the underlying reference is constructed, and available to be borrowed.
+   * @return {@code true} if the underlying reference is constructed and available to be borrowed
    */
   boolean isReady();
 }

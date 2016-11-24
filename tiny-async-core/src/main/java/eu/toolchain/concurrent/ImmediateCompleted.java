@@ -14,16 +14,13 @@ import lombok.ToString;
  * @param <T> type of the completable
  */
 @EqualsAndHashCode(of = {"result"}, doNotUseGetters = true, callSuper = false)
-@ToString(of = {"result"})
 public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage<T> {
-  private final Caller caller;
   private final T result;
 
   public ImmediateCompleted(
       final Caller caller, final T result
   ) {
     super(caller);
-    this.caller = caller;
     this.result = result;
   }
 

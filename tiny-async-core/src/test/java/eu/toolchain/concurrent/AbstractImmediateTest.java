@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import java.lang.reflect.Field;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.Before;
@@ -46,9 +47,14 @@ public class AbstractImmediateTest {
 
   @SuppressWarnings("unchecked")
   @Before
-  public void setup() {
+  public void setup() throws Exception {
     base = mock(AbstractImmediate.class, Mockito.CALLS_REAL_METHODS);
-    base.caller = caller;
+
+    /* hack to work around the fact that the field is final */
+    final Field caller = AbstractImmediate.class.getDeclaredField("caller");
+    caller.setAccessible(true);
+    caller.set(base, this.caller);
+
     doReturn(ee).when(base).executionExceptionFailed(any(Throwable.class), any(Throwable.class));
   }
 

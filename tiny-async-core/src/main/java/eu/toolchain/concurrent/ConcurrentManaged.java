@@ -15,6 +15,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * A thread-safe implementation of {@link Managed}.
+ *
+ * @param <T> type of managed reference
+ */
 public class ConcurrentManaged<T> implements Managed<T> {
   private static final InvalidBorrowed<?> INVALID = new InvalidBorrowed<>();
   private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];

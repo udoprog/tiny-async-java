@@ -1,14 +1,14 @@
 package eu.toolchain.concurrent;
 
 /**
- * User-defined methods for calling user-defined actions and report errors.
+ * Methods for calling user-defined actions and report errors.
  *
- * <p>Any time a future needs to invoke user-specified code the call is wrapped in
+ * <p>Any time a stage needs to invoke user-specified code the call is wrapped in
  * {@link #execute(Runnable)}. This allows the user to implement policies and safe guard for how
  * these interactions should happen by providing their own caller implementation.
  *
  * <p>The implementation of these methods will be invoked from the calling thread that interacts
- * with the future.
+ * with the stage.
  *
  * <p>The core of the framework provides some base classes for easily accomplishing this, most
  * notable is {@code DirectCaller}.
@@ -31,7 +31,7 @@ public interface Caller {
    *
    *   public Stage<Void> doSomething() {
    *     return database.doto(database -> {
-   *       Completable<Void> stage = async.future();
+   *       Completable<Void> stage = async.completable();
    *       return stage;
    *     });
    *   }
@@ -39,7 +39,7 @@ public interface Caller {
    * }</pre>
    *
    * <p>This leaves the managed database in an open state since its reference count will never go
-   * back to zero. When the future and the corresponding borrowed is garbage collected, it will be
+   * back to zero. When the stage and the corresponding borrowed is garbage collected, it will be
    * reported here.
    *
    * @param reference the reference that was leaked

@@ -15,13 +15,9 @@ import lombok.ToString;
  * @param <T> type of the completable
  */
 @EqualsAndHashCode(of = {}, doNotUseGetters = true, callSuper = false)
-@ToString(of = {})
 public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage<T> {
-  private final Caller caller;
-
   public ImmediateCancelled(final Caller caller) {
     super(caller);
-    this.caller = caller;
   }
 
   @Override

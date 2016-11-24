@@ -3,6 +3,10 @@ package eu.toolchain.concurrent;
 import java.util.concurrent.ExecutorService;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * A {@link Caller} implementation that defers all execution to a
+ * {@link java.util.concurrent.ExecutorService}.
+ */
 @RequiredArgsConstructor
 public final class ExecutorCaller implements Caller {
   private final ExecutorService executor;

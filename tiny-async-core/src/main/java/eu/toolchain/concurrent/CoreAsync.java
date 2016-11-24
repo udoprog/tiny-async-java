@@ -77,11 +77,11 @@ public class CoreAsync implements Async {
 
   public <C> Stage<C> doCall(
       final Callable<? extends C> callable, final ExecutorService executor,
-      final Completable<C> future
+      final Completable<C> stage
   ) {
     final Runnable runnable = () -> {
       // completable is already done, do not perform potentially expensive operation.
-      if (future.isDone()) {
+      if (stage.isDone()) {
         return;
       }
 
@@ -90,11 +90,11 @@ public class CoreAsync implements Async {
       try {
         result = callable.call();
       } catch (final Exception error) {
-        future.fail(error);
+        stage.fail(error);
         return;
       }
 
-      future.complete(result);
+      stage.complete(result);
     };
 
     final Future<?> task;
@@ -102,16 +102,16 @@ public class CoreAsync implements Async {
     try {
       task = executor.submit(runnable);
     } catch (final Exception e) {
-      future.fail(e);
-      return future;
+      stage.fail(e);
+      return stage;
     }
 
-    future.whenCancelled(() -> {
+    stage.whenCancelled(() -> {
       // cancel, but do not interrupt.
       task.cancel(false);
     });
 
-    return future;
+    return stage;
   }
 
   @Override
@@ -142,46 +142,46 @@ public class CoreAsync implements Async {
   @SuppressWarnings("unchecked")
   @Override
   public <T> Stage<Collection<T>> collect(
-      final Collection<? extends Stage<? extends T>> futures
+      final Collection<? extends Stage<? extends T>> stages
   ) {
-    if (futures.isEmpty()) {
+    if (stages.isEmpty()) {
       return completed((Collection<T>) EMPTY_RESULTS);
     }
 
-    return collect(futures, Function.identity());
+    return collect(stages, Function.identity());
   }
 
   @Override
   public <C, T> Stage<T> collect(
-      final Collection<? extends Stage<? extends C>> futures,
+      final Collection<? extends Stage<? extends C>> stages,
       final Function<? super Collection<C>, ? extends T> collector
   ) {
-    if (futures.isEmpty()) {
+    if (stages.isEmpty()) {
       return doCollectEmpty(collector);
     }
 
-    return doCollect(futures, collector);
+    return doCollect(stages, collector);
   }
 
   protected <C, T> Stage<T> doCollect(
-      final Collection<? extends Stage<? extends C>> futures,
+      final Collection<? extends Stage<? extends C>> stages,
       final Function<? super Collection<C>, ? extends T> collector
   ) {
     final Completable<T> target = completable();
 
     final CollectHelper<? super C, ? extends T> done =
-        new CollectHelper<>(futures.size(), collector, futures, target);
+        new CollectHelper<>(stages.size(), collector, stages, target);
 
-    for (final Stage<? extends C> q : futures) {
+    for (final Stage<? extends C> q : stages) {
       q.handle(done);
     }
 
-    bindSignals(target, futures);
+    bindSignals(target, stages);
     return target;
   }
 
   /**
-   * Shortcut for when the list of futures is empty.
+   * Shortcut for when the list of stages is empty.
    *
    * @param collector collector to apply
    */
@@ -198,18 +198,18 @@ public class CoreAsync implements Async {
 
   @Override
   public <T, U> Stage<U> streamCollect(
-      final Collection<? extends Stage<? extends T>> futures,
+      final Collection<? extends Stage<? extends T>> stages,
       final StreamCollector<? super T, ? extends U> collector
   ) {
-    if (futures.isEmpty()) {
+    if (stages.isEmpty()) {
       return doStreamCollectEmpty(collector);
     }
 
-    return doStreamCollect(futures, collector);
+    return doStreamCollect(stages, collector);
   }
 
   /**
-   * Shortcut for when the list of futures is empty with {@link StreamCollector}.
+   * Shortcut for when the list of stages is empty with {@link StreamCollector}.
    *
    * @param collector collector to apply
    * @param <T> source type
@@ -228,38 +228,38 @@ public class CoreAsync implements Async {
   /**
    * Perform collection for {@link StreamCollector}.
    *
-   * @param futures futures to apply to collector
+   * @param stages stages to apply to collector
    * @param collector collector to apply
    * @param <T> source type
    * @param <U> target type
    */
   <T, U> Stage<U> doStreamCollect(
-      final Collection<? extends Stage<? extends T>> futures,
+      final Collection<? extends Stage<? extends T>> stages,
       final StreamCollector<? super T, ? extends U> collector
   ) {
     final Completable<U> target = completable();
 
     final StreamCollectHelper<? super T, ? extends U> done =
-        new StreamCollectHelper<>(caller, futures.size(), collector, target);
+        new StreamCollectHelper<>(caller, stages.size(), collector, target);
 
-    for (final Stage<? extends T> q : futures) {
+    for (final Stage<? extends T> q : stages) {
       q.handle(done);
     }
 
-    bindSignals(target, futures);
+    bindSignals(target, stages);
     return target;
   }
 
   @Override
   public <T, U> Stage<U> endCollect(
-      final Collection<? extends Stage<? extends T>> futures,
+      final Collection<? extends Stage<? extends T>> stages,
       final EndCollector<? extends U> collector
   ) {
-    if (futures.isEmpty()) {
+    if (stages.isEmpty()) {
       return doEndCollectEmpty(collector);
     }
 
-    return doEndCollect(futures, collector);
+    return doEndCollect(stages, collector);
   }
 
   <T> Stage<T> doEndCollectEmpty(
@@ -273,19 +273,19 @@ public class CoreAsync implements Async {
   }
 
   <T, U> Stage<U> doEndCollect(
-      final Collection<? extends Stage<? extends T>> futures,
+      final Collection<? extends Stage<? extends T>> stages,
       final EndCollector<? extends U> collector
   ) {
     final Completable<U> target = completable();
 
     final EndCollectHelper<? extends U> done =
-        new EndCollectHelper<>(futures.size(), collector, target);
+        new EndCollectHelper<>(stages.size(), collector, target);
 
-    for (final Stage<? extends T> q : futures) {
+    for (final Stage<? extends T> q : stages) {
       q.handle(done);
     }
 
-    bindSignals(target, futures);
+    bindSignals(target, stages);
     return target;
   }
 
@@ -324,28 +324,28 @@ public class CoreAsync implements Async {
       Collection<? extends Callable<? extends Stage<? extends C>>> callables,
       StreamCollector<? super C, ? extends T> collector
   ) {
-    final List<Stage<? extends C>> futures = new ArrayList<>(callables.size());
+    final List<Stage<? extends C>> stages = new ArrayList<>(callables.size());
 
     for (final Callable<? extends Stage<? extends C>> c : callables) {
-      final Stage<? extends C> future;
+      final Stage<? extends C> stage;
 
       try {
-        future = c.call();
+        stage = c.call();
       } catch (Exception e) {
-        futures.add(this.<C>failed(e));
+        stages.add(this.<C>failed(e));
         continue;
       }
 
-      futures.add(future);
+      stages.add(stage);
     }
 
-    return streamCollect(futures, collector);
+    return streamCollect(stages, collector);
   }
 
   /**
    * Perform an eventual collection.
    *
-   * @param tasks tasks to invoke for futures
+   * @param tasks tasks to invoke for stages
    * @param collector collector to apply
    * @param parallelism number of tasks to run in parallel
    * @param <T> source type
@@ -357,41 +357,40 @@ public class CoreAsync implements Async {
       final StreamCollector<? super T, ? extends U> collector, int parallelism
   ) {
     final ExecutorService executor = executor();
-    final Completable<U> future = completable();
-    executor.execute(
-        new DelayedCollectCoordinator<>(caller, tasks, collector, future, parallelism));
-    return future;
+    final Completable<U> stage = completable();
+    executor.execute(new DelayedCollectCoordinator<>(caller, tasks, collector, stage, parallelism));
+    return stage;
   }
 
   @Override
   public Stage<Void> collectAndDiscard(
-      Collection<? extends Stage<?>> futures
+      Collection<? extends Stage<?>> stages
   ) {
-    if (futures.isEmpty()) {
+    if (stages.isEmpty()) {
       return completed();
     }
 
-    return doCollectAndDiscard(futures);
+    return doCollectAndDiscard(stages);
   }
 
   /**
    * Perform a collect and discard.
    *
-   * @param futures futures to discard
+   * @param stages stages to discard
    * @return a completable
    */
   Stage<Void> doCollectAndDiscard(
-      Collection<? extends Stage<?>> futures
+      Collection<? extends Stage<?>> stages
   ) {
     final Completable<Void> target = completable();
 
-    final CollectAndDiscardHelper done = new CollectAndDiscardHelper(futures.size(), target);
+    final CollectAndDiscardHelper done = new CollectAndDiscardHelper(stages.size(), target);
 
-    for (final Stage<?> q : futures) {
+    for (final Stage<?> q : stages) {
       q.handle(done);
     }
 
-    bindSignals(target, futures);
+    bindSignals(target, stages);
     return target;
   }
 
@@ -411,17 +410,17 @@ public class CoreAsync implements Async {
   }
 
   /**
-   * Bind the given collection of futures to the target completable, which if cancelled, or failed
-   * will do the corresponding to their collection of futures.
+   * Bind the given collection of stages to the target completable, which if cancelled, or failed
+   * will do the corresponding to their collection of stages.
    *
    * @param target The completable to cancel, and fail on.
-   * @param futures The futures to cancel, when {@code target} is cancelled.
+   * @param stages The stages to cancel, when {@code target} is cancelled.
    */
   void bindSignals(
-      final Stage<?> target, final Collection<? extends Stage<?>> futures
+      final Stage<?> target, final Collection<? extends Stage<?>> stages
   ) {
     target.whenCancelled(() -> {
-      for (final Stage<?> f : futures) {
+      for (final Stage<?> f : stages) {
         f.cancel();
       }
     });
@@ -443,19 +442,19 @@ public class CoreAsync implements Async {
       throw new IllegalStateException("no scheduler configured");
     }
 
-    final Completable<T> future = completable();
+    final Completable<T> stage = completable();
 
     final Supplier<RetryDecision> policyInstance = policy.newInstance(clockSource);
 
     final long start = clockSource.now();
 
     final RetryCallHelper<T> helper =
-        new RetryCallHelper<>(start, scheduler, callable, policyInstance, future, clockSource);
+        new RetryCallHelper<>(start, scheduler, callable, policyInstance, stage, clockSource);
 
-    future.whenDone(helper::finished);
+    stage.whenDone(helper::finished);
 
     helper.next();
-    return future.thenApply(result -> new RetryResult<>(result, helper.getErrors()));
+    return stage.thenApply(result -> new RetryResult<>(result, helper.getErrors()));
   }
 
   static String formatStack(final Stream<StackTraceElement> stack, final String prefix) {
@@ -484,6 +483,9 @@ public class CoreAsync implements Async {
     return new Builder();
   }
 
+  /**
+   * Builder for {@link CoreAsync}.
+   */
   public static class Builder {
     private Caller caller;
     private boolean threaded;

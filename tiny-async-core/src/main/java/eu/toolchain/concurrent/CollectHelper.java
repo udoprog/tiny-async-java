@@ -22,34 +22,49 @@ import lombok.RequiredArgsConstructor;
  * @param <U> the collected value
  */
 class CollectHelper<T, U> implements Handle<T> {
-  static final byte RESOLVED = 0x1;
+  static final byte COMPLETED = 0x1;
   static final byte FAILED = 0x2;
   static final byte CANCELLED = 0x3;
 
-  final Function<? super Collection<T>, ? extends U> collector;
-  Collection<? extends Stage<?>> sources;
-  final Completable<? super U> target;
   final int size;
+  final Function<? super Collection<T>, ? extends U> collector;
 
-  /* The collected results, non-final to allow for setting to null. Allows for random writes
-   * since its a pre-emptively sized array. */
+  /**
+   * A collection of all source stages.
+   */
+  Collection<? extends Stage<?>> sources;
+
+  final Completable<? super U> target;
+
+  /**
+   * The collected results, non-final to allow for setting to null. Allows for random writes
+   * since final size is known at initialization.
+   **/
   Object[] values;
+
+  /**
+   * Flags for all collected states.
+   */
   byte[] states;
 
-  /* maintain position separate since the is a potential race condition between getting the
+  /**
+   * maintain position separate since the is a potential race condition between getting the
    * current position and setting the entry. This is avoided by only relying on countdown to trigger
-   * when we are done. */
-  final AtomicInteger write = new AtomicInteger();
+   * when we are done.
+   **/
+  final AtomicInteger write;
 
-  /* maintain a separate countdown since the write position might be out of order, this causes all
-   * threads to synchronize after the write */
+  /**
+   * Maintain a separate countdown since the write position might be out of order, this causes all
+   * threads to synchronize after the write
+   **/
   final AtomicInteger countdown;
 
-  /* Indicate that collector is finished to avoid the case where the write position wraps around. */
-  final AtomicBoolean finished = new AtomicBoolean();
-
-  /* On a single failure, cause all other sources to be cancelled */
-  final AtomicBoolean failed = new AtomicBoolean();
+  /**
+   * State of the collector.
+   **/
+  final AtomicBoolean failed;
+  final AtomicBoolean done;
 
   CollectHelper(
       int size, Function<? super Collection<T>, ? extends U> collector,
@@ -63,14 +78,18 @@ class CollectHelper<T, U> implements Handle<T> {
     this.collector = collector;
     this.sources = sources;
     this.target = target;
+
     this.values = new Object[size];
     this.states = new byte[size];
+    this.write = new AtomicInteger();
     this.countdown = new AtomicInteger(size);
+    this.failed = new AtomicBoolean();
+    this.done = new AtomicBoolean();
   }
 
   @Override
   public void completed(T result) {
-    add(RESOLVED, result);
+    add(COMPLETED, result);
   }
 
   @Override
@@ -102,10 +121,6 @@ class CollectHelper<T, U> implements Handle<T> {
    * Checks in a doCall back. It also wraps up the group if all the callbacks have checked in.
    */
   void add(final byte type, final Object value) {
-    if (finished.get()) {
-      throw new IllegalStateException("already finished");
-    }
-
     final int w = write.getAndIncrement();
 
     if (w < size) {
@@ -128,7 +143,7 @@ class CollectHelper<T, U> implements Handle<T> {
     // make sure this can only happen once.
     // This protects against countdown, and write wrapping around which should very rarely
     // happen.
-    if (!finished.compareAndSet(false, true)) {
+    if (!done.compareAndSet(false, true)) {
       throw new IllegalStateException("already finished");
     }
 
@@ -177,7 +192,7 @@ class CollectHelper<T, U> implements Handle<T> {
       final byte type = states[i];
 
       switch (type) {
-        case RESOLVED:
+        case COMPLETED:
           results.add((T) values[i]);
           break;
         case FAILED:

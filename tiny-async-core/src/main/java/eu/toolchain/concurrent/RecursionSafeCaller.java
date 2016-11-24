@@ -9,6 +9,13 @@ package eu.toolchain.concurrent;
 
 import java.util.concurrent.ExecutorService;
 
+/**
+ * A {@link Caller} implementation that implements immediate calling, and provides a fallback to
+ * avoid blowing up the stack when operations are recursively called.
+ *
+ * This implementation maintains a thread-local storage that gives a rough estimate of how deep a
+ * given stack is.
+ */
 public final class RecursionSafeCaller implements Caller {
   private final ExecutorService executorService;
   private final Caller caller;
@@ -39,20 +46,18 @@ public final class RecursionSafeCaller implements Caller {
 
   @Override
   public void execute(final Runnable runnable) {
-    // Use thread local counter for recursionDepth
+    // Use thread local counter for recursionDepth.
     final Integer recursionDepth = recursionDepthPerThread.get();
     // ++
     recursionDepthPerThread.set(recursionDepth + 1);
 
     if (recursionDepth + 1 <= maxRecursionDepth) {
-      // Case A: Call immediately, this is default until we've reached deep recursion
+      /* Case A: Call immediately, this is default until we've reached deep recursion. */
       runnable.run();
     } else {
-            /*
-             * Case B: Defer to a separate thread
-             * This happens when recursion depth of the current thread is larger than limit, to
-             * avoid stack overflow.
-             */
+      /* Case B: Defer to a separate thread.
+       * This happens when recursion depth of the current thread is larger than limit, to avoid
+       * stack overflow. */
       executorService.submit(runnable);
     }
 

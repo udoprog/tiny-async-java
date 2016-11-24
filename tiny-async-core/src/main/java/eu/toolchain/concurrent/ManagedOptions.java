@@ -3,6 +3,9 @@ package eu.toolchain.concurrent;
 import java.util.Optional;
 import lombok.Data;
 
+/**
+ * Options that can be modified when building {@link Managed} reference.
+ */
 @Data
 public class ManagedOptions {
   private static final boolean TRACING;
@@ -25,6 +28,9 @@ public class ManagedOptions {
     return builder().build();
   }
 
+  /**
+   * Options builder.
+   */
   public static class Builder {
     private Optional<Boolean> captureStack = Optional.empty();
     private Optional<Boolean> tracing = Optional.empty();

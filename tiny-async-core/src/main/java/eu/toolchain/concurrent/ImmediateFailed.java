@@ -15,16 +15,13 @@ import lombok.ToString;
  * @param <T> type of the completable
  */
 @EqualsAndHashCode(of = {"cause"}, doNotUseGetters = true, callSuper = false)
-@ToString(of = {"cause"})
 public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T> {
-  private final Caller caller;
   private final Throwable cause;
 
   public ImmediateFailed(
       Caller caller, Throwable cause
   ) {
     super(caller);
-    this.caller = caller;
     this.cause = cause;
   }
 

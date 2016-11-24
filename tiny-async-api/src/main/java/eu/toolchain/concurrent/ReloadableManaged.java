@@ -11,7 +11,7 @@ public interface ReloadableManaged<T> extends Managed<T> {
    *
    * <p>The new reference will be constructed and started before the old one is shut down.
    *
-   * @return a future that will be completed once the reference has been reloaded
+   * @return a stage that will be completed once the reference has been reloaded
    */
   Stage<Void> reload();
 }

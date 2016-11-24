@@ -4,6 +4,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * A thread-safe implementation of {@link ReloadableManaged}.
+ *
+ * @param <T> type of managed reference
+ */
 class ConcurrentReloadableManaged<T> implements ReloadableManaged<T> {
   private final Async async;
   private final Caller caller;

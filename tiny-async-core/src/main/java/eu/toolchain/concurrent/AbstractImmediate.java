@@ -3,33 +3,43 @@ package eu.toolchain.concurrent;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import lombok.RequiredArgsConstructor;
 
-public abstract class AbstractImmediate<T> implements Stage<T> {
-  protected Caller caller;
-
-  public AbstractImmediate(final Caller caller) {
-    this.caller = caller;
-  }
+/**
+ * Utility class for immediate computations.
+ *
+ * <p>This class is intended to be extended by {@link Stage} implementations to provide a basis for
+ * immediate implementations for some of the common behaviours of a stage.
+ *
+ * <p>A prominent reason to make use of this class is that all user-provided code is guarded with a
+ * try-catch and implements fallbacks for when exceptions have been thrown in the provided
+ * operation.
+ *
+ * @param <T> result type of the stage
+ */
+@RequiredArgsConstructor
+abstract class AbstractImmediate<T> implements Stage<T> {
+  protected final Caller caller;
 
   <U> Stage<U> thenApplyCompleted(
-      final Function<? super T, ? extends U> fn, final T result
+      final Function<? super T, ? extends U> fn, final T value
   ) {
-    final U value;
+    final U result;
 
     try {
-      value = fn.apply(result);
+      result = fn.apply(value);
     } catch (final Exception e) {
       return new ImmediateFailed<>(caller, e);
     }
 
-    return new ImmediateCompleted<>(caller, value);
+    return new ImmediateCompleted<>(caller, result);
   }
 
   <U> Stage<U> thenComposeCompleted(
-      final Function<? super T, ? extends Stage<U>> fn, final T result
+      final Function<? super T, ? extends Stage<U>> fn, final T value
   ) {
     try {
-      return fn.apply(result);
+      return fn.apply(value);
     } catch (final Exception e) {
       return new ImmediateFailed<>(caller, e);
     }

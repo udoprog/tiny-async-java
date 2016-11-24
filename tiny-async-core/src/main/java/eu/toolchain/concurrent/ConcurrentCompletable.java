@@ -15,13 +15,12 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 /**
- * A thread-safe implementation of Completable.
- * <p>
- * The callback uses the calling thread to execute result listeners, see {@link #complete(Object)},
- * and {@link #handle(Handle)} for details.
+ * A concurrent implementation of {@link Completable}.
  *
- * @param <T> type of the completable
- * @author udoprog
+ * <p>The callback uses the calling thread to execute result listeners, see
+ * {@link #postComplete()} for details.
+ *
+ * @param <T> type of the completable stage
  */
 public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     implements Handle<T>, Completable<T> {
