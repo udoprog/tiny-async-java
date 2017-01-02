@@ -6,7 +6,6 @@ import eu.toolchain.async.FutureDone;
 import eu.toolchain.async.ResolvableFuture;
 import eu.toolchain.async.RetryException;
 import eu.toolchain.async.RetryPolicy;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -37,6 +36,8 @@ public class RetryCallHelper<T> implements FutureDone<T> {
      * one thread at a time accesses it
      */
     private final ArrayList<RetryException> errors = new ArrayList<>();
+    private final ArrayList<Long> backoffTimings = new ArrayList<>();
+
     private final AtomicReference<ScheduledFuture<?>> nextCall = new AtomicReference<>();
 
     public RetryCallHelper(
@@ -55,6 +56,10 @@ public class RetryCallHelper<T> implements FutureDone<T> {
 
     public List<RetryException> getErrors() {
         return errors;
+    }
+
+    public List<Long> getBackoffTimings() {
+        return backoffTimings;
     }
 
     @Override
@@ -77,6 +82,7 @@ public class RetryCallHelper<T> implements FutureDone<T> {
         } else {
             nextCall.set(scheduler.schedule(() -> {
                 nextCall.set(null);
+                backoffTimings.add(clockSource.now() - start);
                 next();
             }, decision.backoff(), TimeUnit.MILLISECONDS));
         }
