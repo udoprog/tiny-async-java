@@ -3,7 +3,7 @@
 
   <groupId>eu.toolchain.async</groupId>
   <artifactId>tiny-async-parent</artifactId>
-  <version>1.10.1-SNAPSHOT</version>
+  <version>1.11.0</version>
   <packaging>pom</packaging>
 
   <url>https://github.com/udoprog/tiny-async-java</url>
@@ -35,7 +35,7 @@
     <connection>scm:git:git@github.com:udoprog/tiny-async-java</connection>
     <developerConnection>scm:git:git@github.com:udoprog/tiny-async-java</developerConnection>
     <url>https://github.com/udoprog/tiny-async-java</url>
-    <tag>HEAD</tag>
+    <tag>1.11.0</tag>
   </scm>
 
   <developers>
