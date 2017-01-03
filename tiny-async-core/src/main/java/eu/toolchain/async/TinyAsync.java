@@ -15,7 +15,6 @@ import eu.toolchain.async.helper.RetryCallHelper;
 import eu.toolchain.async.immediate.ImmediateCancelledAsyncFuture;
 import eu.toolchain.async.immediate.ImmediateFailedAsyncFuture;
 import eu.toolchain.async.immediate.ImmediateResolvedAsyncFuture;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -534,6 +533,7 @@ public class TinyAsync implements AsyncFramework {
         future.onFinished(helper::finished);
 
         helper.next();
-        return future.directTransform(result -> new RetryResult<>(result, helper.getErrors()));
+        return future.directTransform(
+            result -> new RetryResult<>(result, helper.getErrors(), helper.getBackoffTimings()));
     }
 }
