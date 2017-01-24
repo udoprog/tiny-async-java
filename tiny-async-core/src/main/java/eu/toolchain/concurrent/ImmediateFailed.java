@@ -113,7 +113,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   }
 
   @Override
-  public Stage<T> thenApplyCaught(Function<? super Throwable, ? extends T> fn) {
+  public Stage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
     return thenApplyCaughtFailed(fn, cause);
   }
 

@@ -170,7 +170,7 @@ public abstract class ImmediateAsyncFutureTestBase {
     final Function<Throwable, From> transform = mock(Function.class);
 
     doReturn(underTest).when(underTest).thenApplyCaughtFailed(transform, cause);
-    assertEquals(underTest, underTest.thenApplyCaught(transform));
+    assertEquals(underTest, underTest.thenApplyFailed(transform));
     verify(underTest, failed()).thenApplyCaughtFailed(transform, cause);
   }
 

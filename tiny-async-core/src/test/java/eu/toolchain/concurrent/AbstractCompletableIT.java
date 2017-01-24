@@ -155,7 +155,7 @@ public abstract class AbstractCompletableIT {
   
   @Test
   public void thenApplyFailed() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     outer.complete(VALUE);
     assertThat(next.join(), is(VALUE));
@@ -163,7 +163,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenApplyFailedFailOuter() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     outer.fail(cause);
     assertThat(next.join(), is(VALUE));
@@ -171,7 +171,7 @@ public abstract class AbstractCompletableIT {
 
   @Test
   public void thenApplyFailedCancelOuter() throws Exception {
-    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     expected.expect(CancellationException.class);
     outer.cancel();
@@ -182,7 +182,7 @@ public abstract class AbstractCompletableIT {
   public void thenApplyFailedCancelNext() throws Exception {
     expected.expect(CancellationException.class);
 
-    final Stage<Integer> next = outer.thenApplyCaught(t -> VALUE);
+    final Stage<Integer> next = outer.thenApplyFailed(t -> VALUE);
 
     next.cancel();
     outer.join();

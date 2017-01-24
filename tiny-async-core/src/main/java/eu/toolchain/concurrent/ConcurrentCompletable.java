@@ -309,7 +309,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @Override
-  public Stage<T> thenApplyCaught(final Function<? super Throwable, ? extends T> fn) {
+  public Stage<T> thenApplyFailed(final Function<? super Throwable, ? extends T> fn) {
     final Object r = result;
 
     if (r != null) {
@@ -321,7 +321,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new ThenApplyCaught(target, fn));
+    whenDone(new ThenApplyFailed(target, fn));
     return target;
   }
 
@@ -668,7 +668,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
   }
 
-  static <U> void handleStage(
+  <U> void handleStage(
       final Supplier<? extends Stage<U>> supplier, final ConcurrentCompletable<U> target
   ) {
     final Stage<U> next;
@@ -697,7 +697,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
           try {
             r = fn.apply(result(result));
-          } catch (Exception e) {
+          } catch (final Exception e) {
             target.fail(e);
             return;
           }
@@ -736,7 +736,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class ThenApplyCaught implements Runnable {
+  class ThenApplyFailed implements Runnable {
     private final ConcurrentCompletable<T> target;
     private final Function<? super Throwable, ? extends T> fn;
 

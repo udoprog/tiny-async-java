@@ -106,7 +106,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   }
 
   @Override
-  public Stage<T> thenApplyCaught(Function<? super Throwable, ? extends T> fn) {
+  public Stage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn) {
     return this;
   }
 

@@ -217,7 +217,7 @@ public interface Stage<T> {
    * @param fn the transformation to use
    * @return the applied stage
    */
-  Stage<T> thenApplyCaught(Function<? super Throwable, ? extends T> fn);
+  Stage<T> thenApplyFailed(Function<? super Throwable, ? extends T> fn);
 
   /**
    * Compose a failed stage.
