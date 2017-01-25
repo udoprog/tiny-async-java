@@ -9,9 +9,11 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.Before;
@@ -19,6 +21,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -125,6 +128,60 @@ public class ConcurrentCompletableTest {
     assertEquals(ConcurrentCompletable.CANCEL, c.completable.result);
 
     verifyFinalized();
+  }
+
+  @Test
+  public void testWhenDone() {
+    final Runnable runnable = mock(Runnable.class);
+
+    doReturn(false).when(c.completable).add(runnable);
+    c.completable.whenDone(runnable);
+
+    doReturn(true).when(c.completable).add(runnable);
+    c.completable.whenDone(runnable);
+
+    final InOrder order = inOrder(c.completable, caller, runnable);
+    order.verify(c.completable).add(runnable);
+    order.verify(caller).execute(runnable);
+    order.verify(c.completable).add(runnable);
+
+    order.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void testWhenComplete() {
+    final Stage<From> stage = mock(Stage.class);
+    final Consumer<From> consumer = mock(Consumer.class);
+    final ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+    doReturn(stage).when(c.completable).whenDone(captor.capture());
+
+    assertEquals(stage, c.completable.whenComplete(consumer));
+
+    verify(c.completable).whenDone(captor.getValue());
+  }
+
+  @Test
+  public void testWhenFailed() {
+    final Stage<From> stage = mock(Stage.class);
+    final Consumer<? super Throwable> consumer = mock(Consumer.class);
+    final ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+    doReturn(stage).when(c.completable).whenDone(captor.capture());
+
+    assertEquals(stage, c.completable.whenFailed(consumer));
+
+    verify(c.completable).whenDone(captor.getValue());
+  }
+
+  @Test
+  public void testWhenCancelled() {
+    final Stage<From> stage = mock(Stage.class);
+    final Runnable runnable = mock(Runnable.class);
+    final ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+    doReturn(stage).when(c.completable).whenDone(captor.capture());
+
+    assertEquals(stage, c.completable.whenCancelled(runnable));
+
+    verify(c.completable).whenDone(captor.getValue());
   }
 
   /* verify that the state of a completable cannot be changed */

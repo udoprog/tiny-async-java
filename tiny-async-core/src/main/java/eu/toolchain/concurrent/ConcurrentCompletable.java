@@ -146,26 +146,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   @Override
   public Stage<T> handle(final Handle<? super T> handle) {
-    final Runnable runnable = handleRunnable(handle);
-
-    if (add(runnable)) {
-      return this;
-    }
-
-    caller.execute(runnable);
-    return this;
-  }
-
-  @Override
-  public Stage<T> whenCancelled(final Runnable cancelled) {
-    final Runnable runnable = cancelledRunnable(cancelled);
-
-    if (add(runnable)) {
-      return this;
-    }
-
-    caller.execute(runnable);
-    return this;
+    return whenDone(new HandleRunnable(handle));
   }
 
   @Override
@@ -180,26 +161,17 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   @Override
   public Stage<T> whenComplete(final Consumer<? super T> consumer) {
-    final Runnable runnable = completedRunnable(consumer);
-
-    if (add(runnable)) {
-      return this;
-    }
-
-    caller.execute(runnable);
-    return this;
+    return whenDone(new CompletedRunnable(consumer));
   }
 
   @Override
   public Stage<T> whenFailed(final Consumer<? super Throwable> consumer) {
-    final Runnable runnable = failedRunnable(consumer);
+    return whenDone(new FailedRunnable(consumer));
+  }
 
-    if (add(runnable)) {
-      return this;
-    }
-
-    caller.execute(runnable);
-    return this;
+  @Override
+  public Stage<T> whenCancelled(final Runnable cancelled) {
+    return whenDone(new CancelledRunnable(cancelled));
   }
 
   @Override
@@ -515,56 +487,6 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
   }
 
-  Runnable handleRunnable(final Handle<? super T> done) {
-    return () -> {
-      switch (state.get()) {
-        case COMPLETED:
-          try {
-            done.completed(result(result));
-          } catch (final Exception e) {
-            done.failed(e);
-          }
-
-          break;
-        case FAILED:
-          done.failed(throwable(result));
-          break;
-        default:
-          try {
-            done.cancelled();
-          } catch (final Exception e) {
-            done.failed(e);
-          }
-
-          break;
-      }
-    };
-  }
-
-  Runnable cancelledRunnable(final Runnable cancelled) {
-    return () -> {
-      if (state.get() == CANCELLED) {
-        cancelled.run();
-      }
-    };
-  }
-
-  Runnable completedRunnable(final Consumer<? super T> consumer) {
-    return () -> {
-      if (state.get() == COMPLETED) {
-        consumer.accept(result(result));
-      }
-    };
-  }
-
-  Runnable failedRunnable(final Consumer<? super Throwable> consumer) {
-    return () -> {
-      if (state.get() == FAILED) {
-        consumer.accept(throwable(result));
-      }
-    };
-  }
-
   @Override
   public String toString() {
     final String name = getClass().getSimpleName();
@@ -682,6 +604,62 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
     final Stage<U> n = next.handle(target);
     target.whenCancelled(n::cancel);
+  }
+
+  @RequiredArgsConstructor
+  class HandleRunnable implements Runnable {
+    private final Handle<? super T> handle;
+
+    @Override
+    public void run() {
+      switch (state.get()) {
+        case COMPLETED:
+          handle.completed(result(result));
+          break;
+        case FAILED:
+          handle.failed(throwable(result));
+          break;
+        default:
+          handle.cancelled();
+          break;
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class CancelledRunnable implements Runnable {
+    private final Runnable runnable;
+
+    @Override
+    public void run() {
+      if (state.get() == CANCELLED) {
+        runnable.run();
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class CompletedRunnable implements Runnable {
+    private final Consumer<? super T> consumer;
+
+    @Override
+    public void run() {
+      if (state.get() == COMPLETED) {
+        consumer.accept(result(result));
+      }
+    }
+  }
+
+  @RequiredArgsConstructor
+  class FailedRunnable implements Runnable {
+    private final Consumer<? super Throwable> consumer;
+
+    @Override
+    public void run() {
+      if (state.get() == FAILED) {
+        consumer.accept(throwable(result));
+      }
+    }
   }
 
   @RequiredArgsConstructor
