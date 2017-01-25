@@ -225,7 +225,7 @@ public interface Stage<T> {
    * <p>This acts like a <em>try-catch</em>, where the composed stage is the catch operation.
    *
    * <p>If the intent is to re-throw after running the catch operation, use
-   * {@link #withOther(java.util.function.Supplier)}
+   * {@link #withNotComplete(java.util.function.Supplier)}
    *
    * @param fn the transformation to use
    * @return the composed stage
@@ -293,5 +293,5 @@ public interface Stage<T> {
    * @param supplier supplier of the stage to run
    * @return a stage that depends on the current stage and the supplied stage
    */
-  Stage<T> withOther(Supplier<? extends Stage<Void>> supplier);
+  Stage<T> withNotComplete(Supplier<? extends Stage<Void>> supplier);
 }

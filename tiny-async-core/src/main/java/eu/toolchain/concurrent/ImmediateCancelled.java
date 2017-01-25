@@ -132,7 +132,7 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
   }
 
   @Override
-  public Stage<T> withOther(
+  public Stage<T> withNotComplete(
       final Supplier<? extends Stage<Void>> supplier
   ) {
     return withNotCompleteCancelled(supplier);

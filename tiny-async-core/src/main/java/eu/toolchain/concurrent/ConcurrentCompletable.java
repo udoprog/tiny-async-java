@@ -385,7 +385,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @Override
-  public Stage<T> withOther(
+  public Stage<T> withNotComplete(
     final Supplier<? extends Stage<Void>> supplier
   ) {
     final Object r = result;

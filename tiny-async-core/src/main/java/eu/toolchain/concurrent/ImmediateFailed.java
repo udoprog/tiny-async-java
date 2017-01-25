@@ -139,7 +139,7 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
   }
 
   @Override
-  public Stage<T> withOther(
+  public Stage<T> withNotComplete(
       final Supplier<? extends Stage<Void>> supplier
   ) {
     return withNotCompleteFailed(cause, supplier);

@@ -125,7 +125,7 @@ abstract class AbstractImmediate<T> implements Stage<T> {
       return notComplete.get().thenFail(e);
     }
 
-    return next.thenComplete(result).withOther(notComplete);
+    return next.thenComplete(result).withNotComplete(notComplete);
   }
 
   Stage<T> withCompleteCompleted(
