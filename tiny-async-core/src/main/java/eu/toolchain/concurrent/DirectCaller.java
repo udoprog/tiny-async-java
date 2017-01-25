@@ -13,7 +13,9 @@ public abstract class DirectCaller implements Caller {
     try {
       runnable.run();
     } catch (final Exception e) {
-      internalError("Failed to execute runnable", e);
+      internalError("Exception in runnable", e);
+    } catch (final Error e) {
+      internalError("Error in runnable", e);
     }
   }
 
