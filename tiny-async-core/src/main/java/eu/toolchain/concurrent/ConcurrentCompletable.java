@@ -16,14 +16,14 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * A concurrent implementation of {@link Completable}.
- *
+ * <p>
  * <p>The callback uses the calling thread to execute result listeners, see
  * {@link #postComplete()} for details.
  *
  * @param <T> type of the completable stage
  */
 public class ConcurrentCompletable<T> extends AbstractImmediate<T>
-    implements Handle<T>, Completable<T> {
+  implements Handle<T>, Completable<T> {
   /**
    * the max number of spins allowed before {@link Thread#yield()}
    */
@@ -121,7 +121,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   @Override
   public boolean fail(final Throwable cause) {
     if (cause == null) {
-      throw new IllegalArgumentException("cause");
+      throw new NullPointerException("cause");
     }
 
     if (!state.compareAndSet(PENDING, FAILED)) {
@@ -250,7 +250,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   @Override
   public T join(long timeout, TimeUnit unit)
-      throws InterruptedException, ExecutionException, TimeoutException {
+    throws InterruptedException, ExecutionException, TimeoutException {
     final long timeoutNanos = unit.toNanos(timeout);
 
     if (timeoutNanos <= 0L) {
@@ -284,7 +284,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<U> target = nextStage();
-    whenDone(new ThenApply<>(target, fn));
+    whenDone(new ThenApplyRunnable<>(target, fn));
     return target;
   }
 
@@ -304,7 +304,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<U> target = nextStage();
-    whenDone(new ThenCompose<>(target, fn));
+    whenDone(new ThenComposeRunnable<>(target, fn));
     return target;
   }
 
@@ -321,7 +321,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new ThenApplyFailed(target, fn));
+    whenDone(new ThenApplyFailedRunnable(target, fn));
     return target;
   }
 
@@ -338,13 +338,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new ThenComposeFailed(target, fn));
+    whenDone(new ThenComposeFailedRunnable(target, fn));
     return target;
   }
 
   @Override
   public Stage<T> withCloser(
-      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
+    final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
   ) {
     final Object r = result;
 
@@ -360,7 +360,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new WithCloser(target, complete, other));
+    whenDone(new WithCloserRunnable(target, complete, other));
     return target;
   }
 
@@ -380,13 +380,13 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new WithComplete(target, supplier));
+    whenDone(new WithCompleteRunnable(target, supplier));
     return target;
   }
 
   @Override
   public Stage<T> withOther(
-      final Supplier<? extends Stage<Void>> supplier
+    final Supplier<? extends Stage<Void>> supplier
   ) {
     final Object r = result;
 
@@ -402,7 +402,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new WithNotComplete(target, supplier));
+    whenDone(new WithNotCompleteRunnable(target, supplier));
     return target;
   }
 
@@ -422,7 +422,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     }
 
     final ConcurrentCompletable<U> target = nextStage();
-    whenDone(new ThenFail<>(target, cause));
+    whenDone(new ThenFailRunnable<>(target, cause));
     return target;
   }
 
@@ -576,10 +576,10 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
     switch (state.get()) {
       case COMPLETED:
         return MessageFormat.format("{0}({1}: result={2})", name, Stage.COMPLETED,
-            result(this.result));
+          result(this.result));
       case FAILED:
         return MessageFormat.format("{0}({1}: cause={2})", name, Stage.FAILED,
-            throwable(this.result));
+          throwable(this.result));
       default:
         return MessageFormat.format("{0}({1})", name, Stage.CANCELLED);
     }
@@ -587,7 +587,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   /**
    * Convert the result object to a result.
-   *
+   * <p>
    * <p>Takes {@link #NULL} into account.
    *
    * @param r the result object
@@ -669,7 +669,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   <U> void handleStage(
-      final Supplier<? extends Stage<U>> supplier, final ConcurrentCompletable<U> target
+    final Supplier<? extends Stage<U>> supplier, final ConcurrentCompletable<U> target
   ) {
     final Stage<U> next;
 
@@ -685,7 +685,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class ThenApply<U> implements Runnable {
+  class ThenApplyRunnable<U> implements Runnable {
     private final ConcurrentCompletable<U> target;
     private final Function<? super T, ? extends U> fn;
 
@@ -715,7 +715,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class ThenCompose<U> implements Runnable {
+  class ThenComposeRunnable<U> implements Runnable {
     private final ConcurrentCompletable<U> target;
     private final Function<? super T, ? extends Stage<U>> fn;
 
@@ -736,7 +736,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class ThenApplyFailed implements Runnable {
+  class ThenApplyFailedRunnable implements Runnable {
     private final ConcurrentCompletable<T> target;
     private final Function<? super Throwable, ? extends T> fn;
 
@@ -766,7 +766,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class ThenComposeFailed implements Runnable {
+  class ThenComposeFailedRunnable implements Runnable {
     private final ConcurrentCompletable<T> target;
     private final Function<? super Throwable, ? extends Stage<T>> fn;
 
@@ -787,7 +787,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class WithCloser implements Runnable {
+  class WithCloserRunnable implements Runnable {
     private final ConcurrentCompletable<T> target;
     private final Supplier<? extends Stage<Void>> complete;
     private final Supplier<? extends Stage<Void>> notComplete;
@@ -837,7 +837,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class WithComplete implements Runnable {
+  class WithCompleteRunnable implements Runnable {
     private final ConcurrentCompletable<T> target;
     private final Supplier<? extends Stage<Void>> complete;
 
@@ -868,7 +868,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class WithNotComplete implements Runnable {
+  class WithNotCompleteRunnable implements Runnable {
     private final ConcurrentCompletable<T> target;
     private final Supplier<? extends Stage<Void>> notComplete;
 
@@ -909,7 +909,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   }
 
   @RequiredArgsConstructor
-  class ThenFail<U> implements Runnable {
+  class ThenFailRunnable<U> implements Runnable {
     private final ConcurrentCompletable<U> target;
     private final Throwable cause;
 

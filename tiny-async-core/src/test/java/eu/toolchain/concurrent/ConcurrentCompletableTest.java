@@ -2,25 +2,22 @@ package eu.toolchain.concurrent;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -30,6 +27,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 @SuppressWarnings("unchecked")
 @RunWith(MockitoJUnitRunner.class)
 public class ConcurrentCompletableTest {
+  @Rule
+  public ExpectedException expected = ExpectedException.none();
+
   private static final RuntimeException cause = new RuntimeException();
   private static final RuntimeException cause2 = new RuntimeException();
 
@@ -39,292 +39,119 @@ public class ConcurrentCompletableTest {
   private To to;
   @Mock
   private Caller caller;
-  @Mock
-  private Runnable runnable;
-  @Mock
-  private Handle<From> done;
-  @Mock
-  private Stage<To> other;
-  @Mock
-  private Runnable cancelled;
-  @Mock
-  private Consumer<From> resolved;
-  @Mock
-  private Consumer<Throwable> failed;
-  @Mock
-  private Runnable finished;
-  @Mock
-  private ConcurrentCompletable<To> toFuture;
-  @Mock
-  private ConcurrentCompletable<From> fromFuture;
-  @Mock
-  private ConcurrentCompletable<From> future;
+
+  private Completable c;
 
   @Before
   public void setup() {
-    future = spy(new ConcurrentCompletable<From>(caller));
+    c = new Completable();
+  }
 
-    doAnswer(invocation -> {
-      invocation.getArgumentAt(0, Runnable.class).run();
-      return null;
-    }).when(caller).execute(any(Runnable.class));
+  /**
+   * verify alias of #{link {@link eu.toolchain.concurrent.ConcurrentCompletable#complete(Object)}}
+   */
+  @Test
+  public void testCompleted() {
+    doReturn(true).when(c.completable).complete(result);
+    c.completable.completed(result);
+    verify(c.completable).complete(result);
+  }
+
+  /**
+   * verify alias of #{link
+   * {@link eu.toolchain.concurrent.ConcurrentCompletable#fail(java.lang.Throwable)}}
+   */
+  @Test
+  public void testFailed() {
+    doReturn(true).when(c.completable).fail(cause);
+    c.completable.failed(cause);
+    verify(c.completable).fail(cause);
+  }
+
+  /**
+   * verify alias of #{link {@link eu.toolchain.concurrent.ConcurrentCompletable#cancel()}}
+   */
+  @Test
+  public void testCancelled() {
+    doReturn(true).when(c.completable).cancel();
+    c.completable.cancelled();
+    verify(c.completable).cancel();
   }
 
   @Test
-  public void testResolve1() {
-    doNothing().when(future).postComplete();
-    assertTrue(future.complete(result));
-    verify(future).postComplete();
-    assertNotNull(future.result);
+  public void testComplete() {
+    assertEquals(ConcurrentCompletable.PENDING, c.completable.state.get());
+    assertTrue(c.completable.complete(result));
+    assertEquals(ConcurrentCompletable.COMPLETED, c.completable.state.get());
+    assertEquals(result, c.completable.result);
+
+    verifyFinalized();
   }
 
   @Test
-  public void testResolve2() {
-    future.state.set(ConcurrentCompletable.COMPLETED);
-    future.result = result;
+  public void testCompleteNull() {
+    assertEquals(ConcurrentCompletable.PENDING, c.completable.state.get());
+    assertTrue(c.completable.complete(null));
+    assertEquals(ConcurrentCompletable.COMPLETED, c.completable.state.get());
+    assertEquals(ConcurrentCompletable.NULL, c.completable.result);
 
-    doNothing().when(future).postComplete();
-    assertFalse(future.complete(result));
-    verify(future, never()).postComplete();
+    verifyFinalized();
   }
 
   @Test
-  public void testFail1() {
-    doNothing().when(future).postComplete();
-    assertTrue(future.fail(cause));
-    verify(future).postComplete();
-    assertNotNull(future.result);
+  public void testFail() {
+    assertEquals(ConcurrentCompletable.PENDING, c.completable.state.get());
+    assertTrue(c.completable.fail(cause));
+    assertEquals(ConcurrentCompletable.FAILED, c.completable.state.get());
+    assertEquals(cause, c.completable.result);
+
+    verifyFinalized();
   }
 
   @Test
-  public void testFail2() {
-    future.state.set(ConcurrentCompletable.FAILED);
-    future.result = cause;
+  public void testFailNull() {
+    expected.expect(NullPointerException.class);
+    expected.expectMessage("cause");
 
-    doNothing().when(future).postComplete();
-    assertFalse(future.fail(cause));
-    verify(future, never()).postComplete();
-    assertNotNull(future.result);
+    assertEquals(ConcurrentCompletable.PENDING, c.completable.state.get());
+    assertTrue(c.completable.fail(null));
   }
 
   @Test
   public void testCancel() {
-    doNothing().when(future).postComplete();
-    assertTrue(future.cancel());
-    verify(future).postComplete();
+    assertEquals(ConcurrentCompletable.PENDING, c.completable.state.get());
+    assertTrue(c.completable.cancel());
+    assertEquals(ConcurrentCompletable.CANCELLED, c.completable.state.get());
+    assertEquals(ConcurrentCompletable.CANCEL, c.completable.result);
+
+    verifyFinalized();
+  }
+
+  /* verify that the state of a completable cannot be changed */
+  private void verifyFinalized() {
+    final int state = c.completable.state.get();
+    final Object result = c.completable.result;
+
+    assertFalse(c.completable.complete(this.result));
+    assertEquals(state, c.completable.state.get());
+    assertEquals(result, c.completable.result);
+    assertFalse(c.completable.fail(cause));
+    assertEquals(state, c.completable.state.get());
+    assertEquals(result, c.completable.result);
+    assertFalse(c.completable.cancel());
+    assertEquals(state, c.completable.state.get());
+    assertEquals(result, c.completable.result);
   }
 
   @Test
-  public void testCancel2() {
-    future.state.set(ConcurrentCompletable.CANCELLED);
-    future.result = ConcurrentCompletable.CANCEL;
-
-    doNothing().when(future).postComplete();
-    assertFalse(future.cancel());
-    verify(future, never()).postComplete();
-  }
-
-  @Test
-  public void testHandle() {
-    doReturn(runnable).when(future).handleRunnable(done);
-    doReturn(true).when(future).add(runnable);
-
-    assertEquals(future, future.handle(done));
-
-    verify(future).handleRunnable(done);
-    verify(future).add(runnable);
-    verify(runnable, never()).run();
-  }
-
-  @Test
-  public void testHandleDirect() {
-    doReturn(runnable).when(future).handleRunnable(done);
-    doReturn(false).when(future).add(runnable);
-
-    assertEquals(future, future.handle(done));
-
-    verify(future).handleRunnable(done);
-    verify(future).add(runnable);
-    verify(runnable).run();
-  }
-
-  @Test
-  public void testDoneRunnable1() {
-    future.state.set(ConcurrentCompletable.FAILED);
-    future.result = cause;
-
-    future.handleRunnable(done).run();
-
-    verify(done, never()).completed(result);
-    verify(done, never()).cancelled();
-    verify(done).failed(cause);
-  }
-
-  @Test
-  public void testDoneRunnable2() {
-    future.state.set(ConcurrentCompletable.CANCELLED);
-    future.result = ConcurrentCompletable.CANCEL;
-
-    future.handleRunnable(done).run();
-
-    verify(done, never()).completed(result);
-    verify(done).cancelled();
-    verify(done, never()).failed(cause);
-  }
-
-  @Test
-  public void testDoneRunnable3() {
-    future.state.set(ConcurrentCompletable.COMPLETED);
-    future.result = result;
-
-    future.handleRunnable(done).run();
-
-    verify(done).completed(result);
-    verify(done, never()).cancelled();
-    verify(done, never()).failed(cause);
-  }
-
-  @Test
-  public void testCancelledRunnable1() {
-    future.state.set(ConcurrentCompletable.CANCELLED);
-    future.result = ConcurrentCompletable.CANCEL;
-
-    future.cancelledRunnable(cancelled).run();
-    verify(cancelled).run();
-  }
-
-  @Test
-  public void testCancelledRunnable2() {
-    future.state.set(~ConcurrentCompletable.CANCELLED);
-
-    future.cancelledRunnable(cancelled).run();
-    verify(cancelled, never()).run();
-  }
-
-  @Test
-  public void testResolvedRunnable1() {
-    future.state.set(ConcurrentCompletable.COMPLETED);
-    future.result = result;
-
-    future.completedRunnable(resolved).run();
-    verify(resolved).accept(result);
-  }
-
-  @Test
-  public void testResolvedRunnable2() {
-    future.state.set(ConcurrentCompletable.FAILED);
-    future.result = cause;
-
-    future.completedRunnable(resolved).run();
-
-    verify(resolved, never()).accept(result);
-  }
-
-  @Test
-  public void testFailedRunnable1() {
-    future.state.set(ConcurrentCompletable.FAILED);
-    future.result = cause;
-
-    future.failedRunnable(failed).run();
-    verify(failed).accept(cause);
-  }
-
-  @Test
-  public void testFailedRunnable2() {
-    future.state.set(ConcurrentCompletable.COMPLETED);
-    future.result = result;
-
-    future.failedRunnable(failed).run();
-    verify(failed, never()).accept(cause);
-  }
-
-  @Test
-  public void testIsDone() {
-    future.result = result;
-    assertTrue(future.isDone());
-  }
-
-  @Test
-  public void testIsResolved() {
-    future.state.set(ConcurrentCompletable.COMPLETED);
-    future.result = result;
-    assertTrue(future.isCompleted());
-  }
-
-  @Test
-  public void testIsFailed() {
-    future.state.set(ConcurrentCompletable.FAILED);
-    future.result = cause;
-    assertTrue(future.isFailed());
-  }
-
-  @Test
-  public void testIsCancelled() {
-    future.result = ConcurrentCompletable.CANCEL;
-    assertTrue(future.isCancelled());
-  }
-
-  @Test
-  public void testJoinNow() throws Exception {
-    future.state.set(ConcurrentCompletable.COMPLETED);
-    future.result = result;
-    assertEquals(result, future.joinNow());
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private void verifyTransform() {
-    verify(future).nextStage();
-    verify(future).whenDone(any(Runnable.class));
-  }
-
-  @Test
-  public void thenApply() {
-    final Function<Object, Object> fn = mock(Function.class);
-
-    doReturn(toFuture).when(future).nextStage();
-
-    assertEquals(toFuture, future.thenApply(fn));
-    verifyTransform();
-  }
-
-  @Test
-  public void thenCompose() {
-    final Function<Object, Stage<Object>> fn = mock(Function.class);
-
-    doReturn(toFuture).when(future).nextStage();
-
-    assertEquals(toFuture, future.thenCompose(fn));
-    verifyTransform();
-  }
-
-  @Test
-  public void thenApplyCaught() {
-    final Function<Throwable, From> fn = mock(Function.class);
-
-    doReturn(fromFuture).when(future).nextStage();
-
-    assertEquals(fromFuture, future.thenApplyFailed(fn));
-    verifyTransform();
-  }
-
-  @Test
-  public void thenComposeCaught() {
-    final Function<Throwable, Stage<From>> fn = mock(Function.class);
-
-    doReturn(fromFuture).when(future).nextStage();
-
-    assertEquals(fromFuture, future.thenComposeCaught(fn));
-    verifyTransform();
-  }
-
-  @Test
-  public void testThenApply() {
+  public void testThenApplyRunnable() {
+    final ConcurrentCompletable<To> target = Mockito.mock(ConcurrentCompletable.class);
     final Function<From, To> fn = Mockito.mock(Function.class);
 
     final Completable c = new Completable();
 
-    final ConcurrentCompletable<From>.ThenApply<To> helper =
-      c.completable.new ThenApply<To>(toFuture, fn);
+    final ConcurrentCompletable.ThenApplyRunnable helper =
+      c.completable.new ThenApplyRunnable<To>(target, fn);
 
     doReturn(to).when(fn).apply(result);
 
@@ -340,26 +167,27 @@ public class ConcurrentCompletableTest {
     c.fail(cause);
     helper.run();
 
-    final InOrder order = inOrder(fn, toFuture);
+    final InOrder order = inOrder(fn, target);
     order.verify(fn).apply(result);
-    order.verify(toFuture).complete(to);
+    order.verify(target).complete(to);
     order.verify(fn).apply(result);
-    order.verify(toFuture).fail(cause);
-    order.verify(toFuture).cancel();
-    order.verify(toFuture).fail(cause);
+    order.verify(target).fail(cause);
+    order.verify(target).cancel();
+    order.verify(target).fail(cause);
     order.verifyNoMoreInteractions();
   }
 
   @Test
-  public void testThenCompose() {
+  public void testThenComposeRunnable() {
+    final ConcurrentCompletable<To> target = Mockito.mock(ConcurrentCompletable.class);
     final Function<From, Stage<To>> fn = Mockito.mock(Function.class);
 
     final Completable c = new Completable();
 
-    final ConcurrentCompletable<From>.ThenCompose<To> helper =
-      c.completable.new ThenCompose<To>(toFuture, fn);
+    final ConcurrentCompletable.ThenComposeRunnable helper =
+      c.completable.new ThenComposeRunnable<To>(target, fn);
 
-    doNothing().when(c.completable).handleStage(any(), eq(toFuture));
+    doNothing().when(c.completable).handleStage(any(), eq(target));
 
     c.complete(result);
     helper.run();
@@ -370,23 +198,24 @@ public class ConcurrentCompletableTest {
     c.fail(cause);
     helper.run();
 
-    final InOrder order = inOrder(fn, toFuture, c.completable);
+    final InOrder order = inOrder(fn, target, c.completable);
 
-    order.verify(c.completable).handleStage(any(), eq(toFuture));
-    order.verify(toFuture).cancel();
-    order.verify(toFuture).fail(cause);
+    order.verify(c.completable).handleStage(any(), eq(target));
+    order.verify(target).cancel();
+    order.verify(target).fail(cause);
 
     order.verifyNoMoreInteractions();
   }
 
   @Test
-  public void testThenApplyFailed() {
+  public void testThenApplyFailedRunnable() {
+    final ConcurrentCompletable<From> target = Mockito.mock(ConcurrentCompletable.class);
     final Function<Throwable, From> fn = Mockito.mock(Function.class);
 
     final Completable c = new Completable();
 
-    final ConcurrentCompletable.ThenApplyFailed helper =
-      c.completable.new ThenApplyFailed(future, fn);
+    final ConcurrentCompletable.ThenApplyFailedRunnable helper =
+      c.completable.new ThenApplyFailedRunnable(target, fn);
 
     doReturn(result).when(fn).apply(cause);
 
@@ -401,26 +230,27 @@ public class ConcurrentCompletableTest {
     doThrow(cause2).when(fn).apply(cause);
     helper.run();
 
-    final InOrder order = inOrder(fn, future);
+    final InOrder order = inOrder(fn, target);
 
-    order.verify(future).complete(result);
-    order.verify(future).cancel();
+    order.verify(target).complete(result);
+    order.verify(target).cancel();
     order.verify(fn).apply(cause);
-    order.verify(future).fail(cause2);
+    order.verify(target).fail(cause2);
 
     order.verifyNoMoreInteractions();
   }
 
   @Test
-  public void testThenComposeFailed() {
+  public void testThenComposeFailedRunnable() {
+    final ConcurrentCompletable<From> target = Mockito.mock(ConcurrentCompletable.class);
     final Function<Throwable, Stage<From>> fn = Mockito.mock(Function.class);
 
     final Completable c = new Completable();
 
-    final ConcurrentCompletable.ThenComposeFailed helper =
-      c.completable.new ThenComposeFailed(future, fn);
+    final ConcurrentCompletable.ThenComposeFailedRunnable helper =
+      c.completable.new ThenComposeFailedRunnable(target, fn);
 
-    doNothing().when(c.completable).handleStage(any(), eq(future));
+    doNothing().when(c.completable).handleStage(any(), eq(target));
     doReturn(result).when(fn).apply(cause);
 
     c.complete(result);
@@ -432,17 +262,18 @@ public class ConcurrentCompletableTest {
     c.fail(cause);
     helper.run();
 
-    final InOrder order = inOrder(fn, future, c.completable);
+    final InOrder order = inOrder(fn, target, c.completable);
 
-    order.verify(future).complete(result);
-    order.verify(future).cancel();
-    order.verify(c.completable).handleStage(any(), eq(future));
+    order.verify(target).complete(result);
+    order.verify(target).cancel();
+    order.verify(c.completable).handleStage(any(), eq(target));
 
     order.verifyNoMoreInteractions();
   }
 
   @Test
-  public void testWithCloser() {
+  public void testWithCloserRunnable() {
+    final ConcurrentCompletable<From> target = Mockito.mock(ConcurrentCompletable.class);
     final Supplier<Stage<Void>> complete = Mockito.mock(Supplier.class);
     final Supplier<Stage<Void>> notComplete = Mockito.mock(Supplier.class);
     final Stage<Void> completeStage = Mockito.mock(Stage.class);
@@ -451,8 +282,8 @@ public class ConcurrentCompletableTest {
 
     final Completable c = new Completable();
 
-    final ConcurrentCompletable.WithCloser helper =
-      c.completable.new WithCloser(future, complete, notComplete);
+    final ConcurrentCompletable.WithCloserRunnable helper =
+      c.completable.new WithCloserRunnable(target, complete, notComplete);
 
     doReturn(completeStage).when(complete).get();
     doReturn(notCompleteStage).when(notComplete).get();
@@ -481,33 +312,34 @@ public class ConcurrentCompletableTest {
     helper.run();
 
     final InOrder order =
-      inOrder(future, c.completable, complete, notComplete, completeStage, notCompleteStage, next);
+      inOrder(target, c.completable, complete, notComplete, completeStage, notCompleteStage, next);
 
     /* completed */
     order.verify(complete).get();
-    order.verify(future).whenCancelled(any());
+    order.verify(target).whenCancelled(any());
     order.verify(completeStage).thenApply(any());
-    order.verify(next).handle(future);
+    order.verify(next).handle(target);
 
     order.verify(complete).get();
     order.verify(notComplete).get();
     order.verify(notCompleteStage).whenDone(any());
 
-    verifyNotComplete(order, notComplete, notCompleteStage, next);
+    verifyNotCompleteRunnable(target, order, notComplete, notCompleteStage, next);
 
     order.verifyNoMoreInteractions();
   }
 
   @Test
-  public void testWithComplete() {
+  public void testWithCompleteRunnable() {
+    final ConcurrentCompletable<From> target = Mockito.mock(ConcurrentCompletable.class);
     final Supplier<Stage<Void>> complete = Mockito.mock(Supplier.class);
     final Stage<Void> completeStage = Mockito.mock(Stage.class);
     final Stage<From> next = Mockito.mock(Stage.class);
 
     final Completable c = new Completable();
 
-    final ConcurrentCompletable.WithComplete helper =
-      c.completable.new WithComplete(future, complete);
+    final ConcurrentCompletable.WithCompleteRunnable helper =
+      c.completable.new WithCompleteRunnable(target, complete);
 
     doReturn(completeStage).when(complete).get();
 
@@ -525,36 +357,35 @@ public class ConcurrentCompletableTest {
     c.fail(cause);
     helper.run();
 
-    final InOrder order = inOrder(future, c.completable, complete, completeStage, next);
+    final InOrder order = inOrder(target, c.completable, complete, completeStage, next);
 
     /* completed */
     order.verify(complete).get();
-    order.verify(future).whenCancelled(any());
+    order.verify(target).whenCancelled(any());
     order.verify(completeStage).thenApply(any());
-    order.verify(next).handle(future);
+    order.verify(next).handle(target);
 
     order.verify(complete).get();
-    order.verify(future).fail(cause);
+    order.verify(target).fail(cause);
 
     /* cancelled */
-    order.verify(future).cancel();
+    order.verify(target).cancel();
 
     /* failed */
-    order.verify(future).fail(any());
+    order.verify(target).fail(any());
 
     order.verifyNoMoreInteractions();
   }
 
   @Test
-  public void testWithNotComplete() {
+  public void testWithNotCompleteRunnable() {
+    final ConcurrentCompletable<From> target = Mockito.mock(ConcurrentCompletable.class);
     final Supplier<Stage<Void>> notComplete = Mockito.mock(Supplier.class);
     final Stage<Void> notCompleteStage = Mockito.mock(Stage.class);
     final Stage<From> next = Mockito.mock(Stage.class);
 
-    final Completable c = new Completable();
-
-    final ConcurrentCompletable.WithNotComplete helper =
-      c.completable.new WithNotComplete(future, notComplete);
+    final ConcurrentCompletable.WithNotCompleteRunnable helper =
+      c.completable.new WithNotCompleteRunnable(target, notComplete);
 
     doReturn(notCompleteStage).when(notComplete).get();
 
@@ -577,37 +408,61 @@ public class ConcurrentCompletableTest {
     doThrow(cause).when(notComplete).get();
     helper.run();
 
-    final InOrder order = inOrder(future, c.completable, notComplete, notCompleteStage, next);
+    final InOrder order = inOrder(target, c.completable, notComplete, notCompleteStage, next);
 
     /* completed */
-    order.verify(future).complete(result);
+    order.verify(target).complete(result);
 
-    verifyNotComplete(order, notComplete, notCompleteStage, next);
+    verifyNotCompleteRunnable(target, order, notComplete, notCompleteStage, next);
 
     order.verifyNoMoreInteractions();
   }
 
-  private void verifyNotComplete(
-    final InOrder order, final Supplier<Stage<Void>> notComplete,
-    final Stage<Void> notCompleteStage, final Stage<From> next
+  @Test
+  public void testThenFailRunnable() {
+    final ConcurrentCompletable<From> target = Mockito.mock(ConcurrentCompletable.class);
+
+    final ConcurrentCompletable.ThenFailRunnable helper =
+      c.completable.new ThenFailRunnable<>(target, cause);
+
+    c.fail(cause);
+    helper.run();
+
+    c.cancel();
+    helper.run();
+
+    c.complete(result);
+    helper.run();
+
+    final InOrder order = inOrder(target);
+
+    order.verify(target, times(3)).fail(any(Exception.class));
+
+    order.verifyNoMoreInteractions();
+  }
+
+  private void verifyNotCompleteRunnable(
+    final ConcurrentCompletable<From> target, final InOrder order,
+    final Supplier<Stage<Void>> notComplete, final Stage<Void> notCompleteStage,
+    final Stage<From> next
   ) {
     /* cancelled */
     order.verify(notComplete).get();
-    order.verify(future).whenCancelled(any());
+    order.verify(target).whenCancelled(any());
     order.verify(notCompleteStage).thenCancel();
-    order.verify(next).handle(future);
+    order.verify(next).handle(target);
 
     order.verify(notComplete).get();
-    order.verify(future).fail(any());
+    order.verify(target).fail(any());
 
     /* failed */
     order.verify(notComplete).get();
-    order.verify(future).whenCancelled(any());
+    order.verify(target).whenCancelled(any());
     order.verify(notCompleteStage).thenFail(any());
-    order.verify(next).handle(future);
+    order.verify(next).handle(target);
 
     order.verify(notComplete).get();
-    order.verify(future).fail(any());
+    order.verify(target).fail(any());
   }
 
   class Completable {
