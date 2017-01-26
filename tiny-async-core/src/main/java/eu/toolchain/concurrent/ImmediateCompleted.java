@@ -124,9 +124,9 @@ public class ImmediateCompleted<T> extends AbstractImmediate<T> implements Stage
   @Override
   public Stage<T> withCloser(
       final Supplier<? extends Stage<Void>> complete,
-      final Supplier<? extends Stage<Void>> other
+      final Supplier<? extends Stage<Void>> notComplete
   ) {
-    return withCloserCompleted(result, complete, other);
+    return withCloserCompleted(result, complete, notComplete);
   }
 
   @Override

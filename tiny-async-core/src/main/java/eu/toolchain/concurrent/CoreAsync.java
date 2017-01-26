@@ -20,9 +20,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Entry point to the tiny async framework.
- * <p>
+ *
  * <p>Example usage:
- * <p>
+ *
  * <pre>{@code
  *   final Async async = CoreAsync.builder().build();
  * }</pre>
@@ -468,7 +468,7 @@ public class CoreAsync implements Async {
 
     /**
      * Configure that all caller invocation, and async tasks should be using a thread pool.
-     * <p>
+     *
      * <p>This will cause the configuration of TinyTask to throw an exception if an executor service
      * is not available for all purposes.
      *
@@ -484,9 +484,9 @@ public class CoreAsync implements Async {
      * Configure that all caller invocations should use a recursion safe mechanism. In the normal
      * case this doesn't change the behaviour of caller and threadedCaller, but when deep recursion
      * is detected in the current thread the next recursive doCall is deferred to a separate thread.
-     * <p>
+     *
      * <p>Recursion is tracked for all threads that doCall the AsyncCallers.
-     * <p>
+     *
      * <p>This will make even the non-threaded caller use a thread in the case of deep recursion.
      *
      * @param recursionSafe {@code true} if all caller invocations should be done with a recursion
@@ -500,7 +500,7 @@ public class CoreAsync implements Async {
 
     /**
      * Configure how many recursions should be allowed.
-     * <p>
+     *
      * <p>This implies enabling {@link #recursionSafe}.
      *
      * @param maxRecursionDepth The max number of times that a caller may go through {@link Caller}
@@ -515,7 +515,7 @@ public class CoreAsync implements Async {
 
     /**
      * Specify an asynchronous caller implementation.
-     * <p>
+     *
      * <p>The 'caller' defines how handles are invoked. The simplest implementations are based of
      * {@code DirectCaller} , which causes the doCall to be performed directly in the calling
      * thread.
@@ -546,7 +546,7 @@ public class CoreAsync implements Async {
 
     /**
      * Specify a separate executor to use for caller (internal handle) invocation.
-     * <p>
+     *
      * <p>Implies use of threaded caller.
      *
      * @param callerExecutor Executor to use for callers
@@ -573,7 +573,7 @@ public class CoreAsync implements Async {
 
     /**
      * Configure clock source.
-     * <p>
+     *
      * <p>A clock source is used to determine what the current time is in order to do timing-related
      * tasks like retrying an action until it has been completed with a back-off.
      *

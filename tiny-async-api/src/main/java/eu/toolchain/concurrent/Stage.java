@@ -271,12 +271,12 @@ public interface Stage<T> {
    * }</pre>
    *
    * @param complete stage to run when this stage ends in a complete state
-   * @param other stage to run when this stage ends in a non-complete state, if the state is
+   * @param notComplete stage to run when this stage ends in a non-complete state, if the state is
    * failed, any exception thrown in this block will suppress the original exception
    * @return a new stage that depends on the supplied stage
    */
   Stage<T> withCloser(
-      Supplier<? extends Stage<Void>> complete, Supplier<? extends Stage<Void>> other
+      Supplier<? extends Stage<Void>> complete, Supplier<? extends Stage<Void>> notComplete
   );
 
   /**

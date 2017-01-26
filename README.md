@@ -24,13 +24,14 @@ abstractions for executing and manipulating computations through a clean API abs
 Everything is tucked behind [a set of API interfaces][api], and some functionality has been moved
 into the stage itself to allow for a clean, chained programming style (especially with java 8).
 
-Since all interaction with the framework can happen behind plain old java interfaces, the using
-component rarely needs to maintain a direct dependency to **tiny-async-core**.
+Since all interaction with the framework happens behind plain old java interfaces, the using
+component rarely needs to maintain a direct dependency to **tiny-async-core**. The less components
+that specify a direct dependency to a potentially messy and changing implementation - the better.
 See [API Separation](#api-separation) for more details on how this will be maintained long term.
 
-This has the benefit of making TinyAsync superb for [testing](#testing-with-tinyasync), your
-components doesn't even have to know about concurrency, all you need to do is mock the expected
-framework behaviour.
+This has the added benefit of making TinyAsync superb for [testing](#testing-with-tinyasync).
+Your components don't even have to know about concurrency, all you need to do is mock the expected
+framework behavior.
 
 For an overview of the library, check out the [API][api] and the [Usage](#usage) section below.
 
@@ -76,12 +77,12 @@ For a more detailed example, see [Helpers.java][helpers].
 
 The separation between the API and core is done to reduce issues with drifts in dependencies.
 
-A specific version of the API is always intended to be signature compatible with future versions,
-this means that if you build a project against version `1.1.0` of the API, it will be working with
-all `1.x.x` versions of core.
+A specific version of the API is always intended to be signature compatible with future versions.
+If you build a project against version `1.1.0` of the API, it will be working with all _future_
+`1.x.x` versions of core.
 
-Deprecated components will be removed in the next major version, and the package will be renamed to
-avoid future classpath conflicts.
+Deprecated components will be be marked with `@Deprecated` and removed in the next major version,
+packages will also be renamed to avoid future classpath conflicts.
 
 # Testing with TinyAsync
 
@@ -101,7 +102,8 @@ You can see how the library is used by looking at the provided examples:
 * [Completing in different thread)][something-reckless]
 * [Listen for changes][listen]
 * [Transform the result][transform]
-* [Collect][collect] and [Stream Collect][stream-collect] results.
+* [Collection][collect], and [stream collections][stream-collect], and
+  [eventual collection][eventual-collect] of results.
 * [Retry Operations][retry-it] ([API][retry-apidocs])
 * [Managed Resources][managed-it] ([API][managed-apidocs])
 
@@ -113,6 +115,7 @@ You can see how the library is used by looking at the provided examples:
 [transform]: /tiny-async-examples/src/main/java/eu/toolchain/examples/Transform.java
 [collect]: /tiny-async-examples/src/main/java/eu/toolchain/examples/Collect.java
 [stream-collect]: /tiny-async-examples/src/main/java/eu/toolchain/examples/StreamCollect.java
+[eventually-collect]: /tiny-async-examples/src/main/java/eu/toolchain/examples/EventuallyCollect.java
 [retry-it]: /tiny-async-core/src/test/java/eu/toolchain/concurrent/RetryUntilResolvedIT.java
 [retry-apidocs]: https://udoprog.github.io/tiny-async-java/apidocs/latest/eu/toolchain/concurrent/Async.html#retryUntilCompleted-java.util.concurrent.Callable-eu.toolchain.concurrent.RetryPolicy-
 [managed-it]: /tiny-async-core/src/test/java/eu/toolchain/concurrent/ManagedIT.java

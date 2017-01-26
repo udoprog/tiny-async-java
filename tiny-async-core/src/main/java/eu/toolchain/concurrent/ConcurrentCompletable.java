@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * A concurrent implementation of {@link Completable}.
- * <p>
+ *
  * <p>The callback uses the calling thread to execute result listeners, see
  * {@link #postComplete()} for details.
  *
@@ -316,23 +316,23 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   @Override
   public Stage<T> withCloser(
-    final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
+    final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> notComplete
   ) {
     final Object r = result;
 
     if (r != null) {
       switch (state.get()) {
         case COMPLETED:
-          return withCloserCompleted(result(result), complete, other);
+          return withCloserCompleted(result(result), complete, notComplete);
         case FAILED:
-          return withCloserFailed(throwable(result), other);
+          return withCloserFailed(throwable(result), notComplete);
         default:
-          return withCloserCancelled(other);
+          return withCloserCancelled(notComplete);
       }
     }
 
     final ConcurrentCompletable<T> target = nextStage();
-    whenDone(new WithCloserRunnable(target, complete, other));
+    whenDone(new WithCloserRunnable(target, complete, notComplete));
     return target;
   }
 
@@ -446,7 +446,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   /**
    * Attempt to add an event listener to the list of listeners.
-   * <p>
+   *
    * This implementation uses a spin-lock, where the loop copies the entire list of listeners.
    *
    * @return {@code true} if a task has been queued up, {@code false} otherwise.
@@ -509,7 +509,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
 
   /**
    * Convert the result object to a result.
-   * <p>
+   *
    * <p>Takes {@link #NULL} into account.
    *
    * @param r the result object
@@ -543,7 +543,7 @@ public class ConcurrentCompletable<T> extends AbstractImmediate<T>
   class Parker implements Runnable {
     /**
      * Thread to unpark.
-     * <p>
+     *
      * Is set to null to avoid unparking it when no longer needed.
      */
     volatile Thread thread;

@@ -119,9 +119,9 @@ public class ImmediateCancelled<T> extends AbstractImmediate<T> implements Stage
 
   @Override
   public Stage<T> withCloser(
-      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
+      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> notComplete
   ) {
-    return withCloserCancelled(other);
+    return withCloserCancelled(notComplete);
   }
 
   @Override

@@ -161,7 +161,10 @@ public interface Async {
    * <p>If a single completable is cancelled, or failed, all the other will be as well.
    *
    * <p>This method is intended to be used for rate-limiting requests that could potentially be
-   * difficult to stop cleanly.
+   * difficult to stop cleanly, or would use too many parallel resources.
+   *
+   * <p>A common example is when querying a database for many distinct things, you typically want to
+   * initiating <em>all</em> requests at the same time.
    *
    * @param callables the collection of operations
    * @param consumer value consumer

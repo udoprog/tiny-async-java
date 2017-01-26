@@ -126,9 +126,9 @@ public class ImmediateFailed<T> extends AbstractImmediate<T> implements Stage<T>
 
   @Override
   public Stage<T> withCloser(
-      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> other
+      final Supplier<? extends Stage<Void>> complete, final Supplier<? extends Stage<Void>> notComplete
   ) {
-    return withCloserFailed(cause, other);
+    return withCloserFailed(cause, notComplete);
   }
 
   @Override
