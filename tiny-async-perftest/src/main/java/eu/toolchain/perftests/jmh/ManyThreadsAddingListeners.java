@@ -5,13 +5,15 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import eu.toolchain.concurrent.Async;
-import eu.toolchain.concurrent.Stage;
 import eu.toolchain.concurrent.CoreAsync;
+import eu.toolchain.concurrent.Stage;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -81,8 +83,8 @@ public class ManyThreadsAddingListeners {
 
     if (sum.get() != expectedSum) {
       throw new IllegalStateException(
-          String.format("did not properly collect all values: expected %d, but was %d",
-              expectedSum, sum.get()));
+        String.format("did not properly collect all values: expected %d, but was %d", expectedSum,
+          sum.get()));
     }
 
     return expectedSum;
@@ -130,8 +132,55 @@ public class ManyThreadsAddingListeners {
 
     if (sum.get() != expectedSum) {
       throw new IllegalStateException(
-          String.format("did not properly collect all values: expected %d, but was %d",
-              expectedSum, sum.get()));
+        String.format("did not properly collect all values: expected %d, but was %d", expectedSum,
+          sum.get()));
+    }
+
+    return expectedSum;
+  }
+
+  @Benchmark
+  public int completable(final ThreadPool pool) throws Exception {
+    final int expectedSum = ((size * (size - 1)) / 2) * callbackCount * THREAD_COUNT;
+
+    final AtomicInteger sum = new AtomicInteger();
+    final CountDownLatch latch = new CountDownLatch(1);
+    final CountDownLatch tasks = new CountDownLatch(callbackCount * size * THREAD_COUNT);
+
+    final BiConsumer<Integer, Throwable> callback = (result, e) -> {
+      sum.addAndGet(result);
+      tasks.countDown();
+    };
+
+    for (int i = 0; i < size; i++) {
+      final int current = i;
+
+      final CompletableFuture<Integer> future = CompletableFuture.supplyAsync(() -> {
+        try {
+          latch.await();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+
+        return current;
+      }, pool.executor);
+
+      for (int t = 0; t < THREAD_COUNT; t++) {
+        pool.executor.execute(() -> {
+          for (int c = 0; c < callbackCount; c++) {
+            future.whenComplete(callback);
+          }
+        });
+      }
+    }
+
+    latch.countDown();
+    tasks.await();
+
+    if (sum.get() != expectedSum) {
+      throw new IllegalStateException(
+        String.format("did not properly collect all values: expected %d, but was %d", expectedSum,
+          sum.get()));
     }
 
     return expectedSum;
