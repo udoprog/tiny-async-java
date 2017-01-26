@@ -11,6 +11,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -19,9 +20,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Entry point to the tiny async framework.
- *
+ * <p>
  * <p>Example usage:
- *
+ * <p>
  * <pre>{@code
  *   final Async async = CoreAsync.builder().build();
  * }</pre>
@@ -198,88 +199,51 @@ public class CoreAsync implements Async {
 
   @Override
   public <T, U> Stage<U> streamCollect(
-      final Collection<? extends Stage<? extends T>> stages,
-      final StreamCollector<? super T, ? extends U> collector
+      final Collection<? extends Stage<? extends T>> stages, final Consumer<? super T> consumer,
+      final Supplier<? extends U> supplier
   ) {
     if (stages.isEmpty()) {
-      return doStreamCollectEmpty(collector);
+      return doStreamCollectEmpty(consumer, supplier);
     }
 
-    return doStreamCollect(stages, collector);
+    return doStreamCollect(stages, consumer, supplier);
   }
 
   /**
-   * Shortcut for when the list of stages is empty with {@link StreamCollector}.
+   * Shortcut for when the list of stages is empty with stream collector.
    *
-   * @param collector collector to apply
+   * @param consumer consumer to apply
+   * @param supplier supplier to provide result
    * @param <T> source type
    * @param <U> target type
    */
   <T, U> Stage<U> doStreamCollectEmpty(
-      final StreamCollector<? super T, ? extends U> collector
+      final Consumer<? super T> consumer, final Supplier<? extends U> supplier
   ) {
     try {
-      return this.completed(collector.end(0, 0, 0));
+      return this.completed(supplier.get());
     } catch (Exception e) {
       return failed(e);
     }
   }
 
   /**
-   * Perform collection for {@link StreamCollector}.
+   * Perform collection for stream collector.
    *
    * @param stages stages to apply to collector
-   * @param collector collector to apply
+   * @param consumer consumer to apply
+   * @param supplier supplier to provide result
    * @param <T> source type
    * @param <U> target type
    */
   <T, U> Stage<U> doStreamCollect(
-      final Collection<? extends Stage<? extends T>> stages,
-      final StreamCollector<? super T, ? extends U> collector
+      final Collection<? extends Stage<? extends T>> stages, final Consumer<? super T> consumer,
+      final Supplier<? extends U> supplier
   ) {
     final Completable<U> target = completable();
 
     final StreamCollectHelper<? super T, ? extends U> done =
-        new StreamCollectHelper<>(caller, stages.size(), collector, target);
-
-    for (final Stage<? extends T> q : stages) {
-      q.handle(done);
-    }
-
-    bindSignals(target, stages);
-    return target;
-  }
-
-  @Override
-  public <T, U> Stage<U> endCollect(
-      final Collection<? extends Stage<? extends T>> stages,
-      final EndCollector<? extends U> collector
-  ) {
-    if (stages.isEmpty()) {
-      return doEndCollectEmpty(collector);
-    }
-
-    return doEndCollect(stages, collector);
-  }
-
-  <T> Stage<T> doEndCollectEmpty(
-      final EndCollector<? extends T> collector
-  ) {
-    try {
-      return this.completed(collector.apply(0, 0, 0));
-    } catch (Exception e) {
-      return failed(e);
-    }
-  }
-
-  <T, U> Stage<U> doEndCollect(
-      final Collection<? extends Stage<? extends T>> stages,
-      final EndCollector<? extends U> collector
-  ) {
-    final Completable<U> target = completable();
-
-    final EndCollectHelper<? extends U> done =
-        new EndCollectHelper<>(stages.size(), collector, target);
+        new StreamCollectHelper<>(caller, stages.size(), consumer, supplier, target);
 
     for (final Stage<? extends T> q : stages) {
       q.handle(done);
@@ -292,27 +256,27 @@ public class CoreAsync implements Async {
   @Override
   public <C, T> Stage<T> eventuallyCollect(
       final Collection<? extends Callable<? extends Stage<? extends C>>> callables,
-      final StreamCollector<? super C, ? extends T> collector, int parallelism
+      final Consumer<? super C> consumer, Supplier<? extends T> supplier, int parallelism
   ) {
     if (callables.isEmpty()) {
-      return doEventuallyCollectEmpty(collector);
+      return doEventuallyCollectEmpty(consumer, supplier);
     }
 
     // Special case: the specified parallelism is sufficient to run all at once.
     if (parallelism >= callables.size()) {
-      return doEventuallyCollectImmediate(callables, collector);
+      return doEventuallyCollectImmediate(callables, consumer, supplier);
     }
 
-    return doEventuallyCollect(callables, collector, parallelism);
+    return doEventuallyCollect(callables, consumer, supplier, parallelism);
   }
 
   <T, C> Stage<T> doEventuallyCollectEmpty(
-      final StreamCollector<? super C, ? extends T> collector
+      final Consumer<? super C> consumer, Supplier<? extends T> supplier
   ) {
     final T value;
 
     try {
-      value = collector.end(0, 0, 0);
+      value = supplier.get();
     } catch (Exception e) {
       return failed(e);
     }
@@ -321,8 +285,8 @@ public class CoreAsync implements Async {
   }
 
   <C, T> Stage<T> doEventuallyCollectImmediate(
-      Collection<? extends Callable<? extends Stage<? extends C>>> callables,
-      StreamCollector<? super C, ? extends T> collector
+      final Collection<? extends Callable<? extends Stage<? extends C>>> callables,
+      final Consumer<? super C> consumer, Supplier<? extends T> supplier
   ) {
     final List<Stage<? extends C>> stages = new ArrayList<>(callables.size());
 
@@ -331,22 +295,23 @@ public class CoreAsync implements Async {
 
       try {
         stage = c.call();
-      } catch (Exception e) {
-        stages.add(this.<C>failed(e));
+      } catch (final Exception e) {
+        stages.add(this.failed(e));
         continue;
       }
 
       stages.add(stage);
     }
 
-    return streamCollect(stages, collector);
+    return streamCollect(stages, consumer, supplier);
   }
 
   /**
    * Perform an eventual collection.
    *
    * @param tasks tasks to invoke for stages
-   * @param collector collector to apply
+   * @param consumer consumer to apply
+   * @param supplier supplier to provide result
    * @param parallelism number of tasks to run in parallel
    * @param <T> source type
    * @param <U> target type
@@ -354,11 +319,12 @@ public class CoreAsync implements Async {
    */
   <T, U> Stage<U> doEventuallyCollect(
       final Collection<? extends Callable<? extends Stage<? extends T>>> tasks,
-      final StreamCollector<? super T, ? extends U> collector, int parallelism
+      final Consumer<? super T> consumer, Supplier<? extends U> supplier, int parallelism
   ) {
     final ExecutorService executor = executor();
     final Completable<U> stage = completable();
-    executor.execute(new DelayedCollectCoordinator<>(caller, tasks, collector, stage, parallelism));
+    executor.execute(
+        new DelayedCollectCoordinator<>(caller, tasks, consumer, supplier, stage, parallelism));
     return stage;
   }
 
@@ -502,7 +468,7 @@ public class CoreAsync implements Async {
 
     /**
      * Configure that all caller invocation, and async tasks should be using a thread pool.
-     *
+     * <p>
      * <p>This will cause the configuration of TinyTask to throw an exception if an executor service
      * is not available for all purposes.
      *
@@ -518,9 +484,9 @@ public class CoreAsync implements Async {
      * Configure that all caller invocations should use a recursion safe mechanism. In the normal
      * case this doesn't change the behaviour of caller and threadedCaller, but when deep recursion
      * is detected in the current thread the next recursive doCall is deferred to a separate thread.
-     *
+     * <p>
      * <p>Recursion is tracked for all threads that doCall the AsyncCallers.
-     *
+     * <p>
      * <p>This will make even the non-threaded caller use a thread in the case of deep recursion.
      *
      * @param recursionSafe {@code true} if all caller invocations should be done with a recursion
@@ -534,7 +500,7 @@ public class CoreAsync implements Async {
 
     /**
      * Configure how many recursions should be allowed.
-     *
+     * <p>
      * <p>This implies enabling {@link #recursionSafe}.
      *
      * @param maxRecursionDepth The max number of times that a caller may go through {@link Caller}
@@ -549,7 +515,7 @@ public class CoreAsync implements Async {
 
     /**
      * Specify an asynchronous caller implementation.
-     *
+     * <p>
      * <p>The 'caller' defines how handles are invoked. The simplest implementations are based of
      * {@code DirectCaller} , which causes the doCall to be performed directly in the calling
      * thread.
@@ -580,7 +546,7 @@ public class CoreAsync implements Async {
 
     /**
      * Specify a separate executor to use for caller (internal handle) invocation.
-     *
+     * <p>
      * <p>Implies use of threaded caller.
      *
      * @param callerExecutor Executor to use for callers
@@ -607,7 +573,7 @@ public class CoreAsync implements Async {
 
     /**
      * Configure clock source.
-     *
+     * <p>
      * <p>A clock source is used to determine what the current time is in order to do timing-related
      * tasks like retrying an action until it has been completed with a back-off.
      *

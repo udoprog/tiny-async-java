@@ -6,6 +6,7 @@ import eu.toolchain.examples.helpers.Helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An example application showcasing using a {@code StreamCollector}.
@@ -22,8 +23,10 @@ public class StreamCollect {
       futures.add(async.call(() -> value));
     }
 
+    final AtomicInteger integer = new AtomicInteger();
+
     final Stage<Integer> sum =
-        async.endCollect(futures, (completed, failed, cancelled) -> completed);
+        async.streamCollect(futures, integer::addAndGet, integer::get);
 
     System.out.println("result: " + sum.join());
   }

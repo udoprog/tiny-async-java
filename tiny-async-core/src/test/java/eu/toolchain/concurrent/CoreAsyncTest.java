@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.Before;
@@ -60,7 +61,9 @@ public class CoreAsyncTest {
   @Mock
   private Function<Collection<Object>, Object> collector;
   @Mock
-  private StreamCollector<Object, Object> streamCollector;
+  private Consumer<Object> consumer;
+  @Mock
+  private Supplier<Object> supplier;
   @Mock
   private Completable<Object> completable;
   @Mock
@@ -229,26 +232,28 @@ public class CoreAsyncTest {
 
   private void runEventuallyCollectTest(int size, int parallelism) {
     setupEventuallyCollect(size, parallelism);
-    assertEquals(future, underTest.eventuallyCollect(callables, streamCollector, parallelism));
+    assertEquals(future, underTest.eventuallyCollect(callables, consumer, supplier, parallelism));
     verifyEventuallyCollect(size, parallelism);
   }
 
   private void setupEventuallyCollect(int size, int parallelism) {
     doReturn(size == 0).when(callables).isEmpty();
     doReturn(size).when(callables).size();
-    doReturn(future).when(underTest).doEventuallyCollectImmediate(callables, streamCollector);
-    doReturn(future).when(underTest).doEventuallyCollectEmpty(streamCollector);
-    doReturn(future).when(underTest).doEventuallyCollect(callables, streamCollector, parallelism);
+    doReturn(future).when(underTest).doEventuallyCollectImmediate(callables, consumer, supplier);
+    doReturn(future).when(underTest).doEventuallyCollectEmpty(consumer, supplier);
+    doReturn(future)
+        .when(underTest)
+        .doEventuallyCollect(callables, consumer, supplier, parallelism);
   }
 
   private void verifyEventuallyCollect(int size, int parallelism) {
     verify(callables, times(1)).isEmpty();
     verify(callables, times(size > 0 ? 1 : 0)).size();
-    verify(underTest, times(size == 0 ? 1 : 0)).doEventuallyCollectEmpty(streamCollector);
+    verify(underTest, times(size == 0 ? 1 : 0)).doEventuallyCollectEmpty(consumer, supplier);
     verify(underTest, times(size > 0 && size < parallelism ? 1 : 0)).doEventuallyCollectImmediate(
-        callables, streamCollector);
-    verify(underTest, times(size >= parallelism ? 1 : 0)).doEventuallyCollect(callables,
-        streamCollector, 10);
+        callables, consumer, supplier);
+    verify(underTest, times(size >= parallelism ? 1 : 0)).doEventuallyCollect(callables, consumer,
+        supplier, 10);
   }
 
   @Test
@@ -268,26 +273,26 @@ public class CoreAsyncTest {
 
   @Test
   public void testDoEventuallyCollectEmptyThrows() throws Exception {
-    doThrow(e).when(streamCollector).end(0, 0, 0);
+    doThrow(e).when(supplier).get();
     doReturn(future).when(underTest).completed(result);
     doReturn(future).when(underTest).failed(e);
 
-    assertEquals(future, underTest.doEventuallyCollectEmpty(streamCollector));
+    assertEquals(future, underTest.doEventuallyCollectEmpty(consumer, supplier));
 
-    verify(streamCollector).end(0, 0, 0);
+    verify(supplier).get();
     verify(underTest, never()).completed(result);
     verify(underTest).failed(e);
   }
 
   @Test
   public void testDoEventuallyCollectEmpty() throws Exception {
-    doReturn(result).when(streamCollector).end(0, 0, 0);
+    doReturn(result).when(supplier).get();
     doReturn(future).when(underTest).completed(result);
     doReturn(future).when(underTest).failed(e);
 
-    assertEquals(future, underTest.doEventuallyCollectEmpty(streamCollector));
+    assertEquals(future, underTest.doEventuallyCollectEmpty(consumer, supplier));
 
-    verify(streamCollector).end(0, 0, 0);
+    verify(supplier).get();
     verify(underTest).completed(result);
     verify(underTest, never()).failed(e);
   }
@@ -300,14 +305,14 @@ public class CoreAsyncTest {
     doReturn(f1).when(c).call();
     doThrow(e).when(c2).call();
     doReturn(f2).when(underTest).failed(e);
-    doReturn(future).when(underTest).streamCollect(futures, streamCollector);
+    doReturn(future).when(underTest).streamCollect(futures, consumer, supplier);
 
-    assertEquals(future, underTest.doEventuallyCollectImmediate(callables, streamCollector));
+    assertEquals(future, underTest.doEventuallyCollectImmediate(callables, consumer, supplier));
 
     verify(c).call();
     verify(c2).call();
     verify(underTest).failed(e);
-    verify(underTest).streamCollect(futures, streamCollector);
+    verify(underTest).streamCollect(futures, consumer, supplier);
   }
 
   @Test
@@ -317,7 +322,7 @@ public class CoreAsyncTest {
     doReturn(executor).when(underTest).executor();
     doReturn(completable).when(underTest).completable();
 
-    assertEquals(completable, underTest.doEventuallyCollect(callables, streamCollector, 10));
+    assertEquals(completable, underTest.doEventuallyCollect(callables, consumer, supplier, 10));
 
     verify(executor).execute(any(DelayedCollectCoordinator.class));
     verify(underTest).executor();
@@ -422,14 +427,14 @@ public class CoreAsyncTest {
   public void testCollectStreamEmpty() throws Exception {
     final Collection<Stage<Object>> futures = mock(Collection.class);
     doReturn(true).when(futures).isEmpty();
-    doReturn(future).when(underTest).doStreamCollectEmpty(streamCollector);
-    doReturn(future).when(underTest).doStreamCollect(futures, streamCollector);
+    doReturn(future).when(underTest).doStreamCollectEmpty(consumer, supplier);
+    doReturn(future).when(underTest).doStreamCollect(futures, consumer, supplier);
 
-    assertEquals(future, underTest.streamCollect(futures, streamCollector));
+    assertEquals(future, underTest.streamCollect(futures, consumer, supplier));
 
     verify(futures).isEmpty();
-    verify(underTest).doStreamCollectEmpty(streamCollector);
-    verify(underTest, never()).doStreamCollect(futures, streamCollector);
+    verify(underTest).doStreamCollectEmpty(consumer, supplier);
+    verify(underTest, never()).doStreamCollect(futures, consumer, supplier);
   }
 
   @SuppressWarnings("unchecked")
@@ -437,14 +442,14 @@ public class CoreAsyncTest {
   public void testCollectStream() throws Exception {
     final Collection<Stage<Object>> futures = mock(Collection.class);
     doReturn(false).when(futures).isEmpty();
-    doReturn(future).when(underTest).doStreamCollectEmpty(streamCollector);
-    doReturn(future).when(underTest).doStreamCollect(futures, streamCollector);
+    doReturn(future).when(underTest).doStreamCollectEmpty(consumer, supplier);
+    doReturn(future).when(underTest).doStreamCollect(futures, consumer, supplier);
 
-    assertEquals(future, underTest.streamCollect(futures, streamCollector));
+    assertEquals(future, underTest.streamCollect(futures, consumer, supplier));
 
     verify(futures).isEmpty();
-    verify(underTest, never()).doStreamCollectEmpty(streamCollector);
-    verify(underTest).doStreamCollect(futures, streamCollector);
+    verify(underTest, never()).doStreamCollectEmpty(consumer, supplier);
+    verify(underTest).doStreamCollect(futures, consumer, supplier);
   }
 
   @SuppressWarnings("unchecked")
@@ -455,7 +460,7 @@ public class CoreAsyncTest {
     doReturn(completable).when(underTest).completable();
     doNothing().when(underTest).bindSignals(completable, futures);
 
-    assertEquals(completable, underTest.doStreamCollect(futures, streamCollector));
+    assertEquals(completable, underTest.doStreamCollect(futures, consumer, supplier));
 
     verify(underTest).completable();
     verify(underTest).bindSignals(completable, futures);
@@ -465,20 +470,20 @@ public class CoreAsyncTest {
 
   @Test
   public void testDoCollectEmptyStream() throws Exception {
-    doReturn(result).when(streamCollector).end(0, 0, 0);
+    doReturn(result).when(supplier).get();
     doReturn(future).when(underTest).completed(result);
 
-    assertEquals(future, underTest.doStreamCollectEmpty(streamCollector));
+    assertEquals(future, underTest.doStreamCollectEmpty(consumer, supplier));
 
     verify(underTest).completed(result);
   }
 
   @Test
   public void testDoCollectEmptyStreamThrows() throws Exception {
-    doThrow(e).when(streamCollector).end(0, 0, 0);
+    doThrow(e).when(supplier).get();
     doReturn(future).when(underTest).failed(e);
 
-    assertEquals(future, underTest.doStreamCollectEmpty(streamCollector));
+    assertEquals(future, underTest.doStreamCollectEmpty(consumer, supplier));
 
     verify(underTest).failed(e);
   }

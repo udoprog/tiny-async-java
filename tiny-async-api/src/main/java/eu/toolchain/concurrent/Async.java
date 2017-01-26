@@ -3,6 +3,7 @@ package eu.toolchain.concurrent;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -107,8 +108,8 @@ public interface Async {
   /**
    * Build a new stage that is the result of applying a computation on a collection of stages.
    *
-   * <p>This is similar to {@link #collect(Collection, Function)}, but uses {@link StreamCollector}
-   * which operates on the stream of results as they arrive.
+   * <p>This is similar to {@link #collect(Collection, Function)}, but uses abstractions which
+   * operates on the stream of results as they arrive.
    *
    * <p>This allows the implementor to reduce memory usage for certain operations since all results
    * does not have to be collected.
@@ -117,29 +118,15 @@ public interface Async {
    * given list of stages as well.
    *
    * @param stages the collection of stages
-   * @param collector the collector
+   * @param consumer value consumer
+   * @param supplier result supplier
    * @param <T> source type of the collected stages
    * @param <U> target type of the collector
    * @return a stage bound to the collected value of the collector
    */
   <T, U> Stage<U> streamCollect(
-      Collection<? extends Stage<? extends T>> stages,
-      StreamCollector<? super T, ? extends U> collector
-  );
-
-  /**
-   * Build a new stage that is the result of applying a computation on a collection of stages.
-   *
-   * <p>This version only care about the number of results.
-   *
-   * @param stages the collection of stages
-   * @param collector the collector
-   * @param <T> source type of the collected stages
-   * @param <U> target type of the collector
-   * @return a stage bound to the collected value of the collector
-   */
-  <T, U> Stage<U> endCollect(
-      Collection<? extends Stage<? extends T>> stages, EndCollector<? extends U> collector
+    Collection<? extends Stage<? extends T>> stages,
+    Consumer<? super T> consumer, Supplier<? extends U> supplier
   );
 
   /**
@@ -158,7 +145,7 @@ public interface Async {
    * Collect the results from a collection of stages, then discard them.
    *
    * <p>Signals like cancellations and failures will be communicated in a similar fashion to {@link
-   * #streamCollect(Collection, StreamCollector)}.
+   * #streamCollect(Collection, Consumer, Supplier)}.
    *
    * @param stages collection to collect
    * @return a new completable
@@ -177,15 +164,16 @@ public interface Async {
    * difficult to stop cleanly.
    *
    * @param callables the collection of operations
-   * @param collector the collector
+   * @param consumer value consumer
+   * @param supplier result supplier
    * @param parallelism number of stages that are allowed to be pending at the same time
    * @param <T> source type of the collected stages
    * @param <U> target type the collected stages are being transformed into
    * @return a new completable that is completed when all operations are completed
    */
   <T, U> Stage<U> eventuallyCollect(
-      Collection<? extends Callable<? extends Stage<? extends T>>> callables,
-      StreamCollector<? super T, ? extends U> collector, int parallelism
+    Collection<? extends Callable<? extends Stage<? extends T>>> callables,
+    Consumer<? super T> consumer, Supplier<? extends U> supplier, int parallelism
   );
 
   /**

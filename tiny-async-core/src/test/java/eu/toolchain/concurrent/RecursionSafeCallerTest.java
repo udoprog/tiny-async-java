@@ -35,9 +35,6 @@ public class RecursionSafeCallerTest {
   @Mock
   private Consumer<Throwable> failed;
 
-  @Mock
-  private StreamCollector<Object, Object> streamCollector;
-
   private StackTraceElement[] stack = new StackTraceElement[0];
 
   @Before

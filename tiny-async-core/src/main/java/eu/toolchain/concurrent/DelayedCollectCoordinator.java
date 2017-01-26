@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Coordinator thread for handling delayed callables executing with a given parallelism.
@@ -14,15 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DelayedCollectCoordinator<S, T> implements Handle<S>, Runnable {
   private final AtomicInteger pending = new AtomicInteger();
 
-  private final AtomicInteger cancelled = new AtomicInteger();
-  private final AtomicInteger failed = new AtomicInteger();
-
   /* lock that must be acquired before using {@link callables} */
   private final Object lock = new Object();
 
   private final Caller caller;
   private final Iterator<? extends Callable<? extends Stage<? extends S>>> callables;
-  private final StreamCollector<? super S, ? extends T> collector;
+  private final Consumer<? super S> consumer;
+  private final Supplier<? extends T> supplier;
   private final Completable<? super T> future;
   private final int parallelism;
   private final int total;
@@ -33,12 +33,13 @@ public class DelayedCollectCoordinator<S, T> implements Handle<S>, Runnable {
   public DelayedCollectCoordinator(
       final Caller caller,
       final Collection<? extends Callable<? extends Stage<? extends S>>> callables,
-      final StreamCollector<S, T> collector, final Completable<? super T> future,
+      final Consumer<S> consumer, Supplier<T> supplier, final Completable<? super T> future,
       int parallelism
   ) {
     this.caller = caller;
     this.callables = callables.iterator();
-    this.collector = collector;
+    this.consumer = consumer;
+    this.supplier = supplier;
     this.future = future;
     this.parallelism = parallelism;
     this.total = callables.size();
@@ -46,25 +47,21 @@ public class DelayedCollectCoordinator<S, T> implements Handle<S>, Runnable {
 
   @Override
   public void failed(Throwable cause) {
-    caller.execute(() -> collector.failed(cause));
     pending.decrementAndGet();
-    failed.incrementAndGet();
     cancel = true;
     checkNext();
   }
 
   @Override
   public void completed(S result) {
-    caller.execute(() -> collector.completed(result));
+    caller.execute(() -> consumer.accept(result));
     pending.decrementAndGet();
     checkNext();
   }
 
   @Override
   public void cancelled() {
-    caller.execute(collector::cancelled);
     pending.decrementAndGet();
-    cancelled.incrementAndGet();
     cancel = true;
     checkNext();
   }
@@ -93,13 +90,9 @@ public class DelayedCollectCoordinator<S, T> implements Handle<S>, Runnable {
     final Callable<? extends Stage<? extends S>> next;
 
     synchronized (lock) {
-      // cancel any available callbacks.
       if (cancel) {
-        while (callables.hasNext()) {
-          callables.next();
-          caller.execute(collector::cancelled);
-          cancelled.incrementAndGet();
-        }
+        checkEnd();
+        return;
       }
 
       if (!callables.hasNext()) {
@@ -139,14 +132,10 @@ public class DelayedCollectCoordinator<S, T> implements Handle<S>, Runnable {
 
     done = true;
 
-    final int f = failed.get();
-    final int c = cancelled.get();
-    final int r = total - f - c;
-
     final T value;
 
     try {
-      value = collector.end(r, f, c);
+      value = supplier.get();
     } catch (Exception e) {
       future.fail(e);
       return;

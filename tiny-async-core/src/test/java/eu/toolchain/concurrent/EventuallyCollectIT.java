@@ -80,28 +80,10 @@ public class EventuallyCollectIT {
         });
       }
 
+      final AtomicLong sum = new AtomicLong();
+
       final Stage<Long> res =
-          async.eventuallyCollect(callables, new StreamCollector<Long, Long>() {
-            final AtomicLong sum = new AtomicLong();
-
-            @Override
-            public void completed(Long result) {
-              sum.addAndGet(result);
-            }
-
-            @Override
-            public void failed(Throwable cause) {
-            }
-
-            @Override
-            public void cancelled() {
-            }
-
-            @Override
-            public Long end(int resolved, int failed, int cancelled) {
-              return sum.get();
-            }
-          }, PARALLELISM);
+          async.eventuallyCollect(callables, sum::addAndGet, sum::get, PARALLELISM);
 
       assertEquals(EXPECTED_SUM, (long) res.join());
       assertEquals(COUNT, called.get());
@@ -124,15 +106,12 @@ public class EventuallyCollectIT {
         callables.add(() -> {
           pending.incrementAndGet();
 
-          final Stage<Long> f = async.call(new Callable<Long>() {
-            @Override
-            public Long call() throws Exception {
-              if (r.nextInt(2) == 1) {
-                throw new RuntimeException("failure");
-              }
-
-              return 1l;
+          final Stage<Long> f = async.call(() -> {
+            if (r.nextInt(2) == 1) {
+              throw new RuntimeException("failure");
             }
+
+            return 1l;
           }, otherExecutor);
 
           if (r.nextInt(2) == 1) {
@@ -147,39 +126,10 @@ public class EventuallyCollectIT {
         });
       }
 
-      final Stage<Long> res =
-          async.eventuallyCollect(callables, new StreamCollector<Long, Long>() {
-            @Override
-            public void completed(Long result) {
-              if (r.nextInt(2) == 1) {
-                expectedInternalErrors.incrementAndGet();
-                throw new RuntimeException("die");
-              }
-            }
+      final Stage<Long> res = async.eventuallyCollect(callables, value -> {
+      }, () -> 0L, PARALLELISM);
 
-            @Override
-            public void failed(Throwable cause) {
-              if (r.nextInt(2) == 1) {
-                expectedInternalErrors.incrementAndGet();
-                throw new RuntimeException("die");
-              }
-            }
-
-            @Override
-            public void cancelled() {
-              if (r.nextInt(2) == 1) {
-                expectedInternalErrors.incrementAndGet();
-                throw new RuntimeException("die");
-              }
-            }
-
-            @Override
-            public Long end(int resolved, int failed, int cancelled) {
-              return (long) (resolved + failed + cancelled);
-            }
-          }, PARALLELISM);
-
-      assertEquals(COUNT, (long) res.join());
+      assertEquals(0L, (long) res.join());
       assertEquals(expectedInternalErrors.get(), internalErrors.get());
     }
   }
