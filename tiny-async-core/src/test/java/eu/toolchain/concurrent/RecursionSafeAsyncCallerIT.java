@@ -1,20 +1,28 @@
 package eu.toolchain.concurrent;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.util.concurrent.AtomicLongMap;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.mockito.Mockito;
 
 public class RecursionSafeAsyncCallerIT {
+  @Rule
+  public Timeout timeout = Timeout.seconds(10);
 
   private AtomicLongMap<Long> recursionDepthPerThread;
   private AtomicLongMap<Long> maxRecursionDepthPerThread;
@@ -29,7 +37,7 @@ public class RecursionSafeAsyncCallerIT {
   }
 
   public void testBasicRecursionMethod(
-      RecursionSafeCaller caller, ConcurrentLinkedQueue<Integer> testData
+    RecursionSafeCaller caller, ConcurrentLinkedQueue<Integer> testData
   ) {
 
     class RecursionRunnable implements Runnable {
@@ -37,7 +45,7 @@ public class RecursionSafeAsyncCallerIT {
       ConcurrentLinkedQueue<Integer> testData;
 
       RecursionRunnable(
-          RecursionSafeCaller caller, ConcurrentLinkedQueue<Integer> testData
+        RecursionSafeCaller caller, ConcurrentLinkedQueue<Integer> testData
       ) {
         this.caller = caller;
         this.testData = testData;
@@ -76,9 +84,9 @@ public class RecursionSafeAsyncCallerIT {
     ExecutorService executorServiceReal = Executors.newFixedThreadPool(10);
     Caller caller2 = Mockito.mock(Caller.class);
     RecursionSafeCaller recursionCaller =
-        new RecursionSafeCaller(executorServiceReal, caller2, MAX_RECURSION_DEPTH);
+      new RecursionSafeCaller(executorServiceReal, caller2, MAX_RECURSION_DEPTH);
     ConcurrentLinkedQueue<Integer> testData =
-        new ConcurrentLinkedQueue<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+      new ConcurrentLinkedQueue<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
 
     testBasicRecursionMethod(recursionCaller, testData);
 
@@ -115,24 +123,38 @@ public class RecursionSafeAsyncCallerIT {
     assert (maxStackDepth <= MAX_RECURSION_DEPTH + 1);
   }
 
-  @Test(expected = StackOverflowError.class)
+  @Test
   public void testRecursionsFailure() throws Exception {
     // make sure the stack is too small to accommodate the current test
-    doRecursions(false);
+    assertTrue(doRecursions(false));
   }
 
   @Test
   public void testRecursionsSuccess() throws Exception {
-    doRecursions(true);
+    assertFalse(doRecursions(true));
   }
 
-  private void doRecursions(final boolean recursionSafe)
-      throws InterruptedException, java.util.concurrent.ExecutionException {
+  private boolean doRecursions(final boolean recursionSafe)
+    throws InterruptedException, java.util.concurrent.ExecutionException {
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Error> error = new AtomicReference<>();
+    final AtomicInteger result = new AtomicInteger();
+
     final Async async = CoreAsync
-        .builder()
-        .executor(Executors.newSingleThreadExecutor())
-        .recursionSafe(recursionSafe)
-        .build();
+      .builder()
+      .executor(Executors.newSingleThreadExecutor())
+      .recursionSafe(recursionSafe)
+      .caller(new DirectCaller() {
+        @Override
+        protected void internalError(final String what, final Throwable e) {
+          if (e instanceof Error) {
+            error.set((Error) e);
+          }
+
+          latch.countDown();
+        }
+      })
+      .build();
 
     final Completable<Integer> source = async.completable();
 
@@ -147,6 +169,28 @@ public class RecursionSafeAsyncCallerIT {
     }
 
     source.complete(0);
-    assertEquals(100000, (int) tail.join());
+
+    final Stage<Integer> last = tail;
+
+    final Thread thread = new Thread(() -> {
+      try {
+        result.set(last.join());
+      } catch (InterruptedException e) {
+        return;
+      } catch (final Exception e) {
+        System.err.println("Failed to join");
+        e.printStackTrace(System.err);
+      }
+
+      latch.countDown();
+    });
+
+    thread.start();
+    latch.await();
+
+    thread.interrupt();
+    thread.join();
+
+    return error.get() != null;
   }
 }
