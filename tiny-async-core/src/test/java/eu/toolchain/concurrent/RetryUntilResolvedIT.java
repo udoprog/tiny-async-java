@@ -2,10 +2,13 @@ package eu.toolchain.concurrent;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -33,12 +36,12 @@ public class RetryUntilResolvedIT {
     assertEquals(RESULT, result.getResult());
     assertEquals(5, result.getErrors().size());
     assertEquals(ImmutableList.of("doCall 0", "doCall 1", "doCall 2", "doCall 3", "doCall 4"),
-        result
-            .getErrors()
-            .stream()
-            .map(Throwable::getCause)
-            .map(Throwable::getMessage)
-            .collect(Collectors.toList()));
+      result
+        .getErrors()
+        .stream()
+        .map(Throwable::getCause)
+        .map(Throwable::getMessage)
+        .collect(Collectors.toList()));
     assertEquals(6, calls.get());
   }
 
@@ -55,13 +58,20 @@ public class RetryUntilResolvedIT {
 
       final Throwable cause = e.getCause();
 
-      assertEquals("doCall 4", cause.getMessage());
-      assertEquals(4, cause.getSuppressed().length);
-      assertEquals(ImmutableList.of("doCall 0", "doCall 1", "doCall 2", "doCall 3"), Arrays
-          .stream(cause.getSuppressed())
-          .map(Throwable::getCause)
-          .map(Throwable::getMessage)
-          .collect(Collectors.toList()));
+      assertEquals("doCall " + cause.getSuppressed().length, cause.getMessage());
+      assertTrue(cause.getSuppressed().length > 2);
+
+      final List<String> list = new ArrayList<>();
+
+      for (int i = 0; i < cause.getSuppressed().length; i++) {
+        list.add("doCall " + i);
+      }
+
+      assertEquals(list, Arrays
+        .stream(cause.getSuppressed())
+        .map(Throwable::getCause)
+        .map(Throwable::getMessage)
+        .collect(Collectors.toList()));
       return;
     }
 
@@ -69,7 +79,7 @@ public class RetryUntilResolvedIT {
   }
 
   private Stage<RetryResult<Object>> runRetry(
-      final AtomicInteger calls, final long timeout
+    final AtomicInteger calls, final long timeout
   ) {
     return async.retryUntilCompleted(() -> {
       final int n = calls.getAndIncrement();
@@ -80,6 +90,6 @@ public class RetryUntilResolvedIT {
 
       return async.completed(RESULT);
     }, RetryPolicy.timed(timeout, TimeUnit.MILLISECONDS,
-        RetryPolicy.linear(50, TimeUnit.MILLISECONDS)));
+      RetryPolicy.linear(50, TimeUnit.MILLISECONDS)));
   }
 }
