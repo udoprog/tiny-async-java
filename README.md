@@ -103,7 +103,7 @@ You can see how the library is used by looking at the provided examples:
 * [Listen for changes][listen]
 * [Transform the result][transform]
 * [Collection][collect], and [stream collections][stream-collect], and
-  [eventual collection][eventual-collect] of results.
+  [eventual collection][eventually-collect] of results.
 * [Retry Operations][retry-it] ([API][retry-apidocs])
 * [Managed Resources][managed-it] ([API][managed-apidocs])
 
