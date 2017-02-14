@@ -99,7 +99,7 @@ You can see how the library is used by looking at the provided examples:
 * [Building stages from scratch][stages-from-scratch]
 * [Immediate results][immediate-results]
 * [Blocking][blocking]
-* [Completing in different thread)][something-reckless]
+* [Completing in different thread][something-reckless]
 * [Listen for changes][listen]
 * [Transform the result][transform]
 * [Collection][collect], and [stream collections][stream-collect], and
